@@ -3,19 +3,19 @@
     android:height="512dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Clean Foodvexa food-mark: no misleading/garbled lettering -->
+    <!-- Professional Foodvexa food mark: bowl + fresh leaves + serving dome -->
     <path android:fillColor="#FFFFFF" android:pathData="M72,0 L440,0 Q512,0 512,72 L512,440 Q512,512 440,512 L72,512 Q0,512 0,440 L0,72 Q0,0 72,0Z"/>
-    <!-- green bowl/plate -->
-    <path android:fillColor="#073B32" android:pathData="M82,292 C116,398 396,398 430,292 L430,278 L82,278Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M88,266 L424,266 L424,290 C350,312 162,312 88,290Z"/>
-    <!-- food/leaf crown -->
-    <path android:fillColor="#67B800" android:pathData="M142,224 C105,190 110,146 122,126 C164,134 187,169 177,211Z"/>
-    <path android:fillColor="#67B800" android:pathData="M370,224 C407,190 402,146 390,126 C348,134 325,169 335,211Z"/>
-    <path android:fillColor="#073B32" android:pathData="M224,226 C197,188 204,132 256,112 C308,132 315,188 288,226Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M256,102 C229,102 210,82 210,60 C238,58 256,76 256,102Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M256,102 C283,102 302,82 302,60 C274,58 256,76 256,102Z"/>
-    <!-- simple fork -->
-    <path android:fillColor="#073B32" android:pathData="M190,54 L202,54 L202,118 L214,118 L214,54 L226,54 L226,118 L238,118 L238,54 L250,54 L250,132 C250,146 240,156 228,160 L228,238 L210,238 L210,160 C198,156 190,146 190,132Z"/>
-    <!-- simple spoon -->
-    <path android:fillColor="#073B32" android:pathData="M300,54 C328,54 342,78 342,108 C342,132 331,148 318,156 L318,238 L300,238 L300,156 C287,148 276,132 276,108 C276,78 290,54 300,54Z"/>
+    <!-- fresh leaves -->
+    <path android:fillColor="#69B83F" android:pathData="M150,220 C111,198 103,156 120,123 C157,128 187,158 181,199 C175,213 164,219 150,220Z"/>
+    <path android:fillColor="#69B83F" android:pathData="M362,220 C401,198 409,156 392,123 C355,128 325,158 331,199 C337,213 348,219 362,220Z"/>
+    <!-- serving dome -->
+    <path android:fillColor="#073B32" android:pathData="M186,224 C190,151 219,112 256,112 C293,112 322,151 326,224Z"/>
+    <path android:fillColor="#FF7A00" android:pathData="M236,112 C236,91 245,77 256,77 C267,77 276,91 276,112Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M224,208 C228,170 240,150 256,150 C272,150 284,170 288,208Z"/>
+    <!-- premium plate and food -->
+    <path android:fillColor="#FF7A00" android:pathData="M92,262 L420,262 L420,286 C355,309 157,309 92,286Z"/>
+    <path android:fillColor="#073B32" android:pathData="M76,286 C99,354 174,390 256,390 C338,390 413,354 436,286 L416,286 C390,333 328,356 256,356 C184,356 122,333 96,286Z"/>
+    <path android:fillColor="#69B83F" android:pathData="M126,281 C156,258 187,258 214,281 C185,300 154,301 126,281Z"/>
+    <path android:fillColor="#69B83F" android:pathData="M298,281 C325,258 356,258 386,281 C358,301 327,300 298,281Z"/>
+    <path android:fillColor="#FF7A00" android:pathData="M218,278 C231,258 281,258 294,278 C281,294 231,294 218,278Z"/>
 </vector>
