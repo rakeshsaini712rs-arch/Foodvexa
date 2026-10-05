@@ -1,0 +1,59 @@
+name: Product Photo Viewer Fix
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app/src/main/java/com/foodvexa/app/MainActivity.kt'
+      - '.github/workflows/product-photo-viewer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch product photo tap
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          marker = 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(138)));loadImage(pic,p.imageUrl);'
+          insert = 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(138)));loadImage(pic,p.imageUrl);pic.setOnClickListener{openProductPhoto(p)};'
+          if 'openProductPhoto(p)' not in s:
+              if marker not in s:
+                  raise SystemExit('Product image marker not found; source left unchanged')
+              s = s.replace(marker, insert, 1)
+              method = '''\n private fun openProductPhoto(p:Product){\n  val dialog=android.app.Dialog(this)\n  dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)\n  val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))}\n  val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER}\n  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)}\n  box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END})\n  box.addView(image,LinearLayout.LayoutParams(-1,0,1f))\n  box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)})\n  box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)))\n  close.setOnClickListener{dialog.dismiss()}\n  dialog.setContentView(box)\n  dialog.window?.setLayout(-1,-1)\n  dialog.show()\n  dialog.window?.setLayout(-1,-1)\n  loadImage(image,p.imageUrl)\n }\n'''
+              s = s.replace('\n private fun locationDialog()', method + '\n private fun locationDialog()', 1)
+              s = s.replace('import android.graphics.Color\n', 'import android.graphics.Color\nimport android.graphics.drawable.ColorDrawable\n', 1)
+              p.write_text(s, encoding='utf-8')
+      - name: Commit photo viewer change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          git diff --cached --quiet || git commit -m "Add full screen product photo viewer"
+          git push
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build debug APK
+        run: chmod +x gradlew && ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Foodvexa-Product-Photo-Viewer-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
