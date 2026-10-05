@@ -75,3 +75,5 @@ jobs:
         with:
           name: Foodvexa-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+
+# build repair trigger
