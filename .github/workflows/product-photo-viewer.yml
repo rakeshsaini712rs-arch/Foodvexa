@@ -24,6 +24,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Fix requested food photos
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          replacements = {
+              'https://images.unsplash.com/photo-1607013251379-e6eecfffe234?auto=format&fit=crop&w=500&q=80':
+              'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=85',
+              'https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=800&q=85':
+              'https://images.unsplash.com/photo-1676700310660-e92d03e259c3?auto=format&fit=crop&fm=jpg&q=85&w=1200',
+              'https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85':
+              'https://upload.wikimedia.org/wikipedia/commons/d/d5/Mirchi_Bada_Mirchi_bajji.jpg',
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit(f'Missing expected image URL: {old}')
+              s = s.replace(old, new)
+          p.write_text(s, encoding='utf-8')
+          PY
+
       - name: Locate Gradle wrapper
         shell: bash
         run: |
