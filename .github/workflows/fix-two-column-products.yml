@@ -74,3 +74,5 @@ jobs:
           fi
           git commit -m "Make products display two per row"
           git push
+
+# Trigger this one-time repair after the workflow file is installed.
