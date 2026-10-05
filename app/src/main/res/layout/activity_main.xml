@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:padding="18dp"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <LinearLayout android:gravity="center_vertical"
+        android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="vertical" android:layout_weight="1"
+            android:layout_width="0dp" android:layout_height="wrap_content">
+            <TextView android:text="FOODVEXA" android:textSize="28sp" android:textStyle="bold"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:text="Fresh food. Fast delivery." android:textSize="14sp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <Button android:id="@+id/profileButton" android:text="Profile"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <EditText android:id="@+id/search" android:hint="Search food, restaurants..."
+        android:singleLine="true" android:padding="14dp" android:layout_marginTop="16dp"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <TextView android:text="Categories" android:textSize="20sp" android:textStyle="bold"
+        android:layout_marginTop="22dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="horizontal" android:paddingTop="10dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <Button android:text="Fast Food" android:layout_marginEnd="6dp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:text="Meals" android:layout_marginEnd="6dp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:text="Snacks" android:layout_marginEnd="6dp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:text="Desserts" android:layout_marginEnd="6dp"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:text="Drinks" android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <TextView android:text="Popular near you" android:textSize="20sp" android:textStyle="bold"
+        android:layout_marginTop="22dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1">
+        <Button android:id="@+id/addBurger" android:text="Veg Burger     ₹80     + Add"
+            android:layout_marginTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/addDosa" android:text="Masala Dosa     ₹90     + Add"
+            android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/addChole" android:text="Chole Bhature     ₹80     + Add"
+            android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <Button android:id="@+id/cartButton" android:text="Cart (0) • ₹0"
+        android:layout_width="match_parent" android:layout_height="wrap_content"/>
+</LinearLayout>
