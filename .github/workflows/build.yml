@@ -32,7 +32,30 @@ jobs:
           sed -i 's/setText(prefs.getString("location",SHOP_LOCATION))/setText(prefs.getString("location",""))/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
           sed -i 's/if(v.isEmpty())SHOP_LOCATION else v/if(v.isEmpty())"" else v/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
-      - name: Make products two per row
+      - name: Fix home safe area and bottom navigation spacing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          text=path.read_text()
+
+          setup_pattern=r' private fun setupBase\(\)\{.*?\}\n private fun bottomNav\(\)'
+          setup_replacement=''' private fun setupBase(){root.removeAllViews();val frame=FrameLayout(this);val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true};content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),dp(112));clipToPadding=false};scroll.addView(content,FrameLayout.LayoutParams(-1,-1));frame.addView(scroll,FrameLayout.LayoutParams(-1,-1));frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM));root.addView(frame,FrameLayout.LayoutParams(-1,-1))}
+ private fun bottomNav()'''
+          text,count=re.subn(setup_pattern,setup_replacement,text,count=1,flags=re.S)
+          if count!=1: raise SystemExit('setupBase not found; refusing unsafe layout edit')
+
+          banner_pattern=r' private fun professionalBanner\(\):LinearLayout\{.*?\}\n private fun categoryCard'
+          banner_replacement=''' private fun professionalBanner():LinearLayout{val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true;clipToPadding=true};val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL;setPadding(0,0,0,0)};text.addView(label("FOODVEXA",12f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(18)));text.addView(label("HOT & FRESH FOOD",20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(27)));text.addView(label("Freshly prepared • Fast delivery",12f,false,Color.LTGRAY),margin(0,2,0,7));text.addView(primaryButton("ORDER NOW  ›"){} ,LinearLayout.LayoutParams(dp(145),dp(40)));box.addView(text,LinearLayout.LayoutParams(0,-1,1f));val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)});loadImage(pic,foodImages[0]);return box}
+ private fun categoryCard'''
+          text,count=re.subn(banner_pattern,banner_replacement,text,count=1,flags=re.S)
+          if count!=1: raise SystemExit('professionalBanner not found; refusing unsafe layout edit')
+
+          path.write_text(text)
+          PY
+
+      - name: Make products two per row with safe ADD buttons
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -41,36 +64,36 @@ jobs:
           text=path.read_text()
           pattern=r' private fun renderProducts\(\)\{.*?\}\n private fun showCart\(\)'
           replacement=r''' private fun renderProducts(){
-  val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
-  var ti=-1
-  for(i in 0 until content.childCount){
-   val v=content.getChildAt(i)
-   if(v is TextView&&v.text.toString()==title){ti=i;break}
-  }
-  if(ti<0)return
-  while(content.childCount>ti+1)content.removeViewAt(ti+1)
-  val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
-  var row:LinearLayout?=null
-  filtered.forEachIndexed{index,p->
-   if(index%2==0){
-    row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.TOP}
-    content.addView(row,margin(0,0,0,10))
-   }
-   val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18)}
-   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-   card.addView(pic,LinearLayout.LayoutParams(-1,dp(145)))
-   loadImage(pic,p.imageUrl)
-   card.addView(label(p.name,16f,true,Color.WHITE),margin(0,8,0,0))
-   card.addView(label("🔥 Fresh & Hot  •  ${p.eta}",12f,true,Color.rgb(235,190,75)),margin(0,4,0,0))
-   card.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),margin(0,5,0,7))
-   card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(-1,dp(42)))
-   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
-  }
- }
- private fun showCart()'''
-          new_text,count=re.subn(pattern,replacement,text,count=1,flags=re.S)
-          if count!=1: raise SystemExit('Product renderer not found; refusing to build with an unsafe replacement')
-          path.write_text(new_text)
+          val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
+          var ti=-1
+          for(i in 0 until content.childCount){
+           val v=content.getChildAt(i)
+           if(v is TextView&&v.text.toString()==title){ti=i;break}
+          }
+          if(ti<0)return
+          while(content.childCount>ti+1)content.removeViewAt(ti+1)
+          val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
+          var row:LinearLayout?=null
+          filtered.forEachIndexed{index,p->
+           if(index%2==0){
+            row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.TOP}
+            content.addView(row,margin(0,0,0,10))
+           }
+           val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+           val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+           card.addView(pic,LinearLayout.LayoutParams(-1,dp(138)))
+           loadImage(pic,p.imageUrl)
+           card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
+           card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.rgb(235,190,75)),margin(0,3,0,0))
+           card.addView(label("₹${p.price}",17f,true,Color.rgb(70,210,145)),margin(0,4,0,7))
+           card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(-1,dp(42)))
+           row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
+          }
+         }
+         private fun showCart'''
+          text,count=re.subn(pattern,replacement,text,count=1,flags=re.S)
+          if count!=1: raise SystemExit('renderProducts/showCart not found; refusing unsafe replacement')
+          path.write_text(text)
           PY
 
       - name: Build debug APK
@@ -82,4 +105,4 @@ jobs:
           name: Foodvexa-APK
           path: app/build/outputs/apk/debug/app-debug.apk
 
-# Fresh build trigger: two products per row.
+# Fresh build trigger: layout-safe two-column product grid.
