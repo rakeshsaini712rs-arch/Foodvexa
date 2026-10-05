@@ -28,13 +28,32 @@ class MainActivity:AppCompatActivity(){
   "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=800&q=85",
   "https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?auto=format&fit=crop&w=800&q=85",
   "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=85",
-  "https://images.unsplash.com/photo-1579751626657-5b9a3b8d7b7a?auto=format&fit=crop&w=800&q=85"
+  "https://images.unsplash.com/photo-1700760934249-93efbb574d23?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1573821663912-569905455b1c?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1776810250102-7459c4e0edc9?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1635832801146-102d3bb7f88e?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1604917877934-07d8d248d396?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1665033628673-7de125eb6b12?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1750680230007-055ecc622c94?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1682117651369-3d68b963f3a9?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1532246420286-127bcd803104?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1742546621342-02ce99d4f970?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1670952606267-f8389525e83b?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1717883235373-ef10b2a745a3?auto=format&fit=crop&w=800&q=85",
+  "https://dineout-media-assets.swiggy.com/swiggy/image/upload/fl_lossy%2Cf_auto%2Cq_auto%2Cw_600%2Ch_468/v1691786248/e45bd17788d24c82946d0147e83c4f82.jpg",
+  "https://b.zmtcdn.com/data/pictures/7/20797497/a6c9e19af2892cd99ea57dd5278f3ed7.jpg",
+  "https://files.idyllic.app/files/static/4553092",
+  "https://static.wixstatic.com/media/3f61bf_0da39a9c87cd49fc8ecb57b51e06add8~mv2.jpg/v1/fill/w_722%2Ch_722%2Cq_90/3f61bf_0da39a9c87cd49fc8ecb57b51e06add8~mv2.jpg",
+  "https://photos.tryotter.com/menu-photos/76d94ba7-127b-4378-9343-4abd9cda5129.png",
+  "https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy%2Cf_auto%2Cq_auto%2Cw_400/nurgu4k1swku5onvbk7v",
+  "https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy%2Cf_auto%2Cq_auto%2Cw_366/e527ca00fdb1eec60dad4efdf6a34f83",
+  "https://www.elnacional.cat/uploads/s1/10/78/53/18/thomas-tucker-mntag-exmkw-unsplash.jpeg"
  )
  private val products=mutableListOf<Product>().apply{
   add(Product("Veg Burger",80,"Fast Food",pizzaImages[0]));add(Product("Masala Dosa",90,"Fast Food",pizzaImages[1]));add(Product("Chole Bhature",80,"Meals",pizzaImages[2]));add(Product("Veg Sandwich",70,"Fast Food",pizzaImages[3]));add(Product("Samosa",20,"Snacks",pizzaImages[4]));add(Product("Kachori",30,"Snacks",pizzaImages[5]));add(Product("Mirchi Bada",30,"Snacks",pizzaImages[0]));add(Product("Chole Kulche",60,"Meals",pizzaImages[1]));add(Product("Maggi",50,"Fast Food",pizzaImages[2]));add(Product("Dhokla",60,"Snacks",pizzaImages[3]));add(Product("Idli",60,"Meals",pizzaImages[4]));add(Product("Vada Pav",50,"Fast Food",pizzaImages[5]));add(Product("Cake",350,"Birthday Special",pizzaImages[0]));add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]));add(Product("Cold Drink",40,"Beverages",pizzaImages[2]))
   val names=listOf("Margherita Pizza","Classic Cheese Pizza","Double Cheese Pizza","Corn Cheese Pizza","Veg Loaded Pizza","Farmhouse Pizza","Paneer Tikka Pizza","Tandoori Paneer Pizza","Peri Peri Paneer Pizza","Mexican Green Wave Pizza","Veggie Paradise Pizza","Capsicum & Onion Pizza","Mushroom Pizza","Jalapeño Cheese Pizza","Cheese Burst Pizza","Paneer & Corn Pizza","Onion & Tomato Pizza","Spicy Veg Pizza","BBQ Paneer Pizza","Achari Paneer Pizza","Tandoori Veg Pizza","Italian Veg Pizza","Cheese & Olive Pizza","Garden Fresh Pizza","Special Foodvexa Pizza")
   val prices=listOf(129,149,179,169,199,219,229,239,239,219,199,179,199,189,229,219,159,189,239,229,219,209,219,209,249)
-  names.forEachIndexed{i,n->add(Product(n,prices[i],"Fast Food",pizzaImages[i%pizzaImages.size]))}
+  names.forEachIndexed{i,n->add(Product(n,prices[i],"Fast Food",pizzaImages[i]))}
  }
  private val categories=listOf(Category("All","https://images.unsplash.com/photo-1669624272709-c5b91f66b1b7?auto=format&fit=crop&w=500&q=80"),Category("Fast Food","https://images.unsplash.com/photo-1607013251379-e6eecfffe234?auto=format&fit=crop&w=500&q=80"),Category("Snacks","https://images.unsplash.com/photo-1572099107898-46f22b3af4f9?auto=format&fit=crop&w=500&q=80"),Category("Chaat Special","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80"),Category("Meals","https://images.unsplash.com/photo-1742281257707-0c7f7e5ca9c6?auto=format&fit=crop&w=500&q=80"),Category("Birthday Special","https://images.unsplash.com/photo-1587015692860-f3a8481e9865?auto=format&fit=crop&w=500&q=80"),Category("Beverages","https://images.unsplash.com/photo-1592099759599-24b131b8e824?auto=format&fit=crop&w=500&q=80"),Category("Sweets","https://images.unsplash.com/photo-1667185487460-b303881b2bb9?auto=format&fit=crop&w=500&q=80"),Category("Special Sabji","https://images.unsplash.com/photo-1645432524571-0e469b22e43f?auto=format&fit=crop&w=500&q=80"),Category("Restaurant / Hotel","https://images.unsplash.com/photo-1646473267592-61e8630367bd?auto=format&fit=crop&w=500&q=80"))
  private val cart=linkedMapOf<String,Int>();private lateinit var root:FrameLayout;private lateinit var content:LinearLayout;private val prefs by lazy{getSharedPreferences("foodvexa",MODE_PRIVATE)};private var selectedCategory="All";private var query=""
