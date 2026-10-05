@@ -29,67 +29,31 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Apply menu and image updates to source
+      - name: Apply Birthday Special products
         shell: python
         run: |
           from pathlib import Path
-          import re
-
           p = Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s = p.read_text(encoding="utf-8")
-
-          # Base #64 image fixes.
-          s = s.replace(
-              'Category("Fast Food","https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=85")',
-              'Category("Fast Food","https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=85")'
-          )
-          s = s.replace(
-              'https://images.unsplash.com/photo-1676700310660-e92d03e259c3?auto=format&fit=crop&fm=jpg&q=85&w=1200',
-              'https://commons.wikimedia.org/wiki/Special:Redirect/file/Kachori-1.jpg'
-          )
-          s = s.replace(
-              'https://upload.wikimedia.org/wikipedia/commons/d/d5/Mirchi_Bada_Mirchi_bajji.jpg',
-              'https://commons.wikimedia.org/wiki/Special:Redirect/file/Mirchi_Bada_from_Jodhpur_1.jpg'
-          )
-
-          products = '''private val products=mutableListOf<Product>().apply{add(Product("Veg Burger",80,"Fast Food",foodImages[0]));add(Product("Masala Dosa",90,"Fast Food",foodImages[1]));add(Product("Veg Sandwich",70,"Fast Food",foodImages[3]));add(Product("Samosa",20,"Snacks",foodImages[4]));add(Product("Kachori",30,"Snacks",foodImages[5]));add(Product("Mirchi Bada",30,"Snacks",foodImages[6]));add(Product("Maggi",50,"Fast Food",foodImages[8]));add(Product("Vada Pav",50,"Fast Food",foodImages[11]));add(Product("Dahi Bhale",60,"Chaat Special","https://commons.wikimedia.org/wiki/Special:Redirect/file/Dahi_vada_or_dahi_bhalla.jpg"));add(Product("Indian Thali",120,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"));add(Product("Chole Bhature",80,"Meals",foodImages[2]));add(Product("Chole Kulche",60,"Meals",foodImages[7]));add(Product("Dosa",70,"Meals","https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=800&q=85"));add(Product("Idli",60,"Meals",foodImages[10]));add(Product("Vada",50,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"));add(Product("Masala Dosa",80,"Meals","https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=800&q=85"));add(Product("Paneer Dosa",100,"Meals","https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=800&q=85"));add(Product("Masala Idli",60,"Meals","https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=85"));add(Product("Vada Pav",50,"Meals",foodImages[11]));add(Product("Veg Sandwich",60,"Meals",foodImages[3]));add(Product("Paneer Sandwich",80,"Meals","https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=85"));add(Product("Pav Bhaji",80,"Meals","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Veg Noodles",80,"Meals","https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=85"));add(Product("Veg Fried Rice",90,"Meals","https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=85"));add(Product("Chilli Potato",80,"Meals","https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=85"));add(Product("Black Forest Cake",350,"Birthday Special","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85"));add(Product("White Forest Cake",350,"Birthday Special","https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=800&q=85"));add(Product("Chocolate Cake",400,"Birthday Special","https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=85"));add(Product("Strawberry Cake",400,"Birthday Special","https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=800&q=85"));add(Product("Mango Cake",400,"Birthday Special","https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=800&q=85"));add(Product("Pineapple Cake",350,"Birthday Special","https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=85"));add(Product("Butterscotch Cake",400,"Birthday Special","https://images.unsplash.com/photo-1559622214-f8a9850965bb?auto=format&fit=crop&w=800&q=85"));add(Product("Oreo Cake",450,"Birthday Special","https://images.unsplash.com/photo-1571115177098-24ec42ed204d?auto=format&fit=crop&w=800&q=85"));add(Product("Red Velvet Cake",500,"Birthday Special","https://images.unsplash.com/photo-1614707267537-2b1f74a0c8a8?auto=format&fit=crop&w=800&q=85"));add(Product("KitKat Chocolate Cake",500,"Birthday Special","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85"));add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]));add(Product("Cold Drink 200 ml",20,"Beverages","https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=85"));add(Product("Cold Drink 500 ml",40,"Beverages","https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=85"));add(Product("Cold Drink 1 L",60,"Beverages","https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=85"));add(Product("Cold Drink 2 L",90,"Beverages","https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=800&q=85"));add(Product("Mango Juice",40,"Beverages","https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=85"));add(Product("Orange Juice",40,"Beverages","https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=85"));add(Product("Pineapple Juice",40,"Beverages","https://images.unsplash.com/photo-1546549032-9571cd6b27df?auto=format&fit=crop&w=800&q=85"));add(Product("Mosambi Juice",50,"Beverages","https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=800&q=85"));add(Product("Watermelon Juice",40,"Beverages","https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?auto=format&fit=crop&w=800&q=85"));add(Product("Mango Shake",60,"Beverages","https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=800&q=85"));add(Product("Banana Shake",50,"Beverages","https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=85"));add(Product("Chocolate Shake",70,"Beverages","https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=85"));add(Product("Strawberry Shake",70,"Beverages","https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=85"));add(Product("Oreo Shake",80,"Beverages","https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=85"));add(Product("Water Bottle 500 ml",10,"Beverages","https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=800&q=85"));add(Product("Water Bottle 1 L",20,"Beverages","https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=800&q=85"));val names=listOf("Margherita Pizza","Classic Cheese Pizza","Double Cheese Pizza","Corn Cheese Pizza","Veg Loaded Pizza","Farmhouse Pizza","Paneer Tikka Pizza","Tandoori Paneer Pizza","Peri Peri Paneer Pizza","Mexican Green Wave Pizza","Veggie Paradise Pizza","Capsicum & Onion Pizza","Mushroom Pizza","Jalapeño Cheese Pizza","Cheese Burst Pizza","Paneer & Corn Pizza","Onion & Tomato Pizza");val prices=listOf(129,149,179,169,199,219,229,239,239,219,199,179,199,189,229,219,159);names.forEachIndexed{i,n->add(Product(n,prices[i],"Fast Food",pizzaImages[i]))}}\n private val categories='''
-          s = re.sub(r'private val products=mutableListOf<Product>\(\)\.apply\{.*?\n private val categories=', products, s, count=1, flags=re.S)
-
-          s = re.sub(
-              r'Category\("Chaat Special","[^"]+"\)',
-              'Category("Chaat Special","https://commons.wikimedia.org/wiki/Special:Redirect/file/Dahi_vada_or_dahi_bhalla.jpg")',
-              s, count=1
-          )
-
-          # Fix product-photo mismatches found in the current source.
-          # Indian Thali must not use the Samosa image.
-          s = s.replace(
-              'add(Product("Indian Thali",120,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"))',
-              'add(Product("Indian Thali",120,"Meals","https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg"))'
-          )
-          # Vada must not use the Samosa image.
-          s = s.replace(
-              'add(Product("Vada",50,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"))',
-              'add(Product("Vada",50,"Meals","https://www.coimbatoretiffinstories.com/assets/meduvada.png"))'
-          )
-          # Cupcake must not use a pizza image.
-          s = s.replace(
-              'add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]))',
-              'add(Product("Cupcake",30,"Birthday Special","https://images.unsplash.com/photo-1652284918100-1fd4a60e7356?auto=format&fit=crop&w=800&q=85"))'
-          )
-          # Orange Juice must use an orange-juice photo, not the Mango Juice photo.
-          s = s.replace(
-              'add(Product("Orange Juice",40,"Beverages","https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=85"))',
-              'add(Product("Orange Juice",40,"Beverages","https://commons.wikimedia.org/wiki/Special:Redirect/file/Orange_juice_1.jpg"))'
-          )
-          # Oreo Shake must not use the Chocolate Shake photo.
-          s = s.replace(
-              'add(Product("Oreo Shake",80,"Beverages","https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=85"))',
-              'add(Product("Oreo Shake",80,"Beverages","https://images.unsplash.com/photo-1619158401201-8fa932695178?auto=format&fit=crop&w=800&q=85"))'
-          )
-
-          p.write_text(s, encoding="utf-8")
-          print("Applied pending menu changes and corrected mismatched product photos")
+          if 'Product("Balloon Packet"' not in s:
+              marker = 'add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]));'
+              additions = (
+                  'add(Product("Balloon Packet",80,"Birthday Special","https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Candle",10,"Birthday Special","https://images.unsplash.com/photo-1602631985686-1bb0e6a8696e?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Birthday Banner",100,"Birthday Special","https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Party Hats",50,"Birthday Special","https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Birthday Decoration Kit",400,"Birthday Special","https://images.unsplash.com/photo-1519657337289-077653f724ed?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Birthday Ribbons",20,"Birthday Special","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Cake Topper",50,"Birthday Special","https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=800&q=85"));'
+                  'add(Product("Birthday Gift Pack",300,"Birthday Special","https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=800&q=85"));'
+              )
+              if marker not in s:
+                  raise SystemExit("Birthday insertion marker not found")
+              s = s.replace(marker, marker + additions, 1)
+              p.write_text(s, encoding="utf-8")
+              print("Added remaining Birthday Special products")
+          else:
+              print("Birthday Special products already present")
 
       - name: Commit source changes back to main
         shell: bash
@@ -100,7 +64,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No source changes to commit"
           else
-            git commit -m "Fix mismatched product photos [skip ci]"
+            git commit -m "Add remaining Birthday Special products [skip ci]"
             git push origin HEAD:main
           fi
 
