@@ -3,33 +3,37 @@
     android:height="512dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Foodvexa logo based on the supplied master logo: chef hat + spoon/fork + fresh leaves + orange/green plate -->
-    <path android:fillColor="#FFFFFF" android:pathData="M76,0 L436,0 Q512,0 512,76 L512,436 Q512,512 436,512 L76,512 Q0,512 0,436 L0,76 Q0,0 76,0Z"/>
 
-    <!-- fresh green leaves -->
-    <path android:fillColor="#69B83F" android:pathData="M116,238 C76,214 66,171 84,136 C126,140 157,170 151,212 C142,226 130,235 116,238Z"/>
-    <path android:fillColor="#69B83F" android:pathData="M396,238 C436,214 446,171 428,136 C386,140 355,170 361,212 C370,226 382,235 396,238Z"/>
-    <path android:fillColor="#4E9E32" android:pathData="M145,229 C125,207 116,185 120,162 C142,173 153,195 145,229Z"/>
-    <path android:fillColor="#4E9E32" android:pathData="M367,229 C387,207 396,185 392,162 C370,173 359,195 367,229Z"/>
+    <!-- Foodvexa master icon: clean chef hat, spoon, fork, leaves and serving plate. -->
+    <path android:fillColor="#FFFFFF" android:pathData="M72,0 L440,0 C480,0 512,32 512,72 L512,440 C512,480 480,512 440,512 L72,512 C32,512 0,480 0,440 L0,72 C0,32 32,0 72,0Z"/>
 
-    <!-- chef hat -->
-    <path android:fillColor="#073B32" android:pathData="M171,214 L171,183 C145,169 138,136 153,112 C168,88 198,82 220,96 C227,66 253,48 284,53 C311,57 331,76 337,101 C365,86 401,98 413,126 C425,154 411,183 386,195 L386,214Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M193,203 L193,180 C174,170 169,148 179,133 C190,117 209,113 226,122 C231,98 250,83 273,86 C295,89 309,106 313,128 C334,115 361,124 370,145 C379,166 368,184 350,193 L350,203Z"/>
+    <!-- Leaves -->
+    <path android:fillColor="#67B63F" android:pathData="M118,235 C80,216 68,178 82,143 C118,143 150,169 151,204 C143,219 132,229 118,235Z"/>
+    <path android:fillColor="#67B63F" android:pathData="M394,235 C432,216 444,178 430,143 C394,143 362,169 361,204 C369,219 380,229 394,235Z"/>
+    <path android:fillColor="#3F9637" android:pathData="M142,226 C123,208 117,187 122,166 C143,176 153,198 142,226Z"/>
+    <path android:fillColor="#3F9637" android:pathData="M370,226 C389,208 395,187 390,166 C369,176 359,198 370,226Z"/>
 
-    <!-- spoon -->
-    <path android:fillColor="#FF7A00" android:pathData="M240,116 C226,100 226,76 239,64 C252,52 273,56 281,72 C289,89 282,108 269,119 L269,230 L240,230Z"/>
-    <!-- fork -->
-    <path android:fillColor="#073B32" android:pathData="M294,70 L306,70 L306,112 L316,112 L316,70 L328,70 L328,112 L338,112 L338,70 L350,70 L350,124 C350,142 340,154 327,159 L327,230 L298,230 L298,159 C285,154 277,142 277,124 L277,70 L289,70 L289,112 L294,112Z"/>
+    <!-- Chef hat silhouette -->
+    <path android:fillColor="#063B31" android:pathData="M171,218 L171,187 C148,177 136,155 140,132 C145,103 169,84 197,86 C211,58 236,43 264,45 C294,47 316,65 325,91 C353,81 383,91 398,115 C416,145 402,178 375,191 L375,218Z"/>
+    <!-- Hat front -->
+    <path android:fillColor="#FFFFFF" android:pathData="M193,208 L193,181 C176,174 166,158 169,142 C172,124 188,112 207,114 C216,91 236,78 258,79 C281,80 299,94 305,115 C326,106 349,115 359,134 C369,154 360,176 341,185 L341,208Z"/>
 
-    <!-- orange serving rim -->
-    <path android:fillColor="#FF7A00" android:pathData="M83,258 C152,232 360,232 429,258 L419,280 C350,257 162,257 93,280Z"/>
-    <!-- green plate -->
-    <path android:fillColor="#073B32" android:pathData="M62,279 C79,353 154,403 256,403 C358,403 433,353 450,279 L421,279 C399,329 336,361 256,361 C176,361 113,329 91,279Z"/>
-    <!-- orange food/plate center -->
-    <path android:fillColor="#FF7A00" android:pathData="M132,286 C158,266 192,265 218,286 C195,307 158,309 132,286Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M294,286 C320,265 354,266 380,286 C354,309 317,307 294,286Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M211,286 C222,270 290,270 301,286 C289,302 223,302 211,286Z"/>
-    <!-- small green leaf accents on plate -->
-    <path android:fillColor="#69B83F" android:pathData="M178,292 C166,278 169,264 181,256 C194,267 194,281 178,292Z"/>
-    <path android:fillColor="#69B83F" android:pathData="M334,292 C346,278 343,264 331,256 C318,267 318,281 334,292Z"/>
+    <!-- Spoon -->
+    <path android:fillColor="#FF8A00" android:pathData="M236,91 C224,78 224,60 235,49 C247,37 266,39 275,53 C286,69 279,88 267,99 L267,232 L238,232 L238,99 C237,96 236,94 236,91Z"/>
+
+    <!-- Fork -->
+    <path android:fillColor="#063B31" android:pathData="M296,57 L308,57 L308,106 L317,106 L317,57 L329,57 L329,106 L338,106 L338,57 L350,57 L350,120 C350,139 341,153 328,159 L328,232 L299,232 L299,159 C286,153 278,139 278,120 L278,57 L290,57 L290,106 L296,106Z"/>
+
+    <!-- Orange plate rim -->
+    <path android:fillColor="#FF8A00" android:pathData="M83,254 C157,229 355,229 429,254 L418,279 C349,257 163,257 94,279Z"/>
+    <!-- Dark green plate -->
+    <path android:fillColor="#063B31" android:pathData="M61,279 C76,351 151,401 256,401 C361,401 436,351 451,279 L421,279 C401,326 337,358 256,358 C175,358 111,326 91,279Z"/>
+    <!-- Orange serving accents -->
+    <path android:fillColor="#FF8A00" android:pathData="M128,286 C153,268 190,267 218,285 C195,308 155,310 128,286Z"/>
+    <path android:fillColor="#FF8A00" android:pathData="M294,285 C322,267 359,268 384,286 C357,310 317,308 294,285Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M211,286 C222,271 290,271 301,286 C289,302 223,302 211,286Z"/>
+
+    <!-- Plate leaf accents -->
+    <path android:fillColor="#67B63F" android:pathData="M177,294 C165,280 168,265 181,256 C194,268 193,282 177,294Z"/>
+    <path android:fillColor="#67B63F" android:pathData="M335,294 C347,280 344,265 331,256 C318,268 319,282 335,294Z"/>
 </vector>
