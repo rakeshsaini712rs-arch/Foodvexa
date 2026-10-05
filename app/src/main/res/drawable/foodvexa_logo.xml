@@ -1,18 +1,21 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="512dp" android:height="512dp" android:viewportWidth="512" android:viewportHeight="512">
-    <path android:fillColor="#FFFFFF" android:pathData="M64,0 L448,0 Q512,0 512,64 L512,448 Q512,512 448,512 L64,512 Q0,512 0,448 L0,64 Q0,0 64,0Z"/>
-    <path android:fillColor="#073B32" android:pathData="M132,170 C92,145 108,78 160,82 C180,40 242,42 256,88 C276,42 338,40 354,82 C407,77 420,145 380,170 L350,170 L350,132 C350,112 326,104 310,116 C288,78 225,78 202,116 C184,103 160,113 160,133 L160,170Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M242,92 L270,92 L270,170 L242,170Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M218,104 C218,86 246,76 256,94 C266,76 294,86 294,104 C294,121 274,134 256,150 C238,134 218,121 218,104Z"/>
-    <path android:fillColor="#073B32" android:pathData="M302,95 L318,102 L300,160 L284,154Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M88,205 C175,168 333,168 424,205 C335,191 178,191 88,205Z"/>
-    <path android:fillColor="#073B32" android:pathData="M90,218 C184,198 328,198 422,218 C327,212 185,212 90,218Z"/>
-    <path android:fillColor="#67B800" android:pathData="M118,150 C90,120 72,128 72,128 C76,159 100,169 126,167Z"/>
-    <path android:fillColor="#67B800" android:pathData="M394,150 C422,120 440,128 440,128 C436,159 412,169 386,167Z"/>
-    <path android:fillColor="#073B32" android:pathData="M45,285 L45,350 L74,350 L74,302 L105,302 L105,285Z"/>
-    <path android:fillColor="#073B32" android:pathData="M116,285 L116,350 L145,350 L145,285Z"/>
-    <path android:fillColor="#073B32" android:pathData="M160,285 L160,350 L190,350 L190,326 L215,326 C250,326 250,285 215,285Z M190,302 L211,302 C221,302 221,310 211,310 L190,310Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M235,285 L265,285 L285,325 L305,285 L335,285 L302,350 L270,350Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M345,285 L345,350 L375,350 L375,326 L402,326 C434,326 434,285 402,285Z M375,302 L397,302 C407,302 407,310 397,310 L375,310Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M420,350 L448,350 L470,285 L442,285Z"/>
-    <path android:fillColor="#FF7A00" android:pathData="M128,390 C176,372 336,372 384,390 L384,399 C330,388 182,388 128,399Z"/>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="512dp"
+    android:height="512dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Clean Foodvexa food-mark: no misleading/garbled lettering -->
+    <path android:fillColor="#FFFFFF" android:pathData="M72,0 L440,0 Q512,0 512,72 L512,440 Q512,512 440,512 L72,512 Q0,512 0,440 L0,72 Q0,0 72,0Z"/>
+    <!-- green bowl/plate -->
+    <path android:fillColor="#073B32" android:pathData="M82,292 C116,398 396,398 430,292 L430,278 L82,278Z"/>
+    <path android:fillColor="#FF7A00" android:pathData="M88,266 L424,266 L424,290 C350,312 162,312 88,290Z"/>
+    <!-- food/leaf crown -->
+    <path android:fillColor="#67B800" android:pathData="M142,224 C105,190 110,146 122,126 C164,134 187,169 177,211Z"/>
+    <path android:fillColor="#67B800" android:pathData="M370,224 C407,190 402,146 390,126 C348,134 325,169 335,211Z"/>
+    <path android:fillColor="#073B32" android:pathData="M224,226 C197,188 204,132 256,112 C308,132 315,188 288,226Z"/>
+    <path android:fillColor="#FF7A00" android:pathData="M256,102 C229,102 210,82 210,60 C238,58 256,76 256,102Z"/>
+    <path android:fillColor="#FF7A00" android:pathData="M256,102 C283,102 302,82 302,60 C274,58 256,76 256,102Z"/>
+    <!-- simple fork -->
+    <path android:fillColor="#073B32" android:pathData="M190,54 L202,54 L202,118 L214,118 L214,54 L226,54 L226,118 L238,118 L238,54 L250,54 L250,132 C250,146 240,156 228,160 L228,238 L210,238 L210,160 C198,156 190,146 190,132Z"/>
+    <!-- simple spoon -->
+    <path android:fillColor="#073B32" android:pathData="M300,54 C328,54 342,78 342,108 C342,132 331,148 318,156 L318,238 L300,238 L300,156 C287,148 276,132 276,108 C276,78 290,54 300,54Z"/>
 </vector>
