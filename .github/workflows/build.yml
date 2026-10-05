@@ -61,8 +61,35 @@ jobs:
               s, count=1
           )
 
+          # Fix product-photo mismatches found in the current source.
+          # Indian Thali must not use the Samosa image.
+          s = s.replace(
+              'add(Product("Indian Thali",120,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"))',
+              'add(Product("Indian Thali",120,"Meals","https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg"))'
+          )
+          # Vada must not use the Samosa image.
+          s = s.replace(
+              'add(Product("Vada",50,"Meals","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"))',
+              'add(Product("Vada",50,"Meals","https://www.coimbatoretiffinstories.com/assets/meduvada.png"))'
+          )
+          # Cupcake must not use a pizza image.
+          s = s.replace(
+              'add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]))',
+              'add(Product("Cupcake",30,"Birthday Special","https://images.unsplash.com/photo-1652284918100-1fd4a60e7356?auto=format&fit=crop&w=800&q=85"))'
+          )
+          # Orange Juice must use an orange-juice photo, not the Mango Juice photo.
+          s = s.replace(
+              'add(Product("Orange Juice",40,"Beverages","https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=800&q=85"))',
+              'add(Product("Orange Juice",40,"Beverages","https://commons.wikimedia.org/wiki/Special:Redirect/file/Orange_juice_1.jpg"))'
+          )
+          # Oreo Shake must not use the Chocolate Shake photo.
+          s = s.replace(
+              'add(Product("Oreo Shake",80,"Beverages","https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=85"))',
+              'add(Product("Oreo Shake",80,"Beverages","https://images.unsplash.com/photo-1619158401201-8fa932695178?auto=format&fit=crop&w=800&q=85"))'
+          )
+
           p.write_text(s, encoding="utf-8")
-          print("Applied pending menu/photo changes to MainActivity.kt")
+          print("Applied pending menu changes and corrected mismatched product photos")
 
       - name: Commit source changes back to main
         shell: bash
@@ -73,7 +100,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No source changes to commit"
           else
-            git commit -m "Apply pending menu changes to source [skip ci]"
+            git commit -m "Fix mismatched product photos [skip ci]"
             git push origin HEAD:main
           fi
 
