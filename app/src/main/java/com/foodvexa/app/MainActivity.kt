@@ -1,11 +1,9 @@
 package com.foodvexa.app
 
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,19 +12,30 @@ import android.view.Gravity
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 
-data class Product(val name:String,val price:Int,val category:String,val eta:String="20–30 min")
+data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min")
 data class Category(val name:String,val imageUrl:String)
 
 class MainActivity:AppCompatActivity(){
  companion object{const val SHOP_LOCATION="Khation ki Dhani, Ward No. 16, Ganeshpura, Nawalgarh"}
- private val products=listOf(Product("Veg Burger",80,"Fast Food"),Product("Masala Dosa",90,"Fast Food"),Product("Chole Bhature",80,"Meals"),Product("Veg Sandwich",70,"Fast Food"),Product("Samosa",20,"Snacks"),Product("Kachori",30,"Snacks"),Product("Mirchi Bada",30,"Snacks"),Product("Chole Kulche",60,"Meals"),Product("Maggi",50,"Fast Food"),Product("Dhokla",60,"Snacks"),Product("Idli",60,"Meals"),Product("Vada Pav",50,"Fast Food"),Product("Cake",350,"Birthday Special"),Product("Cupcake",30,"Birthday Special"),Product("Cold Drink",40,"Beverages"))
+ private val pizzaImages=listOf(
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=800&q=85",
+  "https://images.unsplash.com/photo-1579751626657-5b9a3b8d7b7a?auto=format&fit=crop&w=800&q=85"
+ )
+ private val products=mutableListOf<Product>().apply{
+  add(Product("Veg Burger",80,"Fast Food",pizzaImages[0]));add(Product("Masala Dosa",90,"Fast Food",pizzaImages[1]));add(Product("Chole Bhature",80,"Meals",pizzaImages[2]));add(Product("Veg Sandwich",70,"Fast Food",pizzaImages[3]));add(Product("Samosa",20,"Snacks",pizzaImages[4]));add(Product("Kachori",30,"Snacks",pizzaImages[5]));add(Product("Mirchi Bada",30,"Snacks",pizzaImages[0]));add(Product("Chole Kulche",60,"Meals",pizzaImages[1]));add(Product("Maggi",50,"Fast Food",pizzaImages[2]));add(Product("Dhokla",60,"Snacks",pizzaImages[3]));add(Product("Idli",60,"Meals",pizzaImages[4]));add(Product("Vada Pav",50,"Fast Food",pizzaImages[5]));add(Product("Cake",350,"Birthday Special",pizzaImages[0]));add(Product("Cupcake",30,"Birthday Special",pizzaImages[1]));add(Product("Cold Drink",40,"Beverages",pizzaImages[2]))
+  val names=listOf("Margherita Pizza","Classic Cheese Pizza","Double Cheese Pizza","Corn Cheese Pizza","Veg Loaded Pizza","Farmhouse Pizza","Paneer Tikka Pizza","Tandoori Paneer Pizza","Peri Peri Paneer Pizza","Mexican Green Wave Pizza","Veggie Paradise Pizza","Capsicum & Onion Pizza","Mushroom Pizza","Jalapeño Cheese Pizza","Cheese Burst Pizza","Paneer & Corn Pizza","Onion & Tomato Pizza","Spicy Veg Pizza","BBQ Paneer Pizza","Achari Paneer Pizza","Tandoori Veg Pizza","Italian Veg Pizza","Cheese & Olive Pizza","Garden Fresh Pizza","Special Foodvexa Pizza")
+  val prices=listOf(129,149,179,169,199,219,229,239,239,219,199,179,199,189,229,219,159,189,239,229,219,209,219,209,249)
+  names.forEachIndexed{i,n->add(Product(n,prices[i],"Fast Food",pizzaImages[i%pizzaImages.size]))}
+ }
  private val categories=listOf(Category("All","https://images.unsplash.com/photo-1669624272709-c5b91f66b1b7?auto=format&fit=crop&w=500&q=80"),Category("Fast Food","https://images.unsplash.com/photo-1607013251379-e6eecfffe234?auto=format&fit=crop&w=500&q=80"),Category("Snacks","https://images.unsplash.com/photo-1572099107898-46f22b3af4f9?auto=format&fit=crop&w=500&q=80"),Category("Chaat Special","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80"),Category("Meals","https://images.unsplash.com/photo-1742281257707-0c7f7e5ca9c6?auto=format&fit=crop&w=500&q=80"),Category("Birthday Special","https://images.unsplash.com/photo-1587015692860-f3a8481e9865?auto=format&fit=crop&w=500&q=80"),Category("Beverages","https://images.unsplash.com/photo-1592099759599-24b131b8e824?auto=format&fit=crop&w=500&q=80"),Category("Sweets","https://images.unsplash.com/photo-1667185487460-b303881b2bb9?auto=format&fit=crop&w=500&q=80"),Category("Special Sabji","https://images.unsplash.com/photo-1645432524571-0e469b22e43f?auto=format&fit=crop&w=500&q=80"),Category("Restaurant / Hotel","https://images.unsplash.com/photo-1646473267592-61e8630367bd?auto=format&fit=crop&w=500&q=80"))
  private val cart=linkedMapOf<String,Int>();private lateinit var root:FrameLayout;private lateinit var content:LinearLayout;private val prefs by lazy{getSharedPreferences("foodvexa",MODE_PRIVATE)};private var selectedCategory="All";private var query=""
  private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val cardColor=Color.rgb(250,250,252);private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper())
@@ -36,7 +45,7 @@ class MainActivity:AppCompatActivity(){
  private fun categoryCard(c:Category):LinearLayout{val selected=c.name==selectedCategory;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=categoryBackground(selected);setOnClickListener{selectedCategory=c.name;showHome()}};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(image,LinearLayout.LayoutParams(-1,dp(76)).apply{bottomMargin=dp(5)});box.addView(label(c.name,11.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;ellipsize=null;includeFontPadding=false});loadImage(image,c.imageUrl);return box}
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
- private fun renderProducts(){val title=if(selectedCategory=="All")"Popular near you" else selectedCategory;var ti=-1;for(i in 0 until content.childCount){val v=content.getChildAt(i);if(v is TextView&&v.text.toString()==title){ti=i;break}};if(ti<0)return;while(content.childCount>ti+1)content.removeViewAt(ti+1);products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}.forEach{p->val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(12),dp(12),dp(12));background=rounded(cardColor,18)};val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};info.addView(label(p.name,18f,true,ink));info.addView(label("Fresh & Hot • ${p.eta}",13f,false,muted));info.addView(label("₹${p.price}",18f,true,green));card.addView(info,LinearLayout.LayoutParams(0,-2,1f));card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(dp(110),dp(52)));content.addView(card,margin(0,7,0,0))}}
+ private fun renderProducts(){val title=if(selectedCategory=="All")"Popular near you" else selectedCategory;var ti=-1;for(i in 0 until content.childCount){val v=content.getChildAt(i);if(v is TextView&&v.text.toString()==title){ti=i;break}};if(ti<0)return;while(content.childCount>ti+1)content.removeViewAt(ti+1);products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}.forEach{p->val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(10),dp(10),dp(10));background=rounded(cardColor,18)};val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};card.addView(pic,LinearLayout.LayoutParams(dp(92),dp(92)).apply{rightMargin=dp(12)});loadImage(pic,p.imageUrl);val info=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};info.addView(label(p.name,17f,true,ink));info.addView(label("Fresh & Hot • ${p.eta}",13f,false,muted));info.addView(label("₹${p.price}",18f,true,green));card.addView(info,LinearLayout.LayoutParams(0,-2,1f));card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(dp(78),dp(46)));content.addView(card,margin(0,7,0,0))}}
  private fun locationDialog(){val input=EditText(this).apply{hint="Enter delivery location";setText(prefs.getString("location","")?:"")};AlertDialog.Builder(this).setTitle("Delivery location").setView(input).setPositiveButton("Save"){_,_->prefs.edit().putString("location",input.text.toString().trim()).apply();showHome()}.setNegativeButton("Cancel",null).show()}
  private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
 }
