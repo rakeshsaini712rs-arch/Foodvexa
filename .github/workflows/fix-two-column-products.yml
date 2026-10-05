@@ -76,3 +76,4 @@ jobs:
           git push
 
 # Trigger this one-time repair after the workflow file is installed.
+# Re-run repair after the latest app changes.
