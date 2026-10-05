@@ -81,3 +81,5 @@ jobs:
         with:
           name: Foodvexa-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+
+# Force a fresh APK after the latest product-grid correction.
