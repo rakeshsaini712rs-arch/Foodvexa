@@ -1,0 +1,35 @@
+name: Apply Final Sweets Menu
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  apply-sweets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add final Sweets products
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          if 'Product("Besan Laddu",200,"Sweets"' in s:
+              print('Sweets already present')
+              raise SystemExit(0)
+          marker = 'val names=listOf("Margherita Pizza"'
+          if marker not in s:
+              raise SystemExit('Sweets insertion marker not found')
+          additions = '''add(Product("Besan Laddu",200,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Bundi Ladoo",400,"Sweets","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Motichoor Laddu",400,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Boondi",300,"Sweets","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Gulab Jamun",250,"Sweets","https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"));add(Product("Rasgulla",250,"Sweets","https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"));add(Product("Jalebi",300,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Balushahi",300,"Sweets","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"));add(Product("Milk Cake",500,"Sweets","https://images.unsplash.com/photo-1575377427642-087cf684f29d?auto=format&fit=crop&w=800&q=85"));add(Product("Peda",450,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Kaju Katli",700,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Cham Cham",350,"Sweets","https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"));add(Product("Kaju Roll",700,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Kaju Pista Roll",750,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Gajar Halwa",350,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Moong Dal Halwa",450,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Kalakand",500,"Sweets","https://images.unsplash.com/photo-1575377427642-087cf684f29d?auto=format&fit=crop&w=800&q=85"));add(Product("Rasmalai",500,"Sweets","https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"));add(Product("Rabri",400,"Sweets","https://images.unsplash.com/photo-1575377427642-087cf684f29d?auto=format&fit=crop&w=800&q=85"));add(Product("Shahi Tukda",350,"Sweets","https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"));add(Product("Rajbhog",20,"Sweets","https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"));'''
+          s = s.replace(marker, additions + marker, 1)
+          p.write_text(s, encoding='utf-8')
+      - name: Commit source changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          if git diff --cached --quiet; then echo 'No changes'; else git commit -m 'Add final Sweets products [skip ci]'; git push origin HEAD:main; fi
