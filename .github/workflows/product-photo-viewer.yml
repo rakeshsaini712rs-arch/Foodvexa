@@ -47,6 +47,98 @@ jobs:
           p.write_text(s, encoding='utf-8')
           PY
 
+      - name: Fix blank Profile screen
+        shell: bash
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          profile = r'''private fun showProfile(){
+           setupBase()
+           content.addView(label("Profile",28f,true,Color.WHITE),margin(0,10,0,18))
+           fun item(title:String, subtitle:String="", action:()->Unit={}){
+            val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}
+            val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            texts.addView(label(title,16f,true,Color.WHITE))
+            if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))
+            box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+            box.addView(label("›",24f,true,Color.LTGRAY))
+            content.addView(box,margin(0,0,0,10))
+           }
+           item("👤  My Profile","Name and mobile number")
+           item("📦  My Orders","Order history"){showOrders()}
+           item("📍  Address Book","Saved delivery locations"){locationDialog()}
+           item("❤️  Collection","Your saved items")
+           item("💳  Payment Settings","COD and online payment")
+           item("📞  Call Support","Contact Samosa King"){
+            AlertDialog.Builder(this).setTitle("Call Support").setMessage("Support calling number is not configured yet.").setPositiveButton("OK",null).show()
+           }
+           item("🗺️  Navigate to Shop","Open shop location"){
+            try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
+           }
+           item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
+           item("⭐  Feedback","Share your feedback")
+           item("ℹ️  About","About Foodvexa"){
+            AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
+           }
+           item("🚪  Logout","Sign out"){prefs.edit().clear().apply();showHome()}
+          }
+          private fun showAppearanceSelector(){
+           val options=arrayOf("🌙  Dark","☀️  Light","📱  Use device theme")
+           val current=prefs.getString("theme","dark")
+           val checked=when(current){"light"->1;"system"->2;else->0}
+           AlertDialog.Builder(this).setTitle("Appearance").setSingleChoiceItems(options,checked){dialog,which->
+            val mode=when(which){1->"light";2->"system";else->"dark"}
+            prefs.edit().putString("theme",mode).apply()
+            when(which){1->androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO);2->androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);else->androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)}
+            dialog.dismiss()
+           }.show()
+          }
+          '''
+          def replace_fun(src,name,replacement):
+              marker=f'private fun {name}()'
+              start=src.find(marker)
+              if start<0:
+                  return None
+              brace=src.find('{',start)
+              if brace<0:
+                  raise SystemExit(f'No opening brace for {name}')
+              depth=0
+              for i in range(brace,len(src)):
+                  ch=src[i]
+                  if ch=='{': depth+=1
+                  elif ch=='}':
+                      depth-=1
+                      if depth==0:
+                          return src[:start]+replacement.rstrip()+src[i+1:]
+              raise SystemExit(f'Unclosed function {name}')
+          updated=replace_fun(s,'showProfile',profile)
+          if updated is None:
+              anchor='private fun showCart()'
+              pos=s.find(anchor)
+              if pos<0:
+                  raise SystemExit('Could not find insertion point for profile')
+              updated=s[:pos]+profile+'\n'+s[pos:]
+          s=updated
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit source fix
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          if git diff --cached --quiet; then
+            echo "No profile source changes to commit"
+          else
+            git commit -m "Fix blank profile screen"
+            git push
+          fi
+
       - name: Locate Gradle wrapper
         shell: bash
         run: |
