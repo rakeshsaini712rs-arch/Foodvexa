@@ -31,26 +31,35 @@ class LocationGateActivity : AppCompatActivity() {
         }
 
         val manager = getSystemService(LOCATION_SERVICE) as LocationManager
-        val providers = manager.getProviders(true)
         var best: android.location.Location? = null
-        for (provider in providers) {
+        for (provider in manager.getProviders(true)) {
             try {
                 val location = manager.getLastKnownLocation(provider) ?: continue
                 if (best == null || location.accuracy < best!!.accuracy) best = location
             } catch (_: SecurityException) { }
         }
 
-        val address = best?.let { reverseGeocode(it.latitude, it.longitude) }
-        val finalLocation = address ?: MainActivity.SHOP_LOCATION
-        getSharedPreferences("foodvexa", MODE_PRIVATE).edit().putString("location", finalLocation).apply()
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
+        // Geocoder can block for several seconds. Keep it off the UI thread to avoid ANR.
+        Thread {
+            val address = best?.let { reverseGeocode(it.latitude, it.longitude) }
+            val finalLocation = address ?: ""
+            runOnUiThread {
+                if (finalLocation.isNotBlank()) {
+                    getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
+                        .putString("location", finalLocation)
+                        .apply()
+                }
+                startActivity(Intent(this, MainActivity::class.java))
+                finish()
+            }
+        }.start()
     }
 
     private fun reverseGeocode(lat: Double, lon: Double): String? {
         return try {
             if (!Geocoder.isPresent()) return null
-            val results: List<Address> = Geocoder(this, Locale.getDefault()).getFromLocation(lat, lon, 1) ?: emptyList()
+            val results: List<Address> = Geocoder(this, Locale.getDefault())
+                .getFromLocation(lat, lon, 1) ?: emptyList()
             val a = results.firstOrNull() ?: return null
             listOfNotNull(a.subLocality, a.locality, a.subAdminArea, a.adminArea, a.postalCode)
                 .distinct()
