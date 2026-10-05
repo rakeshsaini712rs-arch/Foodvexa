@@ -1,4 +1,4 @@
-name: Fix Product Grid
+name: Fix Product Grid And Image Cache
 
 on:
   workflow_dispatch:
@@ -16,66 +16,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fix Home layout without changing product photos
+      - name: Fix image flicker and preserve layout
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           path = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           text = path.read_text()
 
-          setup_pattern = r' private fun setupBase\(\)\{.*?\}\n private fun bottomNav\(\)'
-          setup_replacement = ''' private fun setupBase(){root.removeAllViews();val frame=FrameLayout(this);val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true};content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),dp(112));clipToPadding=false};scroll.addView(content,FrameLayout.LayoutParams(-1,-1));frame.addView(scroll,FrameLayout.LayoutParams(-1,-1));frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM));root.addView(frame,FrameLayout.LayoutParams(-1,-1))}
- private fun bottomNav()'''
-          text, count = re.subn(setup_pattern, setup_replacement, text, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit('setupBase not found; refusing unsafe modification')
+          # Repair the known syntax typo from the previous location update.
+          text = text.replace('setPadding(dp(16),dp(12),dp(16),dp(112);clipToPadding=false)', 'setPadding(dp(16),dp(12),dp(16),dp(112));clipToPadding=false)')
 
-          banner_pattern = r' private fun professionalBanner\(\):LinearLayout\{.*?\}\n private fun categoryCard'
-          banner_replacement = ''' private fun professionalBanner():LinearLayout{val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true;clipToPadding=true};val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL};text.addView(label("FOODVEXA",12f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(18)));text.addView(label("HOT & FRESH FOOD",20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(27)));text.addView(label("Freshly prepared • Fast delivery",12f,false,Color.LTGRAY),margin(0,2,0,7));text.addView(primaryButton("ORDER NOW  ›"){} ,LinearLayout.LayoutParams(dp(145),dp(40)));box.addView(text,LinearLayout.LayoutParams(0,-1,1f));val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)});loadImage(pic,foodImages[0]);return box}
- private fun categoryCard'''
-          text, count = re.subn(banner_pattern, banner_replacement, text, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit('professionalBanner not found; refusing unsafe modification')
+          # Add Android's LruCache once, keeping the existing networking approach.
+          if 'android.util.LruCache' not in text:
+              text = text.replace('import android.text.InputType\n', 'import android.text.InputType\nimport android.util.LruCache\n')
+          if 'private val imageCache=' not in text:
+              text = text.replace('private val mainHandler=Handler(Looper.getMainLooper())', 'private val mainHandler=Handler(Looper.getMainLooper());private val imageCache=LruCache<String,android.graphics.Bitmap>(24)')
 
-          grid_pattern = r' private fun renderProducts\(\)\{.*?\}\n private fun showCart\(\)'
-          grid_replacement = ''' private fun renderProducts(){
-          val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
-          var ti=-1
-          for(i in 0 until content.childCount){
-           val v=content.getChildAt(i)
-           if(v is TextView&&v.text.toString()==title){ti=i;break}
-          }
-          if(ti<0)return
-          while(content.childCount>ti+1)content.removeViewAt(ti+1)
-          val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
-          var row:LinearLayout?=null
-          filtered.forEachIndexed{index,p->
-           if(index%2==0){
-            row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.TOP}
-            content.addView(row,margin(0,0,0,10))
-           }
-           val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
-           val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-           card.addView(pic,LinearLayout.LayoutParams(-1,dp(138)))
-           loadImage(pic,p.imageUrl)
-           card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
-           card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.rgb(235,190,75)),margin(0,3,0,0))
-           card.addView(label("₹${p.price}",17f,true,Color.rgb(70,210,145)),margin(0,4,0,7))
-           card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(-1,dp(42)))
-           row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
+          # Replace the old uncached loader. Cached images are shown immediately;
+          # newly downloaded images are cached before being assigned to the view.
+          old = r' private fun loadImage\(view:ImageView,url:String\)\{.*?\}\n private fun renderProducts'
+          new = ''' private fun loadImage(view:ImageView,url:String){
+          view.tag=url
+          imageCache.get(url)?.let{bmp->view.setImageBitmap(bmp);return}
+          imageExecutor.execute{
+           try{
+            val con=URL(url).openConnection() as HttpURLConnection
+            con.connectTimeout=7000;con.readTimeout=7000;con.useCaches=true;con.connect()
+            val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect()
+            if(bmp!=null){imageCache.put(url,bmp);mainHandler.post{if(!isFinishing&&view.tag==url)view.setImageBitmap(bmp)}}
+           }catch(_:Exception){}
           }
          }
-         private fun showCart'''
-          text, count = re.subn(grid_pattern, grid_replacement, text, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit('renderProducts/showCart not found; refusing unsafe modification')
+         private fun renderProducts'''
+          text, n = re.subn(old, new, text, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('loadImage function not found; refusing unsafe modification')
 
           path.write_text(text)
           PY
 
-      - name: Commit layout fix
+      - name: Commit image cache fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -84,5 +65,5 @@ jobs:
             echo "No changes needed"
             exit 0
           fi
-          git commit -m "Fix Foodvexa home layout and product cards"
+          git commit -m "Fix category and product image flicker"
           git push
