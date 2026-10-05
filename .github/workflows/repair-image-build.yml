@@ -1,0 +1,34 @@
+name: Repair Image Refresh
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore last known working MainActivity
+        run: git checkout 1a08da9d69a23db4b5b161372a487a4b9e7837c6 -- app/src/main/java/com/foodvexa/app/MainActivity.kt
+      - name: Add image cache safely
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s=p.read_text()
+          s=s.replace('import android.graphics.BitmapFactory\n','import android.graphics.Bitmap\nimport android.graphics.BitmapFactory\n',1)
+          s=s.replace('private val mainHandler=Handler(Looper.getMainLooper())','private val mainHandler=Handler(Looper.getMainLooper())\n private val imageCache=java.util.concurrent.ConcurrentHashMap<String,Bitmap>()',1)
+          old='private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}'
+          new='private fun loadImage(view:ImageView,url:String){val cached=imageCache[url];if(cached!=null){view.setImageBitmap(cached);return};view.tag=url;imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null){imageCache[url]=bmp;mainHandler.post{if(!isFinishing&&view.tag==url)view.setImageBitmap(bmp)}}}catch(_:Exception){}}}'
+          if old not in s: raise SystemExit('loadImage pattern not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Commit repaired source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          git commit -m "Restore working source and fix image refresh"
+          git push origin main
