@@ -26,6 +26,12 @@ jobs:
       - name: Normalize Kotlin syntax
         run: sed -i 's/? :/?:/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
+      - name: Hide shop address from customer UI
+        run: |
+          sed -i 's/val loc=prefs.getString("location",SHOP_LOCATION)?:SHOP_LOCATION;content.addView(primaryButton("⌖  $loc"){locationDialog()},margin(0,12,0,10))/content.addView(primaryButton("⌖  Select delivery location"){locationDialog()},margin(0,12,0,10))/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          sed -i 's/setText(prefs.getString("location",SHOP_LOCATION))/setText(prefs.getString("location",""))/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          sed -i 's/if(v.isEmpty())SHOP_LOCATION else v/if(v.isEmpty())"" else v/g' app/src/main/java/com/foodvexa/app/MainActivity.kt
+
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
 
