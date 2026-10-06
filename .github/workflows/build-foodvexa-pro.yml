@@ -38,13 +38,11 @@ jobs:
               s = s.replace('private fun showCart()', replacement + 'private fun showCart()', 1)
           s = re.sub(r'Category\("Restaurant / Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
           s = re.sub(r'Category\("Restaurant/Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
-          # Keep exactly one Restaurant / Hotel category entry, regardless of older patches.
           pat = r'add\(Category\("Restaurant / Hotel"[^)]*\)\)'
-          seen = 0
+          seen = [0]
           def keep_one(m):
-              nonlocal seen
-              seen += 1
-              return m.group(0) if seen == 1 else ''
+              seen[0] += 1
+              return m.group(0) if seen[0] == 1 else ''
           s = re.sub(pat, keep_one, s)
           s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
           s = s.replace('loadImage(image,c.imageUrl);return box}', 'if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}')
