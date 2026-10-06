@@ -19,12 +19,18 @@ jobs:
       - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
 
-      - name: Verify banners and categories
+      - name: Stabilize product images and remove duplicate category
+        run: python3 image_stability_fix.py
+
+      - name: Verify banners categories and image stability
         run: |
           grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'HorizontalScrollView' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'auto.postDelayed(runner,4500)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'PIZZA • CHEESY & HOT' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'imageCache' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'view.getTag()==url' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'correctedImageUrl(p)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
 
       - name: Build debug APK
