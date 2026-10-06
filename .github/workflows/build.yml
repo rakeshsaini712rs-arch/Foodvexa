@@ -23,49 +23,6 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Fix product photo mapping
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text()
-          pattern = r'private fun correctedImageUrl\(p:Product\):String\{.*?\n private fun renderProducts'
-          replacement = '''private fun correctedImageUrl(p:Product):String{\n  // Use the explicit image assigned to each product. The previous generic\n  // resolver replaced correct product photos with unrelated random images.\n  return p.imageUrl\n }\n private fun renderProducts'''
-          s2, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit('correctedImageUrl function not found')
-          p.write_text(s2)
-          PY
-
-      - name: Restore product ticker
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text()
-          old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
-          new = '''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }\n          card.addView(ticker,margin(0,4,0,0))\n          card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,3,0,0))'''
-          if old not in s:
-              raise SystemExit('product availability line not found')
-          s = s.replace(old, new, 1)
-          p.write_text(s)
-          PY
-
-      - name: Fix Add to Cart layout
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text()
-          old = '''add.setTextSize(13f)\n        bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))'''
-          new = '''add.setTextSize(12f)\n        add.setPadding(dp(6),0,dp(6),0)\n        add.minWidth=0\n        bottom.addView(add,LinearLayout.LayoutParams(dp(116),dp(48)))'''
-          if old not in s:
-              raise SystemExit('Add to Cart layout block not found')
-          s = s.replace(old, new, 1)
-          p.write_text(s)
-          PY
-
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
