@@ -23,6 +23,33 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Apply product UI fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text()
+
+          # Remove only the final duplicate Restaurant / Hotel category entry.
+          dup = ',Category("Restaurant / Hotel","local://restaurant_hotel_logo"))'
+          if s.count(dup) >= 2:
+              pos = s.rfind(dup)
+              s = s[:pos] + ')' + s[pos + len(dup):]
+
+          # Replace the single product availability line with a Zomato-style moving ticker plus availability.
+          old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          new = '''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }
+          card.addView(ticker,margin(0,4,0,0))
+          card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,3,0,0))'''
+          if old not in s:
+              raise SystemExit('product availability line not found')
+          s = s.replace(old, new, 1)
+
+          # Give the scroll content extra bottom clearance so the last product controls stay above bottom navigation.
+          s = s.replace('setPadding(dp(16),dp(12),dp(16),dp(112))', 'setPadding(dp(16),dp(12),dp(16),dp(132))', 1)
+          p.write_text(s)
+          PY
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
