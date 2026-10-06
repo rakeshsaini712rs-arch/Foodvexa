@@ -66,7 +66,7 @@ filtered.forEachIndexed{index,p->
     if(qty==0){
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
         add.setTextSize(13f)
-        bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))
+        add.setPadding(dp(8),dp(5),dp(8),dp(5)); add.maxLines=2; add.ellipsize=null; bottom.addView(add,LinearLayout.LayoutParams(0,dp(44),0.46f))
     }else{
         val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
