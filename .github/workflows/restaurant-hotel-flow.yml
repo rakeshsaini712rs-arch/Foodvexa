@@ -1,0 +1,131 @@
+name: Build Foodvexa - Restaurant Hotel Flow
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/restaurant-hotel-flow.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Apply Restaurant Hotel flow
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+
+          # Add the category once, immediately before the existing cart fields.
+          category_block = '''\n private val categories=listOf(\n  Category("All","https://img.icons8.com/fluency/240/home.png"),\n  Category("Fast Food","https://img.icons8.com/fluency/240/hamburger.png"),\n  Category("Snacks","https://img.icons8.com/fluency/240/samosa.png"),\n  Category("Chaat Special","https://img.icons8.com/fluency/240/chaat.png"),\n  Category("Meals","https://img.icons8.com/fluency/240/meal.png"),\n  Category("Birthday Special","https://img.icons8.com/fluency/240/birthday-cake.png"),\n  Category("Beverages","https://img.icons8.com/fluency/240/juice.png"),\n  Category("Sweets","https://img.icons8.com/fluency/240/sweets.png"),\n  Category("Special Sabji","https://img.icons8.com/fluency/240/curry.png"),\n  Category("Restaurant / Hotel","https://img.icons8.com/fluency/240/restaurant.png")\n )\n'''
+          if 'private val categories=listOf(' not in s:
+              marker = ' private val cart=linkedMapOf<String,Int>()'
+              if marker not in s:
+                  raise SystemExit('cart marker not found')
+              s = s.replace(marker, category_block + marker, 1)
+
+          # Replace the old Rajasthan-only stub with the requested State -> District -> City flow.
+          district_map = {
+            'Ajmer':['Ajmer','Kishangarh','Beawar'],
+            'Alwar':['Alwar','Bhiwadi','Rajgarh','Behror'],
+            'Balotra':['Balotra','Pachpadra','Siwana'],
+            'Banswara':['Banswara','Bagidora','Ghatol'],
+            'Baran':['Baran','Anta','Chhabra','Mangrol'],
+            'Barmer':['Barmer','Balotra','Baytu','Gudamalani'],
+            'Beawar':['Beawar','Masuda','Vijainagar'],
+            'Bharatpur':['Bharatpur','Bayana','Deeg','Kaman','Nadbai','Weir'],
+            'Bhilwara':['Bhilwara','Asind','Gulabpura','Mandalgarh','Shahpura'],
+            'Bikaner':['Bikaner','Nokha','Dungargarh','Kolayat'],
+            'Bundi':['Bundi','Keshoraipatan','Lakheri','Nainwa'],
+            'Chittorgarh':['Chittorgarh','Nimbahera','Kapasan','Rawatbhata'],
+            'Churu':['Churu','Ratangarh','Sujangarh','Rajgarh','Taranagar'],
+            'Dausa':['Dausa','Bandikui','Lalsot','Mahwa'],
+            'Deeg':['Deeg','Nagar','Kumher','Pahari'],
+            'Didwana-Kuchaman':['Didwana','Kuchaman City','Makrana','Ladnun','Nawa'],
+            'Dholpur':['Dholpur','Bari','Rajakhera'],
+            'Dungarpur':['Dungarpur','Sagwara','Aspur','Simalwara'],
+            'Hanumangarh':['Hanumangarh','Bhadra','Nohar','Pilibanga','Rawatsar','Sangaria'],
+            'Jaipur':['Jaipur','Amer','Chomu','Jamwa Ramgarh','Kotkhawda','Sanganer'],
+            'Jaisalmer':['Jaisalmer','Pokaran','Fatehgarh'],
+            'Jalore':['Jalore','Bhinmal','Sanchore','Ahore'],
+            'Jhalawar':['Jhalawar','Bhawani Mandi','Aklera','Khanpur','Pirawa'],
+            'Jhunjhunu':['Jhunjhunu','Chirawa','Khetri','Nawalgarh','Pilani','Surajgarh'],
+            'Jodhpur':['Jodhpur','Bilara','Bhopalgarh','Osian','Phalodi','Pipar City'],
+            'Karauli':['Karauli','Hindaun','Todabhim','Sapotra'],
+            'Khairthal-Tijara':['Khairthal','Tijara','Bhiwadi','Kishangarh Bas'],
+            'Kota':['Kota','Itawa','Ramganj Mandi','Sangod','Sultanpur'],
+            'Kotputli-Behror':['Kotputli','Behror','Bansur','Neemrana'],
+            'Nagaur':['Nagaur','Merta City','Didwana','Kuchaman City','Degana','Parbatsar'],
+            'Pali':['Pali','Jaitaran','Marwar Junction','Rohat','Sojat','Sumerpur'],
+            'Phalodi':['Phalodi','Lohawat','Osian'],
+            'Pratapgarh':['Pratapgarh','Chhoti Sadri','Arnod','Dhariyawad'],
+            'Rajsamand':['Rajsamand','Nathdwara','Amet','Deogarh'],
+            'Salumbar':['Salumbar'],
+            'Sawai Madhopur':['Sawai Madhopur','Gangapur City','Bonli','Khandar'],
+            'Sikar':['Sikar','Fatehpur','Lachhmangarh','Neem Ka Thana','Sri Madhopur','Danta Ramgarh'],
+            'Sirohi':['Sirohi','Abu Road','Mount Abu','Pindwara','Sheoganj'],
+            'Sri Ganganagar':['Sri Ganganagar','Anoopgarh','Gajsinghpur','Karanpur','Padampur','Raisinghnagar','Sadulshahar','Suratgarh'],
+            'Tonk':['Tonk','Deoli','Malpura','Niwai','Uniara'],
+            'Udaipur':['Udaipur','Gogunda','Jhadol','Kherwara','Salumbar','Rishabhdeo','Vallabhnagar']
+          }
+          # Keep only the current 41 administrative districts.
+          district_names = list(district_map.keys())
+          map_literal = ','.join('"'+d+'" to listOf('+','.join('"'+c+'"' for c in cities)+')' for d,cities in district_map.items())
+
+          new_fn = f''' private fun restaurantHotelDialog(){{\n  val districts= listOf({','.join('"'+d+'"' for d in district_names)})\n  val cities= mapOf({map_literal})\n  fun cityDialog(district:String){{\n   val list=cities[district].orEmpty().distinct().sorted()\n   AlertDialog.Builder(this).setTitle("Select City • $district").setItems(list.toTypedArray()){{_,city->\n    prefs.edit().putString("restaurant_state","Rajasthan").putString("restaurant_district",district).putString("restaurant_city",city).apply()\n    AlertDialog.Builder(this).setTitle("Restaurant / Hotel").setMessage("Selected location\\nRajasthan → $district → $city\\n\\nRegistered Restaurant/Hotel products for this location will appear here when a restaurant or hotel is added through the app.").setPositiveButton("OK",null).show()\n   }}.setNegativeButton("Back",null).show()\n  }}\n  AlertDialog.Builder(this).setTitle("Select District • Rajasthan").setItems(districts.toTypedArray()){{_,district->cityDialog(district)}}.setNegativeButton("Cancel",null).show()\n }}\n'''
+
+          pattern = r' private fun restaurantHotelDialog\(\)\{.*?\n \}\n private fun showCart'
+          replacement = new_fn + ' private fun showCart'
+          s2, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('restaurantHotelDialog block not found')
+          s = s2
+
+          p.write_text(s, encoding='utf-8')
+          print('Restaurant/Hotel flow applied')
+          PY
+
+      - name: Verify source
+        run: |
+          grep -n 'private val categories=listOf' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -n 'private fun restaurantHotelDialog' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -n 'Select District' app/src/main/java/com/foodvexa/app/MainActivity.kt
+
+      - name: Commit source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          if git diff --cached --quiet; then
+            echo 'No source changes'
+          else
+            git commit -m 'Implement Rajasthan Restaurant Hotel selector [skip ci]'
+            git push origin HEAD:main
+          fi
+
+      - name: Build APK
+        run: gradle :app:assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Foodvexa-Restaurant-Hotel-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
