@@ -57,7 +57,7 @@ filtered.forEachIndexed{index,p->
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
-    card.addView(label("Available  •  ${p.eta}",11f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
+    card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),1f))
     val qty=cart[p.name]?:0
