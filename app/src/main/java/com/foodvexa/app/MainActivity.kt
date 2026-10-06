@@ -38,56 +38,7 @@ class MainActivity:AppCompatActivity(){
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
  private fun correctedImageUrl(p:Product):String{
-  val n=p.name.lowercase()
-  val tag=when{
-   n.contains("pizza")->"pizza,food"
-   n.contains("burger")->"burger,food"
-   n.contains("sandwich")->"sandwich,food"
-   n.contains("samosa")->"samosa,indian,food"
-   n.contains("kachori")->"kachori,indian,food"
-   n.contains("mirchi bada")->"mirchi,bajji,indian,food"
-   n.contains("maggi")->"noodles,maggi,food"
-   n.contains("vada pav")->"vada,pav,indian,food"
-   n.contains("dahi bhale")->"dahi,vada,indian,food"
-   n.contains("thali")->"indian,thali,food"
-   n.contains("chole bhature")->"chole,bhature,indian,food"
-   n.contains("chole kulche")->"chole,kulcha,indian,food"
-   n.contains("dosa")->"dosa,indian,food"
-   n.contains("idli")->"idli,indian,food"
-   n=="vada"->"medu,vada,indian,food"
-   n.contains("paneer sandwich")->"paneer,sandwich,food"
-   n.contains("pav bhaji")->"pav,bhaji,indian,food"
-   n.contains("noodles")->"noodles,food"
-   n.contains("fried rice")->"fried,rice,food"
-   n.contains("chilli potato")->"chilli,potato,food"
-   n.contains("cake")||n.contains("cupcake")->n.replace(" ",",")+",cake"
-   n.contains("cold drink")->"cola,soft,drink"
-   n.contains("juice")->n.replace(" ",",")+",juice"
-   n.contains("shake")->n.replace(" ",",")+",milkshake"
-   n.contains("water bottle")->"water,bottle"
-   n.contains("laddu")||n.contains("ladoo")->n.replace(" ",",")+",indian,sweet"
-   n.contains("boondi")->"boondi,indian,sweet"
-   n.contains("gulab jamun")->"gulab,jamun,indian,sweet"
-   n.contains("rasgulla")->"rasgulla,indian,sweet"
-   n.contains("jalebi")->"jalebi,indian,sweet"
-   n.contains("balushahi")->"balushahi,indian,sweet"
-   n.contains("milk cake")->"milk,cake,indian,sweet"
-   n.contains("peda")->"peda,indian,sweet"
-   n.contains("kaju katli")->"kaju,katli,indian,sweet"
-   n.contains("cham cham")->"cham,cham,indian,sweet"
-   n.contains("kaju roll")||n.contains("kaju pista roll")->"kaju,roll,indian,sweet"
-   n.contains("gajar halwa")->"gajar,halwa,indian,sweet"
-   n.contains("moong dal halwa")->"moong,dal,halwa,indian,sweet"
-   n.contains("kalakand")->"kalakand,indian,sweet"
-   n.contains("rasmalai")->"rasmalai,indian,sweet"
-   n.contains("rabri")->"rabri,indian,sweet"
-   n.contains("shahi tukda")->"shahi,tukda,indian,sweet"
-   n.contains("rajbhog")->"rajbhog,indian,sweet"
-   n.contains("special sabji")||p.category=="Special Sabji"->n.replace(" ",",")+",indian,curry"
-   else->n.replace(" ",",")+",food"
-  }
-  val lock=((p.name+"|"+p.category).hashCode() and 0x7fffffff)
-  return "https://loremflickr.com/800/600/$tag/all?lock=$lock"
+  return p.imageUrl
  }
  private fun renderProducts(){
 val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
