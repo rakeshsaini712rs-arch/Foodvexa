@@ -19,7 +19,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           path = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           text = path.read_text(encoding='utf-8')
@@ -45,8 +44,6 @@ jobs:
 '''
           text = text[:start] + new_fn + text[end:]
 
-          # Use the product's explicit image first; the resolver above now only overrides
-          # known mismatches and leaves all other product-specific URLs intact.
           if 'loadImage(pic,correctedImageUrl(p))' not in text:
               raise SystemExit('Product image render call not found')
           if 'loadImage(image,correctedImageUrl(p))' not in text:
@@ -69,3 +66,5 @@ jobs:
           git add app/src/main/java/com/foodvexa/app/MainActivity.kt
           git diff --cached --quiet || git commit -m 'Fix product photo mapping [photo-fix]'
           git push
+
+# deterministic mapping; do not reintroduce generic loremflickr URLs
