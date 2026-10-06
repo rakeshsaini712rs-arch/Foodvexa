@@ -1,0 +1,1 @@
+4 banners: responsive automatic 2-column grid. This is a temporary marker for the banner-grid change; existing app source remains the build source.
