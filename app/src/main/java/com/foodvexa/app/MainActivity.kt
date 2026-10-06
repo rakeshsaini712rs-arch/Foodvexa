@@ -61,12 +61,16 @@ filtered.forEachIndexed{index,p->
     card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
     card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-    bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),1f))
+    bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
-        add.setTextSize(13f)
-        bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))
+        add.setTextSize(12f)
+        add.maxLines=2
+        add.ellipsize=null
+        add.minWidth=0
+        add.setPadding(dp(5),dp(4),dp(5),dp(4))
+        bottom.addView(add,LinearLayout.LayoutParams(0,dp(44),1.08f))
     }else{
         val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
