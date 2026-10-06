@@ -1,0 +1,38 @@
+name: Fix Kotlin syntax
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'Fix categoryCard Kotlin brace') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fix missing categoryCard brace
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          needle = 'setOnClickListener{if(c.name=="Restaurant / Hotel"||c.name=="Restaurant/Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){selectedCategory=c.name;showHome()}};val image='
+          replacement = 'setOnClickListener{if(c.name=="Restaurant / Hotel"||c.name=="Restaurant/Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){selectedCategory=c.name;showHome()}}};val image='
+          if needle not in s:
+              raise SystemExit('categoryCard target not found; refusing to modify source')
+          p.write_text(s.replace(needle, replacement, 1), encoding='utf-8')
+
+      - name: Commit source fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          git commit -m 'Fix categoryCard Kotlin brace'
+          git push
