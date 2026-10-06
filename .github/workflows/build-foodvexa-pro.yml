@@ -23,21 +23,18 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Fix Add to Cart layout before build
+      - name: Verify product freshness label
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s=p.read_text(encoding='utf-8')
-          old='''        val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}\n        add.setTextSize(13f)\n        bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))'''
-          new='''        val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}\n        add.setTextSize(12f)\n        add.maxLines=2\n        add.ellipsize=null\n        add.minWidth=0\n        add.setPadding(dp(5),dp(4),dp(5),dp(4))\n        bottom.addView(add,LinearLayout.LayoutParams(0,dp(44),1.08f))'''
-          if old not in s: raise SystemExit('Add to Cart target block not found')
-          s=s.replace(old,new,1)
-          old2='''bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),1f))'''
-          new2='''bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),0.92f))'''
-          if old2 not in s: raise SystemExit('price target block not found')
-          s=s.replace(old2,new2,1)
-          p.write_text(s,encoding='utf-8')
+          required='Fresh & Hot'
+          if required not in s:
+              raise SystemExit('Product freshness label is missing from MainActivity.kt')
+          if 'Near & Fast' not in s:
+              raise SystemExit('Product speed label is missing from MainActivity.kt')
+          print('Product freshness metadata found')
           PY
 
       - name: Bundle product images
