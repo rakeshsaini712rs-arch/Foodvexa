@@ -23,13 +23,33 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Apply product UI fixes
+      - name: Apply product image fixes
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
+
+          # Keep the base product data as the source of truth. Do not use random
+          # loremflickr images, because they can show a different dish than the name.
+          old = 'return "https://loremflickr.com/800/600/$tag/all?lock=$lock"'
+          new = '''return when(n){
+   "samosa"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Samosa.jpg"
+   "kachori"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Kachori-1.jpg"
+   "mirchi bada"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Mirchi_Bada_from_Jodhpur_1.jpg"
+   "shahi paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Shahi_paneer.jpg"
+   "kadai paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Kadai_paneer.jpg"
+   "paneer butter masala"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Paneer_Butter_Masala.jpg"
+   "matar paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Matar_Paneer.JPG"
+   "palak paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Palak_paneer.JPG"
+   "malai kofta"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Malai_Kofta.jpg"
+   "rajbhog"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Rajbhog.jpg"
+   else->p.imageUrl
+  }'''
+          if old not in s:
+              raise SystemExit('random product image resolver not found')
+          s = s.replace(old, new, 1)
 
           # Remove duplicate Restaurant / Hotel entries and enforce unique category names.
           token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
@@ -48,24 +68,7 @@ jobs:
               block = block.replace('\n private val cart', '.distinctBy { it.name }\n private val cart')
               s = s[:m.start()] + block + s[m.end():]
 
-          # Replace generic/random photo resolution with each product's explicit image URL,
-          # while correcting the known mismatched dishes with exact food photos.
-          old_resolver_return = 'return "https://loremflickr.com/800/600/$tag/all?lock=$lock"'
-          new_resolver_return = '''return when(n){
-   "rajbhog"->"https://www.mygovindas.com/uploads/food_menu/raj_bhog-sweet-4a10f06e11de041fe8f0c358bf5689bf.jpg"
-   "paneer butter masala"->"https://myfoodstory.com/wp-content/uploads/2021/10/Paneer-Butter-Masala-1-2.jpg"
-   "matar paneer"->"https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/matar_paneer.jpg"
-   "palak paneer"->"https://www.finedininglovers.com/sites/default/files/2026-02/palak-paneer.jpg"
-   "kadai paneer"->"https://givukaorkjkksslrzuum.supabase.co/storage/v1/object/public/recipe-images/recipes/kadai-paneer.jpg"
-   "malai kofta"->"https://www.hotandcoolrestaurant.in/assets/malai_kofta-CMZoWclv.jpg"
-   "shahi paneer"->"https://www.cartly.ca/cdn/shop/articles/20210921074846-shahi-paneer-recipe_600x.jpg?v=1639024534"
-   else->p.imageUrl
-  }'''
-          if old_resolver_return not in s:
-              raise SystemExit('generic product image resolver not found')
-          s = s.replace(old_resolver_return, new_resolver_return, 1)
-
-          # Replace the single product availability line with a Zomato-style moving ticker plus availability.
+          # Keep the Zomato-style moving ticker and availability line.
           old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
           new = '''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }
           card.addView(ticker,margin(0,4,0,0))
@@ -74,7 +77,6 @@ jobs:
               raise SystemExit('product availability line not found')
           s = s.replace(old, new, 1)
 
-          # Give the scroll content extra bottom clearance so the last product controls stay above bottom navigation.
           s = s.replace('setPadding(dp(16),dp(12),dp(16),dp(112))', 'setPadding(dp(16),dp(12),dp(16),dp(132))', 1)
           p.write_text(s)
           PY
