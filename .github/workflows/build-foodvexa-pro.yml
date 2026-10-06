@@ -16,11 +16,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply final Foodvexa home layout
-        run: python3 final_layout_fix.py
-
-      - name: Apply premium cart screen
-        run: python3 cart_screen_fix.py
+      - name: Apply premium cart screen directly to current MainActivity
+        run: python3 premium_cart_fix.py
 
       - name: Verify cart screen
         run: |
