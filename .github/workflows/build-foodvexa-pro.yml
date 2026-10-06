@@ -31,7 +31,7 @@ jobs:
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
 
-          # Keep only one Restaurant / Hotel category.
+          # Keep only one Restaurant / Hotel category and enforce unique category names.
           token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
           first = s.find(token)
           if first >= 0:
@@ -39,6 +39,14 @@ jobs:
               while second >= 0:
                   s = s[:second] + s[second + len(token):]
                   second = s.find(token, second)
+
+          m = re.search(r'private val categories=listOf\(.*?\)\n private val cart', s, re.S)
+          if not m:
+              raise SystemExit('categories declaration not found')
+          block = m.group(0)
+          if '.distinctBy { it.name }' not in block:
+              block = block.replace('\n private val cart', '.distinctBy { it.name }\n private val cart')
+              s = s[:m.start()] + block + s[m.end():]
 
           # Make product cards show a continuously moving Zomato-style service strip,
           # followed by a separate green Available line.
