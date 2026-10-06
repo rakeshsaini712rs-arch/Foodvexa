@@ -24,13 +24,42 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
+      - name: Repair source and add Rajasthan-only Restaurant/Hotel selector
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text()
+          lines = s.splitlines(True)
+          for i, line in enumerate(lines):
+              if line.lstrip().startswith('private val products=mutableListOf<Product>().apply') and line.rstrip().endswith('}}'):
+                  lines[i] = line.rstrip()[:-1] + '\n'
+                  break
+          s = ''.join(lines)
+          old = 'if(selectedCategory!=c.name){selectedCategory=c.name;renderProducts()}'
+          new = 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){selectedCategory=c.name;renderProducts()}'
+          s = s.replace(old, new, 1)
+          marker = ' private fun showCart(){'
+          fn = ''' private fun restaurantHotelDialog(){\n  AlertDialog.Builder(this).setTitle("Select State").setItems(arrayOf("Rajasthan")){_,_->\n   Toast.makeText(this,"Rajasthan selected",Toast.LENGTH_SHORT).show()\n  }.setNegativeButton("Cancel",null).show()\n }\n'''
+          if 'private fun restaurantHotelDialog()' not in s:
+              s = s.replace(marker, fn + marker, 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit source changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No source changes"
+          else
+            git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+            git commit -m "Fix Kotlin scope and Rajasthan restaurant selector"
+            git push
+          fi
 
       - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle :app:assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
