@@ -3,8 +3,7 @@ name: Build Foodvexa APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: write
@@ -24,42 +23,50 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Repair source and set Restaurant Hotel logo
+      - name: Repair Restaurant Hotel code
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text()
-          lines = s.splitlines(True)
-          for i, line in enumerate(lines):
-              if line.lstrip().startswith('private val products=mutableListOf<Product>().apply') and line.rstrip().endswith('}}'):
-                  lines[i] = line.rstrip()[:-1] + '\n'
-                  break
-          s = ''.join(lines)
-          logo = 'https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable/restaurant_hotel_logo.svg'
-          patterns = [
-              r'Category\(\s*"Restaurant/Hotel"\s*,\s*"[^"]*"\s*\)',
-              r'Category\(\s*"Restaurant / Hotel"\s*,\s*"[^"]*"\s*\)',
-          ]
-          for pat in patterns:
-              s, n = re.subn(pat, lambda m: m.group(0)[:m.group(0).find(',')] + ',"' + logo + '")', s, count=1)
+          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s=p.read_text()
+          start=s.find(' private fun restaurantHotelDialog(){')
+          if start < 0:
+              raise SystemExit('restaurantHotelDialog not found')
+          end=s.find(' private fun showCart()', start)
+          if end < 0:
+              raise SystemExit('showCart boundary not found')
+          replacement=r''' private fun restaurantHotelDialog(){
+    val districts=listOf("Ajmer","Alwar","Balotra","Banswara","Baran","Barmer","Beawar","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Deeg","Didwana-Kuchaman","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Khairthal-Tijara","Kota","Kotputli-Behror","Nagaur","Pali","Phalodi","Pratapgarh","Rajsamand","Salumbar","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur")
+    val cities=mapOf(
+      "Jaipur" to listOf("Jaipur","Amer","Chomu","Sanganer"),
+      "Jhunjhunu" to listOf("Jhunjhunu","Chirawa","Khetri","Nawalgarh","Pilani","Surajgarh"),
+      "Sikar" to listOf("Sikar","Fatehpur","Lachhmangarh","Neem Ka Thana","Sri Madhopur","Danta Ramgarh"),
+      "Jodhpur" to listOf("Jodhpur","Bilara","Bhopalgarh","Osian","Pipar City"),
+      "Udaipur" to listOf("Udaipur","Gogunda","Jhadol","Kherwara","Rishabhdeo","Vallabhnagar"),
+      "Ajmer" to listOf("Ajmer","Kishangarh","Beawar"),
+      "Alwar" to listOf("Alwar","Bhiwadi","Rajgarh","Behror"),
+      "Kota" to listOf("Kota","Itawa","Ramganj Mandi","Sangod","Sultanpur"),
+      "Bikaner" to listOf("Bikaner","Nokha","Dungargarh","Kolayat"),
+      "Churu" to listOf("Churu","Ratangarh","Sujangarh","Rajgarh","Taranagar"),
+      "Barmer" to listOf("Barmer","Baytu","Gudamalani"),
+      "Pali" to listOf("Pali","Jaitaran","Marwar Junction","Rohat","Sojat","Sumerpur"),
+      "Tonk" to listOf("Tonk","Deoli","Malpura","Niwai","Uniara")
+    )
+    fun cityDialog(d:String){
+      val list=cities[d].orEmpty().distinct().sorted()
+      AlertDialog.Builder(this).setTitle("Select City • $d").setItems(list.toTypedArray()){_,city->
+        prefs.edit().putString("restaurant_state","Rajasthan").putString("restaurant_district",d).putString("restaurant_city",city).apply()
+        Toast.makeText(this,"Rajasthan → $d → $city selected",Toast.LENGTH_LONG).show()
+      }.setNegativeButton("Back",null).show()
+    }
+    AlertDialog.Builder(this).setTitle("Select District • Rajasthan").setItems(districts.toTypedArray()){_,d->cityDialog(d)}.setNegativeButton("Cancel",null).show()
+  }
+'''
+          s=s[:start]+replacement+s[end:]
           p.write_text(s)
           PY
-          # Android resource merger does not accept raw SVG files in res/drawable.
           rm -f app/src/main/res/drawable/restaurant_hotel_logo.svg
-
-      - name: Commit source changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
-            echo "No source changes"
-          else
-            git add -A
-            git commit -m "Fix Restaurant Hotel logo resource"
-            git push
-          fi
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
