@@ -31,14 +31,12 @@ jobs:
           import re
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
-          # Repair the known extra closing brace without touching other code.
           lines = s.splitlines(True)
           for i, line in enumerate(lines):
               if line.lstrip().startswith('private val products=mutableListOf<Product>().apply') and line.rstrip().endswith('}}'):
                   lines[i] = line.rstrip()[:-1] + '\n'
                   break
           s = ''.join(lines)
-          # Use the new professional hotel/restaurant logo for the category.
           logo = 'https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable/restaurant_hotel_logo.svg'
           patterns = [
               r'Category\(\s*"Restaurant/Hotel"\s*,\s*"[^"]*"\s*\)',
@@ -48,6 +46,8 @@ jobs:
               s, n = re.subn(pat, lambda m: m.group(0)[:m.group(0).find(',')] + ',"' + logo + '")', s, count=1)
           p.write_text(s)
           PY
+          # Android resource merger does not accept raw SVG files in res/drawable.
+          rm -f app/src/main/res/drawable/restaurant_hotel_logo.svg
 
       - name: Commit source changes
         run: |
@@ -56,8 +56,8 @@ jobs:
           if git diff --quiet; then
             echo "No source changes"
           else
-            git add app/src/main/java/com/foodvexa/app/MainActivity.kt
-            git commit -m "Set professional Restaurant Hotel logo"
+            git add -A
+            git commit -m "Fix Restaurant Hotel logo resource"
             git push
           fi
 
