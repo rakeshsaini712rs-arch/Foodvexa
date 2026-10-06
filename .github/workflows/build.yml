@@ -22,26 +22,17 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Fix Foodvexa category UI
+      - name: Restore Zomato-style product metadata
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text(encoding='utf-8')
-
-          duplicate = '),Category("Special Sabji","https://images.unsplash.com/photo-1645432524571-0e469b22e43f?auto=format&fit=crop&w=500&q=80"),Category("Restaurant / Hotel","local://restaurant_hotel_logo"))'
-          fixed = '),Category("Special Sabji","https://images.unsplash.com/photo-1645432524571-0e469b22e43f?auto=format&fit=crop&w=500&q=80"))'
-          if duplicate in s:
-              s = s.replace(duplicate, fixed, 1)
-
-          old_click = 'setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()}}else{selectedCategory=c.name;renderProducts()}}}'
-          new_click = 'setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){selectedCategory=c.name;showHome()}}'
-          if old_click not in s:
-              raise SystemExit('category click target not found')
-          s = s.replace(old_click, new_click, 1)
-
-          p.write_text(s, encoding='utf-8')
-          print('Foodvexa category UI fixes applied')
+          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s=p.read_text(encoding='utf-8')
+          old='card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          new='card.addView(label("🔥 Fresh & Hot    •    Near & Fast",12f,true,Color.rgb(255,140,70)),margin(0,4,0,0))'
+          if old not in s:
+              raise SystemExit('product metadata line not found')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
           PY
 
       - name: Build debug APK
