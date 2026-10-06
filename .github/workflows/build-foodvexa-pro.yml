@@ -36,13 +36,31 @@ jobs:
               s = re.sub(pattern, replacement + 'private fun showCart()', s, count=1, flags=re.S)
           elif 'private fun restaurantHotelDialog()' not in s:
               s = s.replace('private fun showCart()', replacement + 'private fun showCart()', 1)
-          s = s.replace('Category("Restaurant/Hotel","__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
-          s = s.replace('Category("Restaurant/Hotel", "__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
-          s = s.replace('Category("Restaurant / Hotel","__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
+          s = re.sub(r'Category\("Restaurant / Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
+          s = re.sub(r'Category\("Restaurant/Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
           s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
+          # Make the Restaurant/Hotel card use a bundled drawable instead of a network image.
+          s = s.replace('loadImage(image,c.imageUrl);return box}', 'if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}')
           p.write_text(s)
           PY
-      - name: Apply near-food product card UI
+      - name: Add bundled Restaurant Hotel logo
+        shell: bash
+        run: |
+          mkdir -p app/src/main/res/drawable
+          cat > app/src/main/res/drawable/restaurant_hotel_logo.xml <<'XML'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="96dp" android:height="96dp" android:viewportWidth="96" android:viewportHeight="96">
+            <path android:fillColor="#FFF8EF" android:pathData="M4,4h88v88h-88z"/>
+            <path android:fillColor="#EF4B32" android:pathData="M14,34h68v12h-68z"/>
+            <path android:fillColor="#F5A623" android:pathData="M18,46h60v34h-60z"/>
+            <path android:fillColor="#FFFFFF" android:pathData="M14,46h68l-7,10h-54z"/>
+            <path android:fillColor="#EF4B32" android:pathData="M20,56h12v10h-12zM42,56h12v10h-12zM64,56h12v10h-12z"/>
+            <path android:fillColor="#FFFFFF" android:pathData="M36,66h24v14h-24z"/>
+            <path android:fillColor="#69B7E8" android:pathData="M40,69h16v11h-16z"/>
+            <path android:fillColor="#EF4B32" android:pathData="M26,16h44v16h-44z"/>
+            <path android:fillColor="#FFFFFF" android:pathData="M31,20h34v8h-34z"/>
+          </vector>
+          XML
+      - name: Apply polished near-food product card UI
         shell: bash
         run: |
           python3 - <<'PY'
@@ -66,57 +84,57 @@ jobs:
           var row:LinearLayout?=null
           filtered.forEachIndexed{index,p->
               if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
-              val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+              val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(9));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
               val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-              card.addView(pic,LinearLayout.LayoutParams(-1,dp(145)))
+              card.addView(pic,LinearLayout.LayoutParams(-1,dp(140)))
               loadImage(pic,p.imageUrl)
               pic.setOnClickListener{openProductPhoto(p)}
-              card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,8,0,0))
-              card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.LTGRAY),margin(0,3,0,0))
-              card.addView(label("1 item",11f,false,Color.LTGRAY),margin(0,6,0,0))
+              card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
+              card.addView(label("Available  •  ${p.eta}",11f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
               val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-              bottom.addView(label("₹${p.price}",19f,true,Color.rgb(70,220,150)),LinearLayout.LayoutParams(0,dp(48),1f))
+              bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,44.dp(),1f))
               val qty=cart[p.name]?:0
               if(qty==0){
                   val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
-                  add.setTextSize(14f)
-                  bottom.addView(add,LinearLayout.LayoutParams(dp(130),dp(48)))
+                  add.setTextSize(13f)
+                  bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))
               }else{
                   val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
                   val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
                   val plus=primaryButton("+"){addToCart(p);renderProducts()}
-                  val count=label(qty.toString(),16f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
-                  controls.addView(minus,LinearLayout.LayoutParams(dp(42),dp(42)))
-                  controls.addView(count,LinearLayout.LayoutParams(dp(38),dp(42)))
-                  controls.addView(plus,LinearLayout.LayoutParams(dp(42),dp(42)))
+                  val count=label(qty.toString(),15f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
+                  controls.addView(minus,LinearLayout.LayoutParams(dp(32),dp(40)))
+                  controls.addView(count,LinearLayout.LayoutParams(dp(30),dp(40)))
+                  controls.addView(plus,LinearLayout.LayoutParams(dp(32),dp(40)))
                   bottom.addView(controls)
               }
               card.addView(bottom,margin(0,7,0,0))
-              card.addView(label("• Available",11f,true,Color.rgb(50,205,120)),margin(0,2,0,0))
               row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
               if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
           }
           }
           '''
+          new=new.replace('44.dp()','dp(44)')
           s=s[:start]+new+s[end:]
           p.write_text(s)
           PY
-      - name: Validate selector and product card wiring
+      - name: Validate UI changes
         shell: bash
         run: |
           grep -q 'Restaurant / Hotel' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'img.icons8.com/fluency/96/hotel.png' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'restaurant_hotel_logo' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'showRestaurantHotelFlow(prefs)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Available' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          test -f app/src/main/res/drawable/restaurant_hotel_logo.xml
           test -f app/src/main/java/com/foodvexa/app/RestaurantHotelFlow.kt
       - name: Commit source changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
-          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Improve product cards with price availability and cart controls'; git push; fi
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt app/src/main/res/drawable/restaurant_hotel_logo.xml
+          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Polish product cards and Restaurant Hotel logo'; git push; fi
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Upload APK
