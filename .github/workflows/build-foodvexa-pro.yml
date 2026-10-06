@@ -2,7 +2,8 @@ name: Build Foodvexa Pro APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -22,55 +23,46 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Bundle product images into APK
+      - name: Bundle product images
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import hashlib, re, subprocess
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text(encoding='utf-8')
-          urls=sorted(set(re.findall(r'https://[^"\\]+',s)))
-          out=Path('app/src/main/res/drawable-nodpi')
-          out.mkdir(parents=True,exist_ok=True)
+          import hashlib
+          import re
+          import subprocess
+
+          source = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          text = source.read_text(encoding='utf-8')
+          urls = sorted(set(re.findall(r'https://[^"\\]+', text)))
+          assets = Path('app/src/main/assets')
+          assets.mkdir(parents=True, exist_ok=True)
+
+          downloaded = 0
           for url in urls:
-              name='product_'+hashlib.sha256(url.encode()).hexdigest()[:16]+'.jpg'
-              target=out/name
-              if not target.exists():
-                  r=subprocess.run(['curl','-L','--fail','--silent','--show-error','--max-time','30','-A','Foodvexa/1.0',url,'-o',str(target)],capture_output=True,text=True)
-                  if r.returncode!=0 or not target.exists() or target.stat().st_size<1000:
+              name = 'product_' + hashlib.sha256(url.encode()).hexdigest()[:16] + '.img'
+              target = assets / name
+              if not target.exists() or target.stat().st_size < 1000:
+                  result = subprocess.run([
+                      'curl', '-L', '--fail', '--silent', '--show-error',
+                      '--max-time', '30', '-A', 'Foodvexa/1.0', url,
+                      '-o', str(target)
+                  ], capture_output=True, text=True)
+                  if result.returncode != 0 or not target.exists() or target.stat().st_size < 1000:
                       target.unlink(missing_ok=True)
                       continue
-              if target.exists():s=s.replace(url,'asset://'+name)
-          old='''private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}'''
-          new='''private fun loadImage(view:ImageView,url:String){
-          imageExecutor.execute{
-           try{
-            val bmp=if(url.startsWith("asset://")){
-             assets.open(url.removePrefix("asset://")).use{BitmapFactory.decodeStream(it)}
-            }else{
-             var con:HttpURLConnection?=null
-             try{
-              con=URL(url).openConnection() as HttpURLConnection
-              con.instanceFollowRedirects=true
-              con.connectTimeout=15000
-              con.readTimeout=15000
-              con.setRequestProperty("User-Agent","Foodvexa/1.0 Android")
-              con.connect()
-              if(con.responseCode in 200..399)con.inputStream.use{BitmapFactory.decodeStream(it)} else null
-             }finally{con?.disconnect()}
-            }
-            if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}
-           }catch(_:Exception){}
-          }
-         }'''
-          if old in s:s=s.replace(old,new,1)
-          p.write_text(s,encoding='utf-8')
-          print('Bundled',sum(1 for x in out.glob('product_*.jpg')),'images')
+              text = text.replace(url, 'asset://' + name)
+              downloaded += 1
+
+          source.write_text(text, encoding='utf-8')
+          print(f'Bundled {downloaded} product images')
           PY
 
-      - name: Validate image loader
+      - name: Validate product images
+        shell: bash
         run: |
+          test -d app/src/main/assets
+          test -n "$(find app/src/main/assets -type f -name 'product_*' -size +1k | head -1)"
           grep -q 'asset://product_' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'assets.open' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
