@@ -1,10 +1,9 @@
 name: Build Foodvexa APK
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,100 +22,59 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Apply product image and UI fixes
+      - name: Bundle product images into APK
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text()
+          import hashlib, re, subprocess
+          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s=p.read_text(encoding='utf-8')
+          urls=sorted(set(re.findall(r'https://[^"\\]+',s)))
+          out=Path('app/src/main/res/drawable-nodpi')
+          out.mkdir(parents=True,exist_ok=True)
+          for url in urls:
+              name='product_'+hashlib.sha256(url.encode()).hexdigest()[:16]+'.jpg'
+              target=out/name
+              if not target.exists():
+                  r=subprocess.run(['curl','-L','--fail','--silent','--show-error','--max-time','30','-A','Foodvexa/1.0',url,'-o',str(target)],capture_output=True,text=True)
+                  if r.returncode!=0 or not target.exists() or target.stat().st_size<1000:
+                      target.unlink(missing_ok=True)
+                      continue
+              if target.exists():
+                  s=s.replace(url,'asset://'+name)
 
-          # Product cards must use the explicit imageUrl stored with each product.
-          old = 'return "https://loremflickr.com/800/600/$tag/all?lock=$lock"'
-          if old in s:
-              new = '''return when(n){
-           "samosa"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Samosa.jpg"
-           "kachori"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Kachori-1.jpg"
-           "mirchi bada"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Mirchi_Bada_from_Jodhpur_1.jpg"
-           "shahi paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Shahi_paneer.jpg"
-           "kadai paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Kadai_paneer.jpg"
-           "paneer butter masala"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Paneer_Butter_Masala.jpg"
-           "matar paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Matar_Paneer.JPG"
-           "palak paneer"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Palak_paneer.JPG"
-           "malai kofta"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Malai_Kofta.jpg"
-           "rajbhog"->"https://commons.wikimedia.org/wiki/Special:Redirect/file/Rajbhog.jpg"
-           else->p.imageUrl
-          }'''
-              s = s.replace(old, new, 1)
-
-          # If an older workflow already converted the resolver, keep that safe state.
-          if 'private fun correctedImageUrl(p:Product):String = p.imageUrl' not in s and 'else->p.imageUrl' not in s:
-              raise SystemExit('Product image resolver is not using p.imageUrl')
-
-          # Use the product URL directly from the card and photo viewer.
-          s = s.replace('loadImage(pic,correctedImageUrl(p))', 'loadImage(pic,p.imageUrl)')
-          s = s.replace('loadImage(image,correctedImageUrl(p))', 'loadImage(image,p.imageUrl)')
-
-          # Make remote image loading tolerant of redirects/CDN user-agent checks.
-          old_loader = 'private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}'
-          new_loader = '''private fun loadImage(view:ImageView,url:String){
+          old='''private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}'''
+          new='''private fun loadImage(view:ImageView,url:String){
           imageExecutor.execute{
-           var con:HttpURLConnection?=null
            try{
-            con=URL(url).openConnection() as HttpURLConnection
-            con.instanceFollowRedirects=true
-            con.connectTimeout=15000
-            con.readTimeout=15000
-            con.setRequestProperty("User-Agent","Foodvexa/1.0 Android")
-            con.setRequestProperty("Accept","image/avif,image/webp,image/jpeg,image/png,*/*")
-            con.connect()
-            if(con.responseCode in 200..399){
-             con.inputStream.use{stream->
-              val bmp=BitmapFactory.decodeStream(stream)
-              if(bmp!=null)mainHandler.post{if(!isFinishing && !view.isFinishingSafe())view.setImageBitmap(bmp)}
-             }
+            val bmp=if(url.startsWith("asset://")){
+             assets.open(url.removePrefix("asset://")).use{BitmapFactory.decodeStream(it)}
+            }else{
+             var con:HttpURLConnection?=null
+             try{
+              con=URL(url).openConnection() as HttpURLConnection
+              con.instanceFollowRedirects=true
+              con.connectTimeout=15000
+              con.readTimeout=15000
+              con.setRequestProperty("User-Agent","Foodvexa/1.0 Android")
+              con.connect()
+              if(con.responseCode in 200..399)con.inputStream.use{BitmapFactory.decodeStream(it)} else null
+             }finally{con?.disconnect()}
             }
+            if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}
            }catch(_:Exception){}
-           finally{con?.disconnect()}
           }
          }'''
-          # Avoid requiring a custom extension: use a simple Activity lifecycle check in the posted callback.
-          new_loader = new_loader.replace(' && !view.isFinishingSafe()','')
-          if old_loader in s:
-              s = s.replace(old_loader,new_loader,1)
-
-          # Remove duplicate Restaurant / Hotel entries and enforce unique category names.
-          token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
-          first = s.find(token)
-          if first >= 0:
-              second = s.find(token, first + len(token))
-              while second >= 0:
-                  s = s[:second] + s[second + len(token):]
-                  second = s.find(token, second)
-          m = re.search(r'private val categories=listOf\(.*?\)\n private val cart', s, re.S)
-          if not m:
-              raise SystemExit('categories declaration not found')
-          block=m.group(0)
-          if '.distinctBy { it.name }' not in block:
-              block=block.replace('\n private val cart','.distinctBy { it.name }\n private val cart')
-              s=s[:m.start()]+block+s[m.end():]
-
-          # Restore ticker if the base still has the old availability-only line.
-          old_bad='card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
-          ticker='''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }
-          card.addView(ticker,margin(0,4,0,0))
-          card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,3,0,0))'''
-          if old_bad in s:s=s.replace(old_bad,ticker,1)
-          s=s.replace('setPadding(dp(16),dp(12),dp(16),dp(112))','setPadding(dp(16),dp(12),dp(16),dp(132))',1)
-          p.write_text(s)
+          if old in s:s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          print('Bundled',sum(1 for x in out.glob('product_*.jpg')),'images')
           PY
 
-      - name: Validate source
+      - name: Validate image loader
         run: |
-          grep -q 'loadImage(pic,p.imageUrl)' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'loadImage(image,p.imageUrl)' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'User-Agent' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'asset://product_' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'assets.open' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
       - name: Build debug APK
