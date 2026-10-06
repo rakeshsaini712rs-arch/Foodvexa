@@ -15,14 +15,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply 148 base and professional banner fix
+      - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
 
       - name: Verify banners and categories
         run: |
-          grep -Fq 'private fun bannerGrid():GridLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'columnCount=2' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'rowCount=2' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'HorizontalScrollView' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'auto.postDelayed(runner,4500)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'PIZZA • CHEESY & HOT' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
 
