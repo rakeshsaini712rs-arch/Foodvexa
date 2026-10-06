@@ -37,7 +37,51 @@ class MainActivity:AppCompatActivity(){
  private fun categoryCard(c:Category):LinearLayout{val selected=c.name==selectedCategory;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=categoryBackground(selected);setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()}}else{selectedCategory=c.name;renderProducts()}}}};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(image,LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)});box.addView(label(c.name,11.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false});loadImage(image,c.imageUrl);return box}
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
- private fun renderProducts(){val title=if(selectedCategory=="All")"Popular near you" else selectedCategory;var ti=-1;for(i in 0 until content.childCount){val v=content.getChildAt(i);if(v is TextView&&(v.text.toString()=="Popular near you"||categories.any{it.name==v.text.toString()})){ti=i;break}};if(ti<0)return;(content.getChildAt(ti) as TextView).text=title;while(content.childCount>ti+1)content.removeViewAt(ti+1);val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))};var row:LinearLayout?=null;filtered.forEachIndexed{index,p->if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL};content.addView(row,margin(0,0,0,10))};val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true};val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};card.addView(pic,LinearLayout.LayoutParams(-1,dp(138)));loadImage(pic,p.imageUrl);pic.setOnClickListener{openProductPhoto(p)};card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0));card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.rgb(235,190,75)),margin(0,3,0,0));card.addView(label("₹${p.price}",17f,true,Color.rgb(70,210,145)),margin(0,4,0,7));card.addView(primaryButton("+ ADD"){addToCart(p)},LinearLayout.LayoutParams(-1,dp(42)));row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})}}
+ private fun renderProducts(){
+val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
+var ti=-1
+for(i in 0 until content.childCount){
+    val v=content.getChildAt(i)
+    if(v is TextView && (v.text.toString()=="Popular near you" || categories.any{it.name==v.text.toString()})){ti=i;break}
+}
+if(ti<0)return
+(content.getChildAt(ti) as TextView).text=title
+while(content.childCount>ti+1)content.removeViewAt(ti+1)
+val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
+var row:LinearLayout?=null
+filtered.forEachIndexed{index,p->
+    if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
+    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+    val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(145)))
+    loadImage(pic,p.imageUrl)
+    pic.setOnClickListener{openProductPhoto(p)}
+    card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,8,0,0))
+    card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.LTGRAY),margin(0,3,0,0))
+    card.addView(label("1 item",11f,false,Color.LTGRAY),margin(0,6,0,0))
+    val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+    bottom.addView(label("₹${p.price}",19f,true,Color.rgb(70,220,150)),LinearLayout.LayoutParams(0,dp(48),1f))
+    val qty=cart[p.name]?:0
+    if(qty==0){
+        val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
+        add.setTextSize(14f)
+        bottom.addView(add,LinearLayout.LayoutParams(dp(130),dp(48)))
+    }else{
+        val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+        val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
+        val plus=primaryButton("+"){addToCart(p);renderProducts()}
+        val count=label(qty.toString(),16f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
+        controls.addView(minus,LinearLayout.LayoutParams(dp(42),dp(42)))
+        controls.addView(count,LinearLayout.LayoutParams(dp(38),dp(42)))
+        controls.addView(plus,LinearLayout.LayoutParams(dp(42),dp(42)))
+        bottom.addView(controls)
+    }
+    card.addView(bottom,margin(0,7,0,0))
+    card.addView(label("• Available",11f,true,Color.rgb(50,205,120)),margin(0,2,0,0))
+    row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
+    if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
+}
+}
  private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
  private fun locationDialog(){val current=prefs.getString("location","").orEmpty();val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))};val search=EditText(this).apply{hint="Search area, street or landmark";setSingleLine(true);setText(current);setPadding(dp(14),0,dp(14),0);background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)};panel.addView(search,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(12)});val use=primaryButton("⌖  Use current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()};panel.addView(use,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)});val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home")};panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)});val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work")};panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)));AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()}
  private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};prefs.edit().putString("location",v).putString("location_label",label).apply();showHome()}
