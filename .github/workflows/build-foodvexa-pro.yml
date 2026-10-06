@@ -23,18 +23,30 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Verify product freshness label
+      - name: Restore product freshness line
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s=p.read_text(encoding='utf-8')
-          required='Fresh & Hot'
-          if required not in s:
-              raise SystemExit('Product freshness label is missing from MainActivity.kt')
-          if 'Near & Fast' not in s:
-              raise SystemExit('Product speed label is missing from MainActivity.kt')
-          print('Product freshness metadata found')
+          old='card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          new='card.addView(label("🔥 Fresh & Hot  •  Near & Fast",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          if old in s:
+              s=s.replace(old,new)
+          elif '🔥 Fresh & Hot  •  Near & Fast' not in s:
+              raise SystemExit('Product card target line not found')
+          p.write_text(s,encoding='utf-8')
+          print('Restored: 🔥 Fresh & Hot  •  Near & Fast')
+          PY
+
+      - name: Verify product freshness line
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt').read_text(encoding='utf-8')
+          if '🔥 Fresh & Hot  •  Near & Fast' not in s:
+              raise SystemExit('Product freshness line is missing')
+          print('Product freshness line verified')
           PY
 
       - name: Bundle product images
