@@ -37,6 +37,58 @@ class MainActivity:AppCompatActivity(){
  private fun categoryCard(c:Category):LinearLayout{val selected=c.name==selectedCategory;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=categoryBackground(selected);setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()}}else{selectedCategory=c.name;renderProducts()}}}};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(image,LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)});box.addView(label(c.name,11.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false});if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
+ private fun correctedImageUrl(p:Product):String{
+  val n=p.name.lowercase()
+  val tag=when{
+   n.contains("pizza")->"pizza,food"
+   n.contains("burger")->"burger,food"
+   n.contains("sandwich")->"sandwich,food"
+   n.contains("samosa")->"samosa,indian,food"
+   n.contains("kachori")->"kachori,indian,food"
+   n.contains("mirchi bada")->"mirchi,bajji,indian,food"
+   n.contains("maggi")->"noodles,maggi,food"
+   n.contains("vada pav")->"vada,pav,indian,food"
+   n.contains("dahi bhale")->"dahi,vada,indian,food"
+   n.contains("thali")->"indian,thali,food"
+   n.contains("chole bhature")->"chole,bhature,indian,food"
+   n.contains("chole kulche")->"chole,kulcha,indian,food"
+   n.contains("dosa")->"dosa,indian,food"
+   n.contains("idli")->"idli,indian,food"
+   n=="vada"->"medu,vada,indian,food"
+   n.contains("paneer sandwich")->"paneer,sandwich,food"
+   n.contains("pav bhaji")->"pav,bhaji,indian,food"
+   n.contains("noodles")->"noodles,food"
+   n.contains("fried rice")->"fried,rice,food"
+   n.contains("chilli potato")->"chilli,potato,food"
+   n.contains("cake")||n.contains("cupcake")->n.replace(" ",",")+",cake"
+   n.contains("cold drink")->"cola,soft,drink"
+   n.contains("juice")->n.replace(" ",",")+",juice"
+   n.contains("shake")->n.replace(" ",",")+",milkshake"
+   n.contains("water bottle")->"water,bottle"
+   n.contains("laddu")||n.contains("ladoo")->n.replace(" ",",")+",indian,sweet"
+   n.contains("boondi")->"boondi,indian,sweet"
+   n.contains("gulab jamun")->"gulab,jamun,indian,sweet"
+   n.contains("rasgulla")->"rasgulla,indian,sweet"
+   n.contains("jalebi")->"jalebi,indian,sweet"
+   n.contains("balushahi")->"balushahi,indian,sweet"
+   n.contains("milk cake")->"milk,cake,indian,sweet"
+   n.contains("peda")->"peda,indian,sweet"
+   n.contains("kaju katli")->"kaju,katli,indian,sweet"
+   n.contains("cham cham")->"cham,cham,indian,sweet"
+   n.contains("kaju roll")||n.contains("kaju pista roll")->"kaju,roll,indian,sweet"
+   n.contains("gajar halwa")->"gajar,halwa,indian,sweet"
+   n.contains("moong dal halwa")->"moong,dal,halwa,indian,sweet"
+   n.contains("kalakand")->"kalakand,indian,sweet"
+   n.contains("rasmalai")->"rasmalai,indian,sweet"
+   n.contains("rabri")->"rabri,indian,sweet"
+   n.contains("shahi tukda")->"shahi,tukda,indian,sweet"
+   n.contains("rajbhog")->"rajbhog,indian,sweet"
+   n.contains("special sabji")||p.category=="Special Sabji"->n.replace(" ",",")+",indian,curry"
+   else->n.replace(" ",",")+",food"
+  }
+  val lock=((p.name+"|"+p.category).hashCode() and 0x7fffffff)
+  return "https://loremflickr.com/800/600/$tag/all?lock=$lock"
+ }
  private fun renderProducts(){
 val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
 var ti=-1
@@ -54,7 +106,7 @@ filtered.forEachIndexed{index,p->
     val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(9));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
     card.addView(pic,LinearLayout.LayoutParams(-1,dp(140)))
-    loadImage(pic,p.imageUrl)
+    loadImage(pic,correctedImageUrl(p))
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
     card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
@@ -80,7 +132,7 @@ filtered.forEachIndexed{index,p->
     if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
 }
 }
- private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
+ private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,correctedImageUrl(p))}
  private fun locationDialog(){val current=prefs.getString("location","").orEmpty();val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))};val search=EditText(this).apply{hint="Search area, street or landmark";setSingleLine(true);setText(current);setPadding(dp(14),0,dp(14),0);background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)};panel.addView(search,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(12)});val use=primaryButton("⌖  Use current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()};panel.addView(use,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)});val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home")};panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)});val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work")};panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)));AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()}
  private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};prefs.edit().putString("location",v).putString("location_label",label).apply();showHome()}
  private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
