@@ -19,31 +19,28 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - name: Patch MainActivity for Restaurant Hotel
+      - name: Repair Restaurant Hotel selector safely
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text()
-          # Repair the known product-list syntax without changing products.
-          s=s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
-          # Add the category once. This is deliberately a simple textual insertion because this file is minified.
-          if 'Category("Restaurant/Hotel"' not in s:
-              key='private val categories='
-              pos=s.find(key)
-              if pos<0: raise SystemExit('categories declaration not found')
-              open_pos=s.find('(',pos)
-              if open_pos<0: raise SystemExit('categories list opening not found')
-              s=s[:open_pos+1]+'Category("Restaurant/Hotel","__RESTAURANT_HOTEL__"),'+s[open_pos+1:]
-          # Make only the Restaurant/Hotel card open the selector.
-          if 'showRestaurantHotelFlow(prefs)' not in s:
-              old='selectedCategory=c.name;renderProducts()'
-              if old not in s:
-                  old='selectedCategory = c.name;renderProducts()'
-              if old not in s: raise SystemExit('category click statement not found')
-              new='if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()}}else{selectedCategory=c.name;renderProducts()}'
-              s=s.replace(old,new,1)
+          import re
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text()
+          # Replace the previously injected malformed selector function as one block.
+          replacement = '''private fun restaurantHotelDialog(){
+          showRestaurantHotelFlow(prefs){ showHome() }
+          }
+          '''
+          pattern = r'private fun restaurantHotelDialog\(\)\{.*?\n\s*private fun showCart\(\)'
+          if re.search(pattern, s, flags=re.S):
+              s = re.sub(pattern, replacement + 'private fun showCart()', s, count=1, flags=re.S)
+          elif 'private fun restaurantHotelDialog()' not in s:
+              marker = 'private fun showCart()'
+              if marker in s:
+                  s = s.replace(marker, replacement + marker, 1)
+          # Repair the old product-list typo only if it still exists.
+          s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
           p.write_text(s)
           PY
       - name: Validate selector wiring
@@ -57,8 +54,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/foodvexa/app/MainActivity.kt app/src/main/java/com/foodvexa/app/RestaurantHotelFlow.kt
-          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Wire Restaurant Hotel Rajasthan selector'; git push; fi
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Fix Restaurant Hotel selector Kotlin syntax'; git push; fi
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Upload APK
