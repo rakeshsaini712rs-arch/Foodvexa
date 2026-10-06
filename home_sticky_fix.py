@@ -1,0 +1,34 @@
+from pathlib import Path
+import re
+
+p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+s=p.read_text(encoding='utf-8')
+
+if 'private var categoryRow:LinearLayout?=null' not in s:
+    marker=' private fun setupBase()'
+    if marker not in s:
+        raise SystemExit('setupBase marker not found')
+    s=s.replace(marker,' private var categoryRow:LinearLayout?=null\n private fun refreshCategorySelection(){categoryRow?.let{row->for(i in 0 until row.childCount){val box=row.getChildAt(i);val selected=categories.getOrNull(i)?.name==selectedCategory;box.background=categoryBackground(selected);if(box is LinearLayout && box.childCount>1){val tv=box.getChildAt(1);if(tv is TextView)tv.setTextColor(if(selected)Color.WHITE else ink)}}}}\n'+marker,1)
+
+new_setup=''' private fun setupHomeBase(){\n  root.removeAllViews()\n  val frame=FrameLayout(this)\n  val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}\n  val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0);setBackgroundColor(Color.TRANSPARENT)}\n  val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true}\n  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(112));clipToPadding=false}\n  scroll.addView(content,FrameLayout.LayoutParams(-1,-1))\n  shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))\n  shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))\n  frame.addView(shell,FrameLayout.LayoutParams(-1,-1))\n  frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM))\n  root.addView(frame,FrameLayout.LayoutParams(-1,-1))\n }\n'''
+if 'private fun setupHomeBase()' not in s:
+    marker=' private fun setupBase()'
+    s=s.replace(marker,new_setup+marker,1)
+
+start=s.index(' private fun showHome(){')
+end=s.index(' private fun locationHeader():LinearLayout',start)
+show=''' private fun showHome(){\n  setupHomeBase()\n  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}\n  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}\n  header.addView(logo,LinearLayout.LayoutParams(dp(70),dp(70)))\n  header.addView(label("FOODVEXA",26f,true,Color.WHITE),LinearLayout.LayoutParams(0,-2,1f))\n  val shell=(content.parent as ScrollView).parent as LinearLayout\n  val fixed=shell.getChildAt(0) as LinearLayout\n  fixed.addView(header)\n  fixed.addView(locationHeader(),margin(0,4,0,10))\n  val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}\n  searchBox=search\n  fixed.addView(search,margin(0,0,0,12))\n  fixed.addView(professionalBanner(),margin(0,0,0,12))\n  fixed.addView(label("Categories",22f,true,Color.WHITE),margin(0,0,0,7))\n  categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}\n  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(116),dp(122)).apply{rightMargin=dp(9)})}\n  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(122)))\n  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,Color.WHITE),margin(0,4,0,8))\n  renderProducts()\n }\n'''
+s=s[:start]+show+s[end:]
+
+start=s.index(' private fun categoryCard(c:Category):LinearLayout')
+end=s.index(' private fun categoryBackground',start)
+cat=''' private fun categoryCard(c:Category):LinearLayout{\n  val selected=c.name==selectedCategory\n  val box=LinearLayout(this).apply{\n    orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=categoryBackground(selected)\n    setOnClickListener{\n      if(c.name=="Restaurant / Hotel"){restaurantHotelDialog();return@setOnClickListener}\n      if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()};return@setOnClickListener}\n      if(selectedCategory!=c.name){selectedCategory=c.name;refreshCategorySelection();renderProducts()}\n    }\n  }\n  box.tag=c.name\n  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}\n  box.addView(image,LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)})\n  box.addView(label(c.name,11.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false})\n  if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)\n  return box\n }\n'''
+s=s[:start]+cat+s[end:]
+
+if 'private fun setupHomeBase()' not in s: raise SystemExit('setupHomeBase missing')
+if 'refreshCategorySelection()' not in s: raise SystemExit('category refresh missing')
+if 'setupHomeBase()' not in s[s.index('private fun showHome'):s.index('private fun locationHeader')]: raise SystemExit('showHome not converted')
+if 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog();return@setOnClickListener}' not in s: raise SystemExit('category click fix missing')
+if s.count('Category("Restaurant / Hotel"') != 1: raise SystemExit('Restaurant / Hotel category duplicate')
+p.write_text(s,encoding='utf-8')
+print('OK: sticky home banner/category, instant category selection, duplicate click removed')
