@@ -28,16 +28,6 @@ jobs:
       - name: Add instant category-to-product jump and preserve banners
         run: python3 navigation_fix.py
 
-      - name: Normalize generated Kotlin formatting
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace('\\n', '\n')
-          p.write_text(s, encoding='utf-8')
-          PY
-
       - name: Verify banners categories images and navigation stability
         run: |
           grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
