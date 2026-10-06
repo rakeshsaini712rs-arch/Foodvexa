@@ -52,6 +52,20 @@ jobs:
           p.write_text(s)
           PY
 
+      - name: Fix Add to Cart layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text()
+          old = '''add.setTextSize(13f)\n        bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))'''
+          new = '''add.setTextSize(12f)\n        add.setPadding(dp(6),0,dp(6),0)\n        add.minWidth=0\n        bottom.addView(add,LinearLayout.LayoutParams(dp(116),dp(48)))'''
+          if old not in s:
+              raise SystemExit('Add to Cart layout block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
