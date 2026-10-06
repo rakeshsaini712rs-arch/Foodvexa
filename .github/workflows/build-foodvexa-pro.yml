@@ -19,7 +19,7 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - name: Repair Restaurant Hotel selector safely
+      - name: Fix Restaurant Hotel selector and logo
         shell: bash
         run: |
           python3 - <<'PY'
@@ -27,7 +27,6 @@ jobs:
           import re
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
-          # Replace the previously injected malformed selector function as one block.
           replacement = '''private fun restaurantHotelDialog(){
           showRestaurantHotelFlow(prefs){ showHome() }
           }
@@ -36,17 +35,18 @@ jobs:
           if re.search(pattern, s, flags=re.S):
               s = re.sub(pattern, replacement + 'private fun showCart()', s, count=1, flags=re.S)
           elif 'private fun restaurantHotelDialog()' not in s:
-              marker = 'private fun showCart()'
-              if marker in s:
-                  s = s.replace(marker, replacement + marker, 1)
-          # Repair the old product-list typo only if it still exists.
+              s = s.replace('private fun showCart()', replacement + 'private fun showCart()', 1)
+          s = s.replace('Category("Restaurant/Hotel","__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
+          s = s.replace('Category("Restaurant/Hotel", "__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
+          s = s.replace('Category("Restaurant / Hotel","__RESTAURANT_HOTEL__")', 'Category("Restaurant / Hotel","https://img.icons8.com/fluency/96/hotel.png")')
           s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
           p.write_text(s)
           PY
-      - name: Validate selector wiring
+      - name: Validate selector and logo
         shell: bash
         run: |
-          grep -q 'Category("Restaurant/Hotel"' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Restaurant / Hotel' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'img.icons8.com/fluency/96/hotel.png' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'showRestaurantHotelFlow(prefs)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test -f app/src/main/java/com/foodvexa/app/RestaurantHotelFlow.kt
       - name: Commit source changes
@@ -55,7 +55,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/foodvexa/app/MainActivity.kt
-          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Fix Restaurant Hotel selector Kotlin syntax'; git push; fi
+          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Fix Restaurant Hotel logo and selector'; git push; fi
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Upload APK
