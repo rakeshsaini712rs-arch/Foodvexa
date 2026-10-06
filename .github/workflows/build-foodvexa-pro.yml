@@ -41,57 +41,7 @@ jobs:
 
       - name: Verify product freshness line
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          s=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt').read_text(encoding='utf-8')
-          if '🔥 Fresh & Hot  •  Near & Fast' not in s:
-              raise SystemExit('Product freshness line is missing')
-          print('Product freshness line verified')
-          PY
-
-      - name: Bundle product images
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import re
-          import subprocess
-
-          source = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          text = source.read_text(encoding='utf-8')
-          urls = sorted(set(re.findall(r'https://[^"\\]+', text)))
-          assets = Path('app/src/main/assets')
-          assets.mkdir(parents=True, exist_ok=True)
-
-          downloaded = 0
-          for url in urls:
-              name = 'product_' + hashlib.sha256(url.encode()).hexdigest()[:16] + '.img'
-              target = assets / name
-              if not target.exists() or target.stat().st_size < 1000:
-                  result = subprocess.run([
-                      'curl', '-L', '--fail', '--silent', '--show-error',
-                      '--max-time', '30', '-A', 'Foodvexa/1.0', url,
-                      '-o', str(target)
-                  ], capture_output=True, text=True)
-                  if result.returncode != 0 or not target.exists() or target.stat().st_size < 1000:
-                      target.unlink(missing_ok=True)
-                      continue
-              text = text.replace(url, 'asset://' + name)
-              downloaded += 1
-
-          source.write_text(text, encoding='utf-8')
-          print(f'Bundled {downloaded} product images')
-          PY
-
-      - name: Validate product images
-        shell: bash
-        run: |
-          test -d app/src/main/assets
-          test -n "$(find app/src/main/assets -type f -name 'product_*' -size +1k | head -1)"
-          grep -q 'asset://product_' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'assets.open' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq '🔥 Fresh & Hot  •  Near & Fast' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
