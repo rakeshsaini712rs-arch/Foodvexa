@@ -1,0 +1,71 @@
+name: Fix Product Photo Mapping
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-product-photos:
+    if: "!contains(github.event.head_commit.message, '[photo-fix]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch product photo resolver
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          path = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          text = path.read_text(encoding='utf-8')
+
+          start = text.find(' private fun correctedImageUrl(p:Product):String{')
+          end = text.find(' private fun renderProducts(){', start)
+          if start < 0 or end < 0:
+              raise SystemExit('Product photo resolver boundaries not found')
+
+          new_fn = ''' private fun correctedImageUrl(p:Product):String{
+  val n=p.name.trim().lowercase()
+  return when{
+   n=="rajbhog"->"https://www.mygovindas.com/uploads/food_menu/raj_bhog-sweet-4a10f06e11de041fe8f0c358bf5689bf.jpg"
+   n=="paneer butter masala"->"https://myfoodstory.com/wp-content/uploads/2021/10/Paneer-Butter-Masala-1-2.jpg"
+   n=="matar paneer"->"https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/matar_paneer.jpg"
+   n=="palak paneer"->"https://www.finedininglovers.com/sites/default/files/2026-02/palak-paneer.jpg"
+   n=="kadai paneer"->"https://givukaorkjkksslrzuum.supabase.co/storage/v1/object/public/recipe-images/recipes/kadai-paneer.jpg"
+   n=="malai kofta"->"https://www.hotandcoolrestaurant.in/assets/malai_kofta-CMZoWclv.jpg"
+   n=="shahi paneer"->"https://www.cartly.ca/cdn/shop/articles/20210921074846-shahi-paneer-recipe_600x.jpg?v=1639024534"
+   else->p.imageUrl
+  }
+ }
+'''
+          text = text[:start] + new_fn + text[end:]
+
+          # Use the product's explicit image first; the resolver above now only overrides
+          # known mismatches and leaves all other product-specific URLs intact.
+          if 'loadImage(pic,correctedImageUrl(p))' not in text:
+              raise SystemExit('Product image render call not found')
+          if 'loadImage(image,correctedImageUrl(p))' not in text:
+              raise SystemExit('Product photo viewer call not found')
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify
+        shell: bash
+        run: |
+          grep -q 'n=="rajbhog"' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'else->p.imageUrl' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'loadImage(pic,correctedImageUrl(p))' app/src/main/java/com/foodvexa/app/MainActivity.kt
+
+      - name: Commit source change
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          git diff --cached --quiet || git commit -m 'Fix product photo mapping [photo-fix]'
+          git push
