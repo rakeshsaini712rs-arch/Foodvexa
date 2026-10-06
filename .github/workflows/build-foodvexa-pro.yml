@@ -16,14 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply real premium home-screen layout
-        run: python3 premium_layout_fix.py
+      - name: Apply final Foodvexa home layout
+        run: python3 final_layout_fix.py
 
-      - name: Verify premium layout source
+      - name: Verify final home layout
         run: |
-          grep -Fq 'homeScroll=ScrollView(this)' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'jumpToProducts=true' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'dp(96)' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'private var homeProductScroll:ScrollView?=null' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'homeProductScroll=scroll' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'LinearLayout.LayoutParams(dp(96),dp(94))' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'LinearLayout.LayoutParams(-1,dp(104))' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'LinearLayout.LayoutParams(dp(104),dp(104))' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'selectedCategory=c.name;showHome()' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
 
       - name: Build debug APK
