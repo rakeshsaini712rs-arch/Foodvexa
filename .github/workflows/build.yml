@@ -22,19 +22,6 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Restore Zomato-style product metadata
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text(encoding='utf-8')
-          old='card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
-          new='card.addView(label("🔥 Fresh & Hot    •    Near & Fast",12f,true,Color.rgb(255,140,70)),margin(0,4,0,0))'
-          if old not in s:
-              raise SystemExit('product metadata line not found')
-          p.write_text(s.replace(old,new,1),encoding='utf-8')
-          PY
-
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
