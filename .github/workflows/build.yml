@@ -1,5 +1,6 @@
 name: Build Foodvexa APK
 
+# Build after source syntax repair
 on:
   workflow_dispatch:
   push:
