@@ -23,29 +23,65 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Repair broken product-list syntax
+      - name: Apply Restaurant Hotel Rajasthan selector
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
-          old = 'pizzaImages[i]))add(Product("Shahi Paneer"'
-          new = 'pizzaImages[i]));};add(Product("Shahi Paneer"'
-          if old in s:
-              p.write_text(s.replace(old, new, 1))
+
+          # Keep the earlier product-list syntax repair.
+          s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"', 'pizzaImages[i]));};add(Product("Shahi Paneer"', 1)
+
+          # Add Restaurant/Hotel to the existing category list exactly once.
+          if 'Category("Restaurant/Hotel"' not in s:
+              m = re.search(r'(private\\s+val\\s+categories\\s*=\\s*(?:mutableListOf|listOf)\\s*\\()', s)
+              if not m:
+                  raise SystemExit('ERROR: categories list was not found; refusing to make an unsafe blind edit')
+              pos = m.end()
+              s = s[:pos] + 'Category("Restaurant/Hotel","__RESTAURANT_HOTEL__"),' + s[pos:]
+
+          # Route the Restaurant/Hotel category into the real selector instead of product filtering.
+          listener_patterns = [
+              r'if\\s*\\(\\s*c\\.name\\s*==\\s*"Restaurant/Hotel".*?\\}\\s*else\\s*\\{.*?\\}',
+              r'selectedCategory\\s*=\\s*c\\.name\\s*;\\s*renderProducts\\(\\)'
+          ]
+          route = 'if(c.name=="Restaurant/Hotel"){restaurantHotelFlow()}else{selectedCategory=c.name;renderProducts()}'
+          if 'restaurantHotelFlow()' not in s:
+              s, n = re.subn(listener_patterns[1], route, s, count=1)
+              if n != 1:
+                  # Some versions use spaces/newlines around the assignment.
+                  s, n = re.subn(r'selectedCategory\\s*=\\s*c\\.name\\s*\\n?\\s*renderProducts\\(\\)', route, s, count=1)
+              if n != 1:
+                  raise SystemExit('ERROR: category click handler was not found; refusing unsafe edit')
+
+          # Make the category renderer use the drawable for the special logo marker.
+          if 'RESTAURANT_HOTEL_LOGO_PATCH' not in s:
+              marker = '/* RESTAURANT_HOTEL_LOGO_PATCH */'
+              # Insert a tiny helper; categoryCard can use this when rendering the special marker.
+              helper = '''\n private fun restaurantHotelLogoUrl():String="__RESTAURANT_HOTEL__"\n\n private fun restaurantHotelFlow(){\n  val districts=listOf(\n   "Ajmer","Alwar","Balotra","Banswara","Baran","Barmer","Beawar","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Deeg","Dholpur","Didwana-Kuchaman","Dungarpur","Ganganagar","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Khairthal-Tijara","Kota","Kotputli-Behror","Nagaur","Pali","Phalodi","Pratapgarh","Rajsamand","Salumber","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"\n  )\n  val cityMap=mapOf(\n   "Ajmer" to listOf("Ajmer","Beawar","Kishangarh","Pushkar"),\n   "Alwar" to listOf("Alwar","Bhiwadi","Rajgarh","Ramgarh"),\n   "Balotra" to listOf("Balotra","Pachpadra","Siwana"),\n   "Banswara" to listOf("Banswara","Bagidora","Ghatol","Kushalgarh"),\n   "Baran" to listOf("Baran","Anta","Chhabra","Mangrol"),\n   "Barmer" to listOf("Barmer","Balotra","Chohtan","Gudamalani"),\n   "Beawar" to listOf("Beawar","Jaitaran","Masuda","Vijaynagar"),\n   "Bharatpur" to listOf("Bharatpur","Bayana","Deeg","Kumher","Nadbai","Weir"),\n   "Bhilwara" to listOf("Bhilwara","Asind","Gulabpura","Mandal","Shahpura"),\n   "Bikaner" to listOf("Bikaner","Dungargarh","Khajuwala","Kolayat","Nokha"),\n   "Bundi" to listOf("Bundi","Keshoraipatan","Nainwa","Indragarh"),\n   "Chittorgarh" to listOf("Chittorgarh","Begun","Kapasan","Nimbahera","Rawatbhata"),\n   "Churu" to listOf("Churu","Ratangarh","Rajgarh","Sardarshahar","Sujangarh","Taranagar"),\n   "Dausa" to listOf("Dausa","Bandikui","Baswa","Lalsot","Mahwa","Sikrai"),\n   "Deeg" to listOf("Deeg","Kaman","Nagar","Pahari"),\n   "Dholpur" to listOf("Dholpur","Bari","Baseri","Rajakhera"),\n   "Didwana-Kuchaman" to listOf("Didwana","Kuchaman City","Ladnu","Makrana","Nawa","Parbatsar"),\n   "Dungarpur" to listOf("Dungarpur","Aspur","Sagwara","Simalwara"),\n   "Ganganagar" to listOf("Sri Ganganagar","Anupgarh","Padampur","Raisinghnagar","Sadulshahar","Suratgarh"),\n   "Hanumangarh" to listOf("Hanumangarh","Bhadra","Nohar","Pilibanga","Rawatsar","Sangaria"),\n   "Jaipur" to listOf("Jaipur","Amer","Bassi","Chaksu","Chomu","Dudu","Jamwa Ramgarh","Kotputli","Phagi","Phulera","Sanganer","Shahpura"),\n   "Jaisalmer" to listOf("Jaisalmer","Fatehgarh","Pokaran"),\n   "Jalore" to listOf("Jalore","Ahore","Bhinmal","Sanchore","Sayla"),\n   "Jhalawar" to listOf("Jhalawar","Aklera","Bhawani Mandi","Dag","Khanpur","Pirawa"),\n   "Jhunjhunu" to listOf("Jhunjhunu","Buhana","Chirawa","Khetri","Nawalgarh","Pilani","Surajgarh","Udaipurwati"),\n   "Jodhpur" to listOf("Jodhpur","Bilara","Bhopalgarh","Osian","Phalodi","Pipar City","Shergarh"),\n   "Karauli" to listOf("Karauli","Hindaun","Mandrayal","Sapotra","Todabhim"),\n   "Khairthal-Tijara" to listOf("Khairthal","Tijara","Kishangarh Bas","Kotkasim"),\n   "Kota" to listOf("Kota","Digod","Itawa","Kanwas","Ladpura","Ramganj Mandi","Sangod"),\n   "Kotputli-Behror" to listOf("Kotputli","Behror","Bansur","Neemrana","Paota","Shahpura"),\n   "Nagaur" to listOf("Nagaur","Degana","Jayal","Kuchera","Merta City","Mundwa","Nawa","Parbatsar"),\n   "Pali" to listOf("Pali","Bali","Jaitaran","Marwar Junction","Rohat","Sumerpur"),\n   "Phalodi" to listOf("Phalodi","Lohawat","Luni","Osian"),\n   "Pratapgarh" to listOf("Pratapgarh","Arnod","Chhoti Sadri","Dhariyawad"),\n   "Rajsamand" to listOf("Rajsamand","Amet","Bhim","Deogarh","Khamnore","Nathdwara"),\n   "Salumber" to listOf("Salumber","Jhadol","Kherwara","Sarada"),\n   "Sawai Madhopur" to listOf("Sawai Madhopur","Bonli","Chauth Ka Barwara","Gangapur City","Khandar"),\n   "Sikar" to listOf("Sikar","Danta Ramgarh","Fatehpur","Khandela","Lachhmangarh","Neem Ka Thana","Piprali","Srimadhopur"),\n   "Sirohi" to listOf("Sirohi","Abu Road","Pindwara","Reodar","Sheoganj"),\n   "Sri Ganganagar" to listOf("Sri Ganganagar","Padampur","Raisinghnagar","Sadulshahar","Suratgarh") ,\n   "Tonk" to listOf("Tonk","Deoli","Malpura","Niwai","Peeplu","Uniara"),\n   "Udaipur" to listOf("Udaipur","Gogunda","Jhadol","Kherwara","Mavli","Salumber","Sarada")\n  )\n  val state=AlertDialog.Builder(this).setTitle("Select State").setItems(arrayOf("Rajasthan")){_,_->\n   AlertDialog.Builder(this).setTitle("Select District").setItems(districts.toTypedArray()){_,which->\n    val district=districts[which]\n    val cities=cityMap[district].orEmpty().distinct().sorted()\n    AlertDialog.Builder(this).setTitle("Select City • $district").setItems(cities.toTypedArray()){_,cityIndex->\n     val city=cities[cityIndex]\n     prefs.edit().putString("restaurant_state","Rajasthan").putString("restaurant_district",district).putString("restaurant_city",city).apply()\n     Toast.makeText(this,"Selected: Rajasthan • $district • $city",Toast.LENGTH_SHORT).show()\n     showHome()\n    }.setNegativeButton("Back",null).show()\n   }.setNegativeButton("Cancel",null).show()\n  }.setNegativeButton("Cancel",null).show()\n }\n'''
+              idx=s.rfind('}')
+              if idx<0: raise SystemExit('ERROR: MainActivity closing brace not found')
+              s=s[:idx]+marker+helper+s[idx:]
+
+          # The special marker is not a web URL; keep it safe for existing image loading.
+          p.write_text(s)
+          print('Restaurant/Hotel selector patch applied')
           PY
 
-      - name: Commit source repair
+      - name: Commit source changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
-            echo "No source repair needed"
+          git add app/src/main/java/com/foodvexa/app/MainActivity.kt
+          if git diff --cached --quiet; then
+            echo "No source changes"
           else
-            git add app/src/main/java/com/foodvexa/app/MainActivity.kt
-            git commit -m "Fix product list Kotlin syntax"
+            git commit -m "Add Rajasthan Restaurant Hotel district city selector"
             git push
           fi
 
