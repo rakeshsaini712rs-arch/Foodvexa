@@ -42,12 +42,73 @@ jobs:
           s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
           p.write_text(s)
           PY
-      - name: Validate selector and logo
+      - name: Apply near-food product card UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s=p.read_text()
+          start=s.find(' private fun renderProducts(){')
+          end=s.find(' private fun openProductPhoto', start)
+          if start<0 or end<0: raise SystemExit('renderProducts boundaries not found')
+          new=''' private fun renderProducts(){
+          val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
+          var ti=-1
+          for(i in 0 until content.childCount){
+              val v=content.getChildAt(i)
+              if(v is TextView && (v.text.toString()=="Popular near you" || categories.any{it.name==v.text.toString()})){ti=i;break}
+          }
+          if(ti<0)return
+          (content.getChildAt(ti) as TextView).text=title
+          while(content.childCount>ti+1)content.removeViewAt(ti+1)
+          val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
+          var row:LinearLayout?=null
+          filtered.forEachIndexed{index,p->
+              if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
+              val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(9),dp(9),dp(9),dp(10));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+              val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+              card.addView(pic,LinearLayout.LayoutParams(-1,dp(145)))
+              loadImage(pic,p.imageUrl)
+              pic.setOnClickListener{openProductPhoto(p)}
+              card.addView(label(p.name,15f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,8,0,0))
+              card.addView(label("Fresh & Hot  •  ${p.eta}",11f,true,Color.LTGRAY),margin(0,3,0,0))
+              card.addView(label("1 item",11f,false,Color.LTGRAY),margin(0,6,0,0))
+              val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+              bottom.addView(label("₹${p.price}",19f,true,Color.rgb(70,220,150)),LinearLayout.LayoutParams(0,dp(48),1f))
+              val qty=cart[p.name]?:0
+              if(qty==0){
+                  val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
+                  add.setTextSize(14f)
+                  bottom.addView(add,LinearLayout.LayoutParams(dp(130),dp(48)))
+              }else{
+                  val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+                  val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
+                  val plus=primaryButton("+"){addToCart(p);renderProducts()}
+                  val count=label(qty.toString(),16f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
+                  controls.addView(minus,LinearLayout.LayoutParams(dp(42),dp(42)))
+                  controls.addView(count,LinearLayout.LayoutParams(dp(38),dp(42)))
+                  controls.addView(plus,LinearLayout.LayoutParams(dp(42),dp(42)))
+                  bottom.addView(controls)
+              }
+              card.addView(bottom,margin(0,7,0,0))
+              card.addView(label("• Available",11f,true,Color.rgb(50,205,120)),margin(0,2,0,0))
+              row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
+              if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
+          }
+          }
+          '''
+          s=s[:start]+new+s[end:]
+          p.write_text(s)
+          PY
+      - name: Validate selector and product card wiring
         shell: bash
         run: |
           grep -q 'Restaurant / Hotel' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'img.icons8.com/fluency/96/hotel.png' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'showRestaurantHotelFlow(prefs)' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Available' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test -f app/src/main/java/com/foodvexa/app/RestaurantHotelFlow.kt
       - name: Commit source changes
         shell: bash
@@ -55,7 +116,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/foodvexa/app/MainActivity.kt
-          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Fix Restaurant Hotel logo and selector'; git push; fi
+          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Improve product cards with price availability and cart controls'; git push; fi
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Upload APK
