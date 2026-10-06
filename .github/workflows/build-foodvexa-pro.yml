@@ -22,8 +22,7 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Apply final product UI fixes
-        shell: bash
+      - name: Fix product photo mapping
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -31,66 +30,39 @@ jobs:
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
 
-          # Keep only one Restaurant / Hotel category and enforce unique category names.
+          # Keep the first Restaurant / Hotel category and remove later duplicates.
           token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
           first = s.find(token)
           if first >= 0:
-              second = s.find(token, first + len(token))
-              while second >= 0:
-                  s = s[:second] + s[second + len(token):]
-                  second = s.find(token, second)
+              tail = s[first + len(token):]
+              tail = tail.replace(',' + token, '')
+              s = s[:first + len(token)] + tail
 
-          m = re.search(r'private val categories=listOf\(.*?\)\n private val cart', s, re.S)
-          if not m:
-              raise SystemExit('categories declaration not found')
-          block = m.group(0)
-          if '.distinctBy { it.name }' not in block:
-              block = block.replace('\n private val cart', '.distinctBy { it.name }\n private val cart')
-              s = s[:m.start()] + block + s[m.end():]
+          pattern = r'private fun correctedImageUrl\(p:Product\):String\{.*?\n private fun renderProducts'
+          replacement = '''private fun correctedImageUrl(p:Product):String{\n  // Every product already has an explicit image assigned in the product list.\n  // Do not replace it with a generic/random image.\n  return p.imageUrl\n }\n private fun renderProducts'''
+          s2, count = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit('correctedImageUrl function not found')
+          s = s2
 
-          # Use each product's explicit image URL instead of random loremflickr photos,
-          # with exact corrections for the known mismatched dishes.
-          old_resolver_return = 'return "https://loremflickr.com/800/600/$tag/all?lock=$lock"'
-          new_resolver_return = '''return when(n){
-   "rajbhog"->"https://www.mygovindas.com/uploads/food_menu/raj_bhog-sweet-4a10f06e11de041fe8f0c358bf5689bf.jpg"
-   "paneer butter masala"->"https://myfoodstory.com/wp-content/uploads/2021/10/Paneer-Butter-Masala-1-2.jpg"
-   "matar paneer"->"https://snapcalorie-webflow-website.s3.us-east-2.amazonaws.com/media/food_pics_v2/medium/matar_paneer.jpg"
-   "palak paneer"->"https://www.finedininglovers.com/sites/default/files/2026-02/palak-paneer.jpg"
-   "kadai paneer"->"https://givukaorkjkksslrzuum.supabase.co/storage/v1/object/public/recipe-images/recipes/kadai-paneer.jpg"
-   "malai kofta"->"https://www.hotandcoolrestaurant.in/assets/malai_kofta-CMZoWclv.jpg"
-   "shahi paneer"->"https://www.cartly.ca/cdn/shop/articles/20210921074846-shahi-paneer-recipe_600x.jpg?v=1639024534"
-   else->p.imageUrl
-  }'''
-          if old_resolver_return not in s:
-              raise SystemExit('generic product image resolver not found')
-          s = s.replace(old_resolver_return, new_resolver_return, 1)
+          # Ensure category names are unique at the source level too.
+          marker = 'private val cart='
+          if '.distinctBy { it.name }' not in s:
+              pos = s.find(marker)
+              if pos < 0:
+                  raise SystemExit('cart declaration not found')
+              # categories is a list expression immediately before cart; close it with distinctBy.
+              before = s[:pos]
+              if before.rstrip().endswith('))'):
+                  s = before.rstrip()[:-1] + '.distinctBy { it.name })' + s[pos:]
 
-          # Make product cards show a continuously moving Zomato-style service strip,
-          # followed by a separate green Available line.
-          old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
-          if old in s:
-              new = '''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }
-          card.addView(ticker,margin(0,4,0,0))
-          card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,3,0,0))'''
-              s = s.replace(old, new, 1)
-          elif 'Fresh & Hot' not in s:
-              raise SystemExit('product badge insertion point not found')
-
-          # Keep the last product row clear of the bottom navigation.
-          s = s.replace('setPadding(dp(16),dp(12),dp(16),dp(112))', 'setPadding(dp(16),dp(12),dp(16),dp(132))', 1)
           p.write_text(s)
           PY
 
-      - name: Validate final UI
-        shell: bash
+      - name: Validate source
         run: |
-          grep -q 'Fresh & Hot' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'Near & Fast' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'Quick Delivery' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'Available' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'return p.imageUrl' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'restaurant_hotel_logo' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'p.imageUrl' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test -f app/src/main/res/drawable/restaurant_hotel_logo.xml
 
       - name: Build debug APK
