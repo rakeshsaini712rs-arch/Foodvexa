@@ -1,25 +1,28 @@
 name: Build Foodvexa Pro APK
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 permissions:
-  contents: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - name: Fix Restaurant Hotel selector and logo
+
+      - name: Apply final product UI fixes
         shell: bash
         run: |
           python3 - <<'PY'
@@ -27,122 +30,46 @@ jobs:
           import re
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
-          replacement = '''private fun restaurantHotelDialog(){
-          showRestaurantHotelFlow(prefs){ showHome() }
-          }
-          '''
-          pattern = r'private fun restaurantHotelDialog\(\)\{.*?\n\s*private fun showCart\(\)'
-          if re.search(pattern, s, flags=re.S):
-              s = re.sub(pattern, replacement + 'private fun showCart()', s, count=1, flags=re.S)
-          elif 'private fun restaurantHotelDialog()' not in s:
-              s = s.replace('private fun showCart()', replacement + 'private fun showCart()', 1)
-          s = re.sub(r'Category\("Restaurant / Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
-          s = re.sub(r'Category\("Restaurant/Hotel"\s*,\s*"[^"]*"\)', 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")', s)
-          pat = r'add\(Category\("Restaurant / Hotel"[^)]*\)\)'
-          seen = [0]
-          def keep_one(m):
-              seen[0] += 1
-              return m.group(0) if seen[0] == 1 else ''
-          s = re.sub(pat, keep_one, s)
-          s = s.replace('pizzaImages[i]))add(Product("Shahi Paneer"','pizzaImages[i]));};add(Product("Shahi Paneer"',1)
-          s = s.replace('loadImage(image,c.imageUrl);return box}', 'if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}')
+
+          # Keep only one Restaurant / Hotel category.
+          token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
+          first = s.find(token)
+          if first >= 0:
+              second = s.find(token, first + len(token))
+              while second >= 0:
+                  s = s[:second] + s[second + len(token):]
+                  second = s.find(token, second)
+
+          # Make product cards show a continuously moving Zomato-style service strip,
+          # followed by a separate green Available line.
+          old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          if old in s:
+              new = '''val ticker=TextView(this).apply{ text="🔥 Fresh & Hot    •    📍 Near & Fast    •    ⚡ Quick Delivery    •    🔥 Fresh & Hot"; textSize=10.5f; setTextColor(Color.rgb(255,196,70)); typeface=Typeface.DEFAULT_BOLD; gravity=Gravity.CENTER_VERTICAL; isSingleLine=true; ellipsize=android.text.TextUtils.TruncateAt.MARQUEE; marqueeRepeatLimit=-1; isSelected=true; setHorizontallyScrolling(true); setPadding(dp(4),0,dp(4),0) }
+          card.addView(ticker,margin(0,4,0,0))
+          card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,3,0,0))'''
+              s = s.replace(old, new, 1)
+          elif 'Fresh & Hot' not in s:
+              raise SystemExit('product badge insertion point not found')
+
+          # Keep the last product row clear of the bottom navigation.
+          s = s.replace('setPadding(dp(16),dp(12),dp(16),dp(112))', 'setPadding(dp(16),dp(12),dp(16),dp(132))', 1)
           p.write_text(s)
           PY
-      - name: Add bundled Restaurant Hotel logo
+
+      - name: Validate final UI
         shell: bash
         run: |
-          mkdir -p app/src/main/res/drawable
-          cat > app/src/main/res/drawable/restaurant_hotel_logo.xml <<'XML'
-          <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="96dp" android:height="96dp" android:viewportWidth="96" android:viewportHeight="96">
-            <path android:fillColor="#FFF8EF" android:pathData="M4,4h88v88h-88z"/>
-            <path android:fillColor="#EF4B32" android:pathData="M14,34h68v12h-68z"/>
-            <path android:fillColor="#F5A623" android:pathData="M18,46h60v34h-60z"/>
-            <path android:fillColor="#FFFFFF" android:pathData="M14,46h68l-7,10h-54z"/>
-            <path android:fillColor="#EF4B32" android:pathData="M20,56h12v10h-12zM42,56h12v10h-12zM64,56h12v10h-12z"/>
-            <path android:fillColor="#FFFFFF" android:pathData="M36,66h24v14h-24z"/>
-            <path android:fillColor="#69B7E8" android:pathData="M40,69h16v11h-16z"/>
-            <path android:fillColor="#EF4B32" android:pathData="M26,16h44v16h-44z"/>
-            <path android:fillColor="#FFFFFF" android:pathData="M31,20h34v8h-34z"/>
-          </vector>
-          XML
-      - name: Apply polished near-food product card UI
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text()
-          start=s.find(' private fun renderProducts(){')
-          end=s.find(' private fun openProductPhoto', start)
-          if start<0 or end<0: raise SystemExit('renderProducts boundaries not found')
-          new=''' private fun renderProducts(){
-          val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
-          var ti=-1
-          for(i in 0 until content.childCount){
-              val v=content.getChildAt(i)
-              if(v is TextView && (v.text.toString()=="Popular near you" || categories.any{it.name==v.text.toString()})){ti=i;break}
-          }
-          if(ti<0)return
-          (content.getChildAt(ti) as TextView).text=title
-          while(content.childCount>ti+1)content.removeViewAt(ti+1)
-          val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
-          var row:LinearLayout?=null
-          filtered.forEachIndexed{index,p->
-              if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
-              val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(9));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
-              val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-              card.addView(pic,LinearLayout.LayoutParams(-1,dp(140)))
-              loadImage(pic,p.imageUrl)
-              pic.setOnClickListener{openProductPhoto(p)}
-              card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
-              card.addView(label("Available  •  ${p.eta}",11f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
-              val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-              bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,44.dp(),1f))
-              val qty=cart[p.name]?:0
-              if(qty==0){
-                  val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
-                  add.setTextSize(13f)
-                  bottom.addView(add,LinearLayout.LayoutParams(dp(96),dp(44)))
-              }else{
-                  val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-                  val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();renderProducts()}
-                  val plus=primaryButton("+"){addToCart(p);renderProducts()}
-                  val count=label(qty.toString(),15f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
-                  controls.addView(minus,LinearLayout.LayoutParams(dp(32),dp(40)))
-                  controls.addView(count,LinearLayout.LayoutParams(dp(30),dp(40)))
-                  controls.addView(plus,LinearLayout.LayoutParams(dp(32),dp(40)))
-                  bottom.addView(controls)
-              }
-              card.addView(bottom,margin(0,7,0,0))
-              row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
-              if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
-          }
-          }
-          '''
-          new=new.replace('44.dp()','dp(44)')
-          s=s[:start]+new+s[end:]
-          p.write_text(s)
-          PY
-      - name: Validate UI changes
-        shell: bash
-        run: |
-          grep -q 'Restaurant / Hotel' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'restaurant_hotel_logo' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -q 'showRestaurantHotelFlow(prefs)' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Fresh & Hot' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Near & Fast' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'Quick Delivery' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Add to Cart' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -q 'Available' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -q 'restaurant_hotel_logo' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test -f app/src/main/res/drawable/restaurant_hotel_logo.xml
-          test -f app/src/main/java/com/foodvexa/app/RestaurantHotelFlow.kt
-          test "$(grep -o 'add(Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
-      - name: Commit source changes
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/foodvexa/app/MainActivity.kt app/src/main/res/drawable/restaurant_hotel_logo.xml
-          if git diff --cached --quiet; then echo 'No source changes'; else git commit -m 'Remove duplicate Restaurant Hotel category'; git push; fi
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
