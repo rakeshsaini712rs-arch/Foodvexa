@@ -1,16 +1,77 @@
 from pathlib import Path
-path=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-s=path.read_text()
-s=s.replace('private var selectedCategory="All";private var query="";', 'private var selectedCategory="All";private var query="";private var homeProductScroll:ScrollView?=null;')
-a=s.index(' private fun setupBase{'.replace('{','{')); b=s.index('\n private fun bottomNav',a)
-setup=' private fun setupBase(){root.removeAllViews();homeProductScroll=null;val frame=FrameLayout(this);val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true};content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(8),dp(16),dp(100));clipToPadding=false};scroll.addView(content,FrameLayout.LayoutParams(-1,-1));frame.addView(scroll,FrameLayout.LayoutParams(-1,-1));frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM));root.addView(frame,FrameLayout.LayoutParams(-1,-1))}'
-s=s[:a]+setup+s[b:]
-a=s.index(' private fun showHome(){'); b=s.index('\n private fun locationHeader',a)
-show=''' private fun showHome(){\n root.removeAllViews();homeProductScroll=null\n val frame=FrameLayout(this)\n val home=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(Color.rgb(18,16,21))}\n val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(6),dp(16),0)}\n val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}\n val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}\n header.addView(logo,LinearLayout.LayoutParams(dp(56),dp(56)))\n header.addView(label("FOODVEXA",24f,true,Color.WHITE),LinearLayout.LayoutParams(0,-2,1f))\n fixed.addView(header)\n fixed.addView(locationHeader(),margin(0,2,0,6))\n val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(12),0,dp(12),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}\n searchBox=search;fixed.addView(search,margin(0,0,0,7))\n fixed.addView(professionalBanner(),margin(0,0,0,8))\n fixed.addView(label("Categories",21f,true,Color.WHITE),margin(0,0,0,5))\n val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}\n categories.forEach{c->row.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(94)).apply{rightMargin=dp(7)})}\n fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=ScrollView.OVER_SCROLL_NEVER;addView(row)})\n home.addView(fixed,LinearLayout.LayoutParams(-1,-2))\n val scroll=ScrollView(this).apply{clipToPadding=false;fillViewport=false;isVerticalScrollBarEnabled=false}\n homeProductScroll=scroll\n content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(4),dp(16),dp(96));clipToPadding=false}\n content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,21f,true,Color.WHITE),margin(0,0,0,6))\n scroll.addView(content,FrameLayout.LayoutParams(-1,-2))\n home.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))\n frame.addView(home,FrameLayout.LayoutParams(-1,-1));frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM));root.addView(frame,FrameLayout.LayoutParams(-1,-1));renderProducts()\n}'''
-s=s[:a]+show+s[b:]
-for old,new in [('setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20)','setPadding(dp(10),dp(7),dp(7),dp(7));background=rounded(green,18)'),('label("FOODVEXA",12f,true,Color.WHITE)','label("FOODVEXA",10f,true,Color.WHITE)'),('label("HOT & FRESH FOOD",20f,true,Color.WHITE)','label("HOT & FRESH FOOD",17f,true,Color.WHITE)'),('label("Freshly prepared • Fast delivery",12f,false,Color.LTGRAY),margin(0,2,0,7)','label("Freshly prepared • Fast delivery",10f,false,Color.LTGRAY),margin(0,1,0,4)'),('LinearLayout.LayoutParams(dp(145),dp(40))','LinearLayout.LayoutParams(dp(120),dp(34))'),('LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)}','LinearLayout.LayoutParams(dp(104),dp(104)).apply{leftMargin=dp(6)}'),('setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(Color.WHITE,18)','setPadding(dp(10),dp(7),dp(8),dp(7));background=rounded(Color.WHITE,16)'),('textSize=25f','textSize=21f'),('LinearLayout.LayoutParams(dp(38),dp(42))','LinearLayout.LayoutParams(dp(32),dp(34))'),('label("Deliver to",11f,true,muted)','label("Deliver to",10f,true,muted)'),('label(if(saved.isBlank())"Select delivery location" else saved,15f,true,ink)','label(if(saved.isBlank())"Select delivery location" else saved,13f,true,ink)'),('LinearLayout.LayoutParams(dp(28),dp(42)).apply{gravity=Gravity.CENTER}','LinearLayout.LayoutParams(dp(24),dp(34)).apply{gravity=Gravity.CENTER}'),('setPadding(dp(8),dp(8),dp(8),dp(9));background=rounded(Color.rgb(38,29,22),18)','setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),15)'),('LinearLayout.LayoutParams(-1,dp(140))','LinearLayout.LayoutParams(-1,dp(104))'),('label(p.name,14f,true,Color.WHITE)','label(p.name,13f,true,Color.WHITE)'),('label("• Available",12f,true,Color.rgb(50,205,120))','label("• Available",10f,true,Color.rgb(50,205,120))'),('LinearLayout.LayoutParams(0,dp(44),0.92f)','LinearLayout.LayoutParams(0,dp(34),0.92f)'),('add.setTextSize(12f)','add.setTextSize(10f)'),('bottom.addView(add,LinearLayout.LayoutParams(0,dp(44),1.08f))','bottom.addView(add,LinearLayout.LayoutParams(0,dp(34),1.08f))')]: s=s.replace(old,new)
-a=s.index(' private fun categoryCard(c:Category):LinearLayout{'); b=s.index('\n private fun categoryBackground',a)
-cat=' private fun categoryCard(c:Category):LinearLayout{val selected=c.name==selectedCategory;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(4),dp(4),dp(4),dp(4));background=categoryBackground(selected);setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else{selectedCategory=c.name;showHome();homeProductScroll?.post{homeProductScroll?.smoothScrollTo(0,0)}}}};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(image,LinearLayout.LayoutParams(-1,dp(60)).apply{bottomMargin=dp(3)});box.addView(label(c.name,10.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false});if(c.name=="Restaurant / Hotel")image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}'
-s=s[:a]+cat+s[b:]
-path.write_text(s)
-print('final layout patched')
+import re
+
+p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+s = p.read_text()
+
+# Add state once.
+if 'private var homeProductScroll:ScrollView?=null' not in s:
+    marker = 'private var selectedCategory="All";private var query="";'
+    if marker in s:
+        s = s.replace(marker, marker + 'private var homeProductScroll:ScrollView?=null;', 1)
+    else:
+        s = s.replace('class MainActivity:AppCompatActivity(){', 'class MainActivity:AppCompatActivity(){\n private var homeProductScroll:ScrollView?=null', 1)
+
+# Replace showHome robustly, without depending on whitespace/signatures from older patches.
+show = r''' private fun showHome(){
+  root.removeAllViews()
+  val frame=FrameLayout(this)
+  val home=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(Color.rgb(18,16,21))}
+  val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(4),dp(12),0)}
+  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
+  header.addView(logo,LinearLayout.LayoutParams(dp(48),dp(48)))
+  header.addView(label("FOODVEXA",22f,true,Color.WHITE),LinearLayout.LayoutParams(0,-2,1f))
+  fixed.addView(header)
+  fixed.addView(locationHeader(),margin(0,2,0,5))
+  val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(10),0,dp(10),0);background=rounded(Color.WHITE,15);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
+  searchBox=search
+  fixed.addView(search,margin(0,0,0,6))
+  fixed.addView(professionalBanner(),margin(0,0,0,6))
+  fixed.addView(label("Categories",20f,true,Color.WHITE),margin(0,0,0,4))
+  val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+  categories.forEach{c->row.addView(categoryCard(c),LinearLayout.LayoutParams(dp(94),dp(92)).apply{rightMargin=dp(6)})}
+  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=ScrollView.OVER_SCROLL_NEVER;addView(row)})
+  home.addView(fixed,LinearLayout.LayoutParams(-1,-2))
+  val productsScroll=ScrollView(this).apply{isVerticalScrollBarEnabled=false;clipToPadding=false;fillViewport=false}
+  homeProductScroll=productsScroll
+  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(4),dp(12),dp(92));clipToPadding=false}
+  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,20f,true,Color.WHITE),margin(0,0,0,5))
+  productsScroll.addView(content,FrameLayout.LayoutParams(-1,-2))
+  home.addView(productsScroll,LinearLayout.LayoutParams(-1,0,1f))
+  frame.addView(home,FrameLayout.LayoutParams(-1,-1))
+  frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(72),Gravity.BOTTOM))
+  root.addView(frame,FrameLayout.LayoutParams(-1,-1))
+  renderProducts()
+}'''
+pat = re.compile(r'\s*private fun showHome\(\)\{.*?\n\s*\}\s*\n(?=\s*private fun )', re.S)
+if not pat.search(s):
+    raise SystemExit('showHome function not found')
+s = pat.sub('\n'+show+'\n', s, count=1)
+
+# Category tap: update immediately, render immediately, then jump product scroll to top.
+cat = r''' private fun categoryCard(c:Category):LinearLayout{
+  val selected=c.name==selectedCategory
+  val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(3),dp(3),dp(3),dp(3));background=categoryBackground(selected);setOnClickListener{
+    if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else{selectedCategory=c.name;renderProducts();homeProductScroll?.post{homeProductScroll?.scrollTo(0,0)}}
+  }}
+  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+  box.addView(image,LinearLayout.LayoutParams(-1,dp(58)).apply{bottomMargin=dp(2)})
+  box.addView(label(c.name,10f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false})
+  if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)
+  return box
+}'''
+catpat = re.compile(r'\s*private fun categoryCard\(c:Category\):LinearLayout\{.*?\n\s*\}\s*\n(?=\s*private fun categoryBackground)', re.S)
+if not catpat.search(s):
+    raise SystemExit('categoryCard function not found')
+s = catpat.sub('\n'+cat+'\n', s, count=1)
+
+# Compact only the card/banner dimensions; keep banner present.
+s = s.replace('LinearLayout.LayoutParams(dp(138),dp(138))', 'LinearLayout.LayoutParams(dp(104),dp(104))')
+s = s.replace('LinearLayout.LayoutParams(-1,dp(140))', 'LinearLayout.LayoutParams(-1,dp(104))')
+s = s.replace('LinearLayout.LayoutParams(dp(145),dp(40))', 'LinearLayout.LayoutParams(dp(118),dp(34))')
+s = s.replace('label(p.name,14f,true,Color.WHITE)', 'label(p.name,13f,true,Color.WHITE)')
+s = s.replace('label("• Available",12f,true,Color.rgb(50,205,120))', 'label("• Available",10f,true,Color.rgb(50,205,120))')
+
+p.write_text(s)
+print('Foodvexa final home layout applied')
