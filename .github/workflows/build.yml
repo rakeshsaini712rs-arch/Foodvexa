@@ -22,6 +22,42 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Apply only requested UI fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+
+          # Remove only the second Restaurant / Hotel category entry.
+          duplicate_category = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo"))'
+          category_marker = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo"),Category("All"'
+          if s.count('Category("Restaurant / Hotel"') > 1:
+              s = s.replace(duplicate_category, ')', 1)
+
+          # Remove the duplicated Restaurant / Hotel click branch without changing behavior.
+          duplicate_click = 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}'
+          single_click = 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}'
+          if duplicate_click in s:
+              s = s.replace(duplicate_click, single_click, 1)
+
+          # Restore the existing product-card badge exactly once.
+          available = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
+          badge = 'card.addView(label("🔥 Fresh & Hot     •     Near & Fast",11f,true,Color.rgb(255,196,70)),margin(0,4,0,0))'
+          if '🔥 Fresh & Hot     •     Near & Fast' not in s:
+              if available not in s:
+                  raise SystemExit('Existing product-card anchor not found')
+              s = s.replace(available, badge, 1)
+
+          if s.count('Category("Restaurant / Hotel"') != 1:
+              raise SystemExit('Restaurant / Hotel duplicate was not resolved')
+          if s.count('🔥 Fresh & Hot     •     Near & Fast') != 1:
+              raise SystemExit('Product badge was not restored exactly once')
+
+          p.write_text(s, encoding='utf-8')
+          print('Requested Foodvexa UI fixes applied exactly once')
+          PY
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
