@@ -27,14 +27,26 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
           s = p.read_text()
 
-          # Remove only the final duplicate Restaurant / Hotel category entry.
-          dup = ',Category("Restaurant / Hotel","local://restaurant_hotel_logo"))'
-          if s.count(dup) >= 2:
-              pos = s.rfind(dup)
-              s = s[:pos] + ')' + s[pos + len(dup):]
+          # Remove duplicate Restaurant / Hotel entries and enforce unique category names.
+          token = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo")'
+          first = s.find(token)
+          if first >= 0:
+              second = s.find(token, first + len(token))
+              while second >= 0:
+                  s = s[:second] + s[second + len(token):]
+                  second = s.find(token, second)
+
+          m = re.search(r'private val categories=listOf\(.*?\)\n private val cart', s, re.S)
+          if not m:
+              raise SystemExit('categories declaration not found')
+          block = m.group(0)
+          if '.distinctBy { it.name }' not in block:
+              block = block.replace('\n private val cart', '.distinctBy { it.name }\n private val cart')
+              s = s[:m.start()] + block + s[m.end():]
 
           # Replace the single product availability line with a Zomato-style moving ticker plus availability.
           old = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
