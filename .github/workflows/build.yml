@@ -15,48 +15,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Apply only requested UI fixes
+      - name: Apply 148 base with 4-banner grid
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s = p.read_text(encoding='utf-8')
-
-          # Remove only the second Restaurant / Hotel category entry.
-          duplicate_category = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo"))'
-          category_marker = 'Category("Restaurant / Hotel","local://restaurant_hotel_logo"),Category("All"'
-          if s.count('Category("Restaurant / Hotel"') > 1:
-              s = s.replace(duplicate_category, ')', 1)
-
-          # Remove the duplicated Restaurant / Hotel click branch without changing behavior.
-          duplicate_click = 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}'
-          single_click = 'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}'
-          if duplicate_click in s:
-              s = s.replace(duplicate_click, single_click, 1)
-
-          # Restore the existing product-card badge exactly once.
-          available = 'card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))'
-          badge = 'card.addView(label("🔥 Fresh & Hot     •     Near & Fast",11f,true,Color.rgb(255,196,70)),margin(0,4,0,0))'
-          if '🔥 Fresh & Hot     •     Near & Fast' not in s:
-              if available not in s:
-                  raise SystemExit('Existing product-card anchor not found')
-              s = s.replace(available, badge, 1)
-
-          if s.count('Category("Restaurant / Hotel"') != 1:
-              raise SystemExit('Restaurant / Hotel duplicate was not resolved')
-          if s.count('🔥 Fresh & Hot     •     Near & Fast') != 1:
-              raise SystemExit('Product badge was not restored exactly once')
-
-          p.write_text(s, encoding='utf-8')
-          print('Requested Foodvexa UI fixes applied exactly once')
+          from zipfile import ZipFile
+          z = Path('Foodvexa-148-4-banner-grid.zip')
+          if not z.exists():
+              raise SystemExit('Foodvexa-148-4-banner-grid.zip not found')
+          target = 'Foodvexa-main/app/src/main/java/com/foodvexa/app/MainActivity.kt'
+          with ZipFile(z) as archive:
+              data = archive.read(target)
+          out = Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
+          out.write_bytes(data)
+          text = data.decode('utf-8')
+          if 'private fun bannerGrid():GridLayout' not in text:
+              raise SystemExit('4-banner grid code was not found in the 148 base source')
+          if 'content.addView(bannerGrid()' not in text:
+              raise SystemExit('4-banner grid is not attached to the home screen')
+          print('148 base applied: 4-banner automatic 2x2 grid')
           PY
+
+      - name: Verify 4-banner grid
+        run: |
+          grep -Fq 'private fun bannerGrid():GridLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'content.addView(bannerGrid()' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'columnCount=2' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'rowCount=2' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
