@@ -22,39 +22,6 @@ jobs:
           java-version: '17'
           cache: gradle
 
-      - name: Bundle product images into APK
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib, re, subprocess
-          p=Path('app/src/main/java/com/foodvexa/app/MainActivity.kt')
-          s=p.read_text(encoding='utf-8')
-          urls=sorted(set(re.findall(r'https://[^"\\]+',s)))
-          out=Path('app/src/main/res/drawable-nodpi')
-          out.mkdir(parents=True,exist_ok=True)
-          replaced=0
-          for url in urls:
-              name='product_'+hashlib.sha256(url.encode()).hexdigest()[:16]+'.jpg'
-              target=out/name
-              if not target.exists() or target.stat().st_size < 1000:
-                  r=subprocess.run(['curl','-L','--fail','--silent','--show-error','--max-time','30','-A','Foodvexa/1.0',url,'-o',str(target)],capture_output=True,text=True)
-                  if r.returncode!=0 or not target.exists() or target.stat().st_size<1000:
-                      target.unlink(missing_ok=True)
-                      continue
-              if target.exists():
-                  s=s.replace(url,'asset://'+name)
-                  replaced += 1
-          p.write_text(s,encoding='utf-8')
-          print(f'Bundled {replaced} product images')
-          PY
-
-      - name: Validate bundled images
-        run: |
-          test -d app/src/main/res/drawable-nodpi
-          test -n "$(find app/src/main/res/drawable-nodpi -type f -name 'product_*.jpg' -size +1k | head -1)"
-          grep -q 'asset://product_' app/src/main/java/com/foodvexa/app/MainActivity.kt
-
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
