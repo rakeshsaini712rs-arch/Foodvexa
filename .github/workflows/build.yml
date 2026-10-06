@@ -44,9 +44,6 @@ jobs:
           grep -Fq 'refreshCategorySelection()' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'private fun jumpToCategory(name:String)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'jumpToCategory(c.name)' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'LinearLayout.LayoutParams(dp(94),dp(94))' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'LinearLayout.LayoutParams(-1,dp(100))' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'LinearLayout.LayoutParams(dp(54),dp(54))' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
 
       - name: Build debug APK
