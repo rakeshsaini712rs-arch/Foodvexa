@@ -25,6 +25,9 @@ jobs:
       - name: Fix sticky banner/category and instant category selection
         run: python3 home_sticky_fix.py
 
+      - name: Add instant category-to-product jump and preserve banners
+        run: python3 navigation_fix.py
+
       - name: Verify banners categories images and navigation stability
         run: |
           grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
@@ -37,6 +40,8 @@ jobs:
           grep -Fq 'private fun setupHomeBase()' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'private var categoryRow:LinearLayout?=null' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'refreshCategorySelection()' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'private fun jumpToCategory(name:String)' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'jumpToCategory(c.name)' app/src/main/java/com/foodvexa/app/MainActivity.kt
           test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
 
       - name: Build debug APK
