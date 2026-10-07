@@ -160,15 +160,19 @@ body=r'''private fun showCart(){
 
     scroll.addView(list)
     root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-    val dialog=AlertDialog.Builder(this).setView(root).create()
+    val dialog=android.app.Dialog(this)
+    dialog.setContentView(root)
+    dialog.setCanceledOnTouchOutside(false)
     close.setOnClickListener{dialog.dismiss()}
     dialog.show()
     dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-    dialog.window?.setLayout((resources.displayMetrics.widthPixels*0.96f).toInt(),
-        (resources.displayMetrics.heightPixels*0.90f).toInt())
+    dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+    dialog.window?.attributes?.dimAmount=0.62f
+    dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
+        android.view.WindowManager.LayoutParams.MATCH_PARENT)
 }'''
 idx=s.rfind("}")
 if idx<0:raise SystemExit("MainActivity closing brace not found")
 s=s[:idx]+"\n"+body+"\n"+s[idx:]
 p.write_text(s)
-print("installed fixed cart UI; Add to Cart opens cart; persistent cart map is used")
+print("installed fixed cart UI; Add to Cart stays on home; cart opens only from bottom CART; persistent cart map is used")
