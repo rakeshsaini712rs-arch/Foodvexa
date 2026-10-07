@@ -45,7 +45,7 @@ private fun showCart(){
     list.addView(primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show() else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(58)))
     scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
     val dialog=android.app.Dialog(this);dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
-}''''''
+}'''
 idx=s.rfind("}")
 if idx<0:raise SystemExit("MainActivity closing brace not found")
 s=s[:idx]+"\n"+body+"\n"+s[idx:]
