@@ -53,7 +53,7 @@ class MainActivity:AppCompatActivity(){
   val item=TextView(this).apply{
    text=t;textSize=12f;gravity=Gravity.CENTER;includeFontPadding=true;setTextColor(if(i==selectedNav)orange else Color.LTGRAY);typeface=Typeface.DEFAULT_BOLD
    setBackgroundColor(Color.TRANSPARENT);isFocusable=false;isClickable=true
-   setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}
+   setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}
   }
   if(i==3)cartNavLabel=item
   nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))
@@ -196,7 +196,7 @@ private fun showCollection(){
 private fun showPaymentSettings(){
  setupBase(4)
  content.addView(label("Payment Settings",28f,true,Color.WHITE),margin(0,10,0,8))
- content.addView(label("Choose your preferred payment method",15f,false,Color.LTGRAY),margin(0,0,0,16))
+ content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))
  val methods=arrayOf("💵  Cash on Delivery (COD)","📱  UPI / Online Payment")
  val current=prefs.getString("payment_method","COD")
  val checked=if(current=="UPI")1 else 0
@@ -238,7 +238,7 @@ private fun showProfileEditor(){
  content.addView(primaryButton("📍  Manage Address Book"){showAddressBook()},margin(0,0,0,10))
 }
 private fun showAddressBook(){
- setupBase()
+ setupBase(4)
  content.addView(label("Address Book",28f,true,Color.WHITE),margin(0,10,0,8))
  content.addView(label("Your saved delivery addresses",15f,false,Color.LTGRAY),margin(0,0,0,16))
  fun addressCard(title:String,key:String,icon:String){
