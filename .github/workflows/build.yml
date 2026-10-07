@@ -65,7 +65,7 @@ jobs:
               s=s.replace("import org.json.JSONObject", "import org.json.JSONObject\nimport org.json.JSONArray", 1)
           # Main workflow's home transformation may leave setupBase() while final stability
           # routes profile screens through setupBase(4). Normalize the declaration safely.
-          if not re.search(r"private\\s+fun\\s+setupBase\\(selectedNav:Int", s):
+          if "private fun setupBase(selectedNav:Int" not in s:
               s=re.sub(
                   r"private\\s+fun\\s+setupBase\\(\\)\\s*\\{[^}]*\\}",
                   "private fun setupBase(selectedNav:Int=0){setupHomeBase()}",
