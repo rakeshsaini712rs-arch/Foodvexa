@@ -8,7 +8,7 @@ if "private var cartNavLabel:TextView?=null" not in s:
     s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;",1)
 
 def remove_method(src,name):
-    pat=re.compile(r"private fun "+re.escape(name)+r"\\s*\\([^)]*\\)\\s*\\{")
+    pat=re.compile(r"private fun "+re.escape(name)+r"\s*\([^)]*\)\s*\{")
     while True:
         m=pat.search(src)
         if not m: return src
