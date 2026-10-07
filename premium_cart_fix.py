@@ -91,5 +91,28 @@ idx=s.rfind("}")
 if idx<0:
     raise SystemExit("MainActivity closing brace not found")
 s=s[:idx]+"\n"+body+"\n"+s[idx:]
+# Final cart badge hardening after all other patches.
+nav_pattern=r' private fun bottomNav\(\):LinearLayout\{.*?\n private fun showHome\(\)'
+nav_repl=''' private fun bottomNav():LinearLayout{
+  val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(dp(5),dp(5),dp(5),dp(5));elevation=dp(10).toFloat();background=GradientDrawable().apply{setColor(Color.rgb(28,24,30));cornerRadius=dp(20).toFloat()}}
+  val labels=listOf("⌂\\nHOME","⌕\\nSEARCH","▣\\nORDERS","🛒\\nCART","♙\\nPROFILE")
+  labels.forEachIndexed{i,t->{val item=TextView(this).apply{text=t;textSize=12f;gravity=Gravity.CENTER;setTextColor(if(i==0)orange else Color.WHITE);typeface=Typeface.DEFAULT_BOLD);tag=if(i==3)"CART_NAV" else null;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}};if(i==3)cartNavLabel=item;nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))}}
+  updateCartBadge()
+  return nav
+ }
+ private fun showHome()'''
+s=re.sub(nav_pattern,nav_repl,s,flags=re.S)
+old_badge='''private fun updateCartBadge(){
+    val count=cart.values.sum()
+    cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
+}'''
+new_badge='''private fun updateCartBadge(){
+    val count=cart.values.sum().coerceAtLeast(0)
+    val text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
+    cartNavLabel?.text=text
+    fun scan(v:android.view.View){if(v.tag=="CART_NAV" && v is TextView)v.text=text;if(v is android.view.ViewGroup)for(i in 0 until v.childCount)scan(v.getChildAt(i))}
+    scan(root)
+}'''
+s=s.replace(old_badge,new_badge,1)
 p.write_text(s)
 print("installed fixed cart patch; removed old duplicate cart methods before adding one clean implementation")
