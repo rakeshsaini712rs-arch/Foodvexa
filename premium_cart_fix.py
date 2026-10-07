@@ -45,7 +45,10 @@ private fun showUpiApps(total:Int){
 }
 private fun completeOrder(payment:String,total:Int){
     val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
-    prefs.edit().putString("last_order",summary+"\n\nPayment: "+payment+"\nTotal: ₹"+total).apply()
+    val orderRecord=summary+"\n\nPayment: "+payment+"\nTotal: ₹"+total
+    val orders=try{org.json.JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){org.json.JSONArray()}
+    orders.put(orderRecord)
+    prefs.edit().putString("orders",orders.toString()).putString("last_order",orderRecord).apply()
     cart.clear();saveCart();updateCartBadge()
     cartDialog?.dismiss();cartDialog=null
     Toast.makeText(this,"Order placed successfully",Toast.LENGTH_SHORT).show()
