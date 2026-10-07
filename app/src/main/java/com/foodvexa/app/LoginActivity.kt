@@ -12,6 +12,9 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import androidx.appcompat.app.AppCompatActivity
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -28,6 +31,26 @@ class LoginActivity : AppCompatActivity() {
     private val muted = Color.rgb(105, 105, 115)
     private lateinit var auth: FirebaseAuth
     private lateinit var credentialManager: CredentialManager
+    private val googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode != RESULT_OK) {
+            Toast.makeText(this, "Google login cancelled.", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+        try {
+            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(com.google.android.gms.common.api.ApiException::class.java)
+            val idToken = account.idToken
+            if (idToken.isNullOrBlank()) {
+                Toast.makeText(this, "Google ID token not received.", Toast.LENGTH_LONG).show()
+                return@registerForActivityResult
+            }
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            auth.signInWithCredential(credential).addOnSuccessListener { openHome() }.addOnFailureListener { e ->
+                Toast.makeText(this, "Firebase login failed: ${e.localizedMessage ?: "Try again"}", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Google login failed: ${e.localizedMessage ?: e.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,9 +91,17 @@ class LoginActivity : AppCompatActivity() {
                     Toast.makeText(this@LoginActivity, "Please choose a Google account.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@LoginActivity, "Google login cancelled or failed.", Toast.LENGTH_SHORT).show()
+                startLegacyGoogleLogin()
             }
         }
+    }
+
+    private fun startLegacyGoogleLogin() {
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        googleLauncher.launch(GoogleSignIn.getClient(this, options).signInIntent)
     }
 
     private fun openHome() {
