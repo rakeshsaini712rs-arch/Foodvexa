@@ -4,31 +4,21 @@ import re
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text(encoding="utf-8")
 
-# Navigation / keyboard
-s=re.sub(
- r'setOnClickListener\{when\(i\)\{0->showHome\(\);1->\{showHome\(\);searchBox\?\.requestFocus\(\)\};2->showOrders\(\);3->showCart\(\);4->showProfile\(\)\}\}',
- 'setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}',
- s, count=1)
+s=re.sub(r'setOnClickListener\{when\(i\)\{0->showHome\(\);1->\{showHome\(\);searchBox\?\.requestFocus\(\)\};2->showOrders\(\);3->showCart\(\);4->showProfile\(\)\}\}',
+'setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}',s,count=1)
 
-# Branding
 s=s.replace('setMessage("Food ordering app for Samosa King.")','setMessage("Food ordering app by Foodvexa.")',1)
 
-# Keyboard helper
 if "private fun hideKeyboard()" not in s:
     anchor="private fun dp(v:Int)="
     if anchor in s:
         s=s.replace(anchor,'private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}\n '+anchor,1)
 
-# Address Book must open with Profile tab selected
-s=re.sub(r'(private fun showAddressBook\(\)\{\s*setupBase\()\)',r'\g<1>4)',s,count=1)
+s=re.sub(r'(private fun showAddressBook\(\)\{\s*setupBase\()',r'\g<1>4)',s,count=1)
 
-# Payment Settings selected method label
-s=re.sub(
- r'content\.addView\(label\("Choose your preferred payment method",15f,false,Color\.LTGRAY\),margin\(0,0,0,16\)\)',
- 'content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))',
- s,count=1)
+s=re.sub(r'content\.addView\(label\("Choose your preferred payment method",15f,false,Color\.LTGRAY\),margin\(0,0,0,16\)\)',
+'content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))',s,count=1)
 
-# Favorite helper + complete collection screen
 helper='''private fun toggleFavorite(p:Product){
  val arr=try{JSONArray(prefs.getString("saved_items","[]").orEmpty())}catch(_:Exception){JSONArray()}
  var found=-1
@@ -39,8 +29,7 @@ helper='''private fun toggleFavorite(p:Product){
 '''
 if "private fun toggleFavorite(p:Product)" not in s:
     pos=s.find("private fun showCollection()")
-    if pos>=0:
-        s=s[:pos]+helper+s[pos:]
+    if pos>=0: s=s[:pos]+helper+s[pos:]
 
 start=s.find("private fun showCollection()")
 end=s.find("private fun showPaymentSettings()",start)
@@ -66,8 +55,7 @@ if start>=0 and end>start:
 '''
     s=s[:start]+collection+s[end:]
 
-# Add heart beside each product title if not already present.
-if "if(saved)"♥" else "♡"" not in s:
+if 'if(saved)"♥" else "♡"' not in s:
     old=r'card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))'
     new='''val titleRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     titleRow.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},LinearLayout.LayoutParams(0,dp(40),1f))
