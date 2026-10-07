@@ -116,5 +116,36 @@ s=s.replace('content.addView(label("Choose your preferred payment method",15f,fa
 print("FINAL HAS Selected:", "Selected: " in s)
 print("FINAL HAS setupBase4:", "setupBase(4)" in s)
 
+
+# Restore the promotional banner after later home-screen patches.
+if 'private fun bannerGrid():LinearLayout' not in s:
+    marker=' private fun professionalBanner():LinearLayout'
+    banner=''' private fun bannerGrid():LinearLayout{
+  val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+  val scroller=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER}
+  val track=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+  val banners=listOf(Pair(foodImages[0],"HOT & FRESH BURGERS"),Pair(foodImages[1],"SOUTH INDIAN FAVORITES"),Pair(pizzaImages[0],"PIZZA • CHEESY & HOT"))
+  val w=maxOf(dp(290),resources.displayMetrics.widthPixels-dp(48))
+  banners.forEach{b->
+   val card=FrameLayout(this).apply{background=rounded(green,20);clipChildren=true}
+   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};loadImage(image,b.first)
+   card.addView(image,FrameLayout.LayoutParams(-1,-1))
+   val title=TextView(this).apply{text=b.second;textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),0,dp(16),0);background=ColorDrawable(Color.argb(150,0,0,0))}
+   card.addView(title,FrameLayout.LayoutParams(-1,dp(48),Gravity.BOTTOM))
+   track.addView(card,LinearLayout.LayoutParams(w,dp(190)).apply{rightMargin=dp(10)})
+  }
+  scroller.addView(track,LinearLayout.LayoutParams(-1,dp(190)))
+  root.addView(scroller,LinearLayout.LayoutParams(-1,dp(190)))
+  root.addView(label("●  •  •",12f,true,orange),LinearLayout.LayoutParams(-1,dp(24)))
+  return root
+ }
+'''
+    if marker not in s: raise SystemExit("professionalBanner marker missing")
+    s=s.replace(marker,banner+marker,1)
+
+if 'fixed.addView(bannerGrid()' not in s:
+    s=s.replace('fixed.addView(professionalBanner(),margin(0,0,0,12))','fixed.addView(bannerGrid(),margin(0,0,0,8))',1)
+    s=s.replace('fixed.addView(professionalBanner(),margin(0,0,0,9))','fixed.addView(bannerGrid(),margin(0,0,0,8))',1)
+
 p.write_text(s,encoding="utf-8")
 print("FINAL PATCH APPLIED")
