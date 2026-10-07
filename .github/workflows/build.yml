@@ -28,61 +28,43 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
-      - name: Force final payment/profile source state
+      - name: Enforce final payment/profile source state
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
-          s=p.read_text()
-          def fix_method(name):
-              global s
-              m=re.search(r"private\s+fun\s+"+re.escape(name)+r"\s*\(\)\s*\{",s)
-              if not m: return
-              nxt=re.search(r"\nprivate\s+fun\s+",s[m.end():])
-              end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
-              block=s[m.start():end]
-              block=re.sub(r"\bsetupBase\(\)", "setupBase(4)", block, count=1)
-              if name=="showPaymentSettings":
-                  selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
-                  block=re.sub(r'content\.addView\(label\("Choose your preferred payment method".*?\)\)', selected, block, count=1)
-                  if "Selected: " not in block:
-                      pos=block.find("setupBase(4)")
-                      if pos>=0:
-                          line_end=block.find("\n",pos)
-                          if line_end<0: line_end=pos+len("setupBase(4)")
-                          block=block[:line_end+1]+" "+selected+"\n"+block[line_end+1:]
-              s=s[:m.start()]+block+s[end:]
-          for name in ("showAddressBook","showPaymentSettings","showProfile"):
-              fix_method(name)
-          p.write_text(s)
-          print("FORCED payment/profile source state")
-          PY
-      - name: Normalize final payment source check
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text()
           selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
-          m=re.search(r'private\s+fun\s+showPaymentSettings\(\)\s*\{',s)
-          if not m:
-              raise SystemExit("showPaymentSettings method not found")
-          nxt=re.search(r'\nprivate\s+fun\s+',s[m.end():])
-          end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
-          block=s[m.start():end]
+          # Use exact source anchors; do not depend on fragile regex matching.
+          header="private fun showPaymentSettings(){"
+          pos=s.find(header)
+          if pos < 0:
+              raise SystemExit("showPaymentSettings source header not found")
+          body_start=pos+len(header)
+          nxt=s.find("\nprivate fun ",body_start)
+          if nxt < 0: nxt=len(s)
+          block=s[pos:nxt]
+          if "setupBase(4)" not in block:
+              block=block.replace("setupBase()", "setupBase(4)", 1)
           if "Selected: " not in block:
-              pos=block.find("setupBase(4)")
-              if pos < 0:
-                  block=block[:]+ "\n setupBase(4)\n " + selected + "\n"
-              else:
-                  line_end=block.find("\n",pos)
-                  if line_end < 0: line_end=len(block)
-                  block=block[:line_end+1]+" "+selected+"\n"+block[line_end+1:]
-              s=s[:m.start()]+block+s[end:]
+              block=block.replace("\n", "\n "+selected+"\n", 1)
+              if "Selected: " not in block:
+                  block="\n "+selected+block
+          s=s[:pos]+block+s[nxt:]
+          for method in ("showAddressBook","showProfile"):
+              header="private fun "+method+"(){"
+              pos=s.find(header)
+              if pos>=0:
+                  body_start=pos+len(header)
+                  nxt=s.find("\nprivate fun ",body_start)
+                  if nxt<0: nxt=len(s)
+                  block=s[pos:nxt]
+                  if "setupBase(4)" not in block:
+                      block=block.replace("setupBase()", "setupBase(4)", 1)
+                      s=s[:pos]+block+s[nxt:]
           p.write_text(s)
-          print("Selected payment source:", "Selected: " in s)
+          print("PAYMENT_SELECTED:", "Selected: " in s)
+          print("PROFILE_TAB:", "setupBase(4)" in s)
           PY
 
       - name: VERIFY exact final patch
@@ -116,11 +98,11 @@ jobs:
           PY
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
-      - name: Print exact debug SHA-1 for Firebase
+      - name: Print exact APK SHA-1 for Firebase
         run: |
-          echo "=== FOODVEXA DEBUG SHA-1 ==="
-          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep -E "SHA1:|SHA-1:"
-          echo "============================="
+          echo "=== FOODVEXA APK SHA-1 ==="
+          keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk | grep -E "SHA1:|SHA-1:"
+          echo "==========================="
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
