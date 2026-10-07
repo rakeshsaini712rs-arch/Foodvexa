@@ -69,8 +69,16 @@ jobs:
                       s=s[:start]+"private fun setupBase(selectedNav:Int=0){setupHomeBase()}"+s[end+2:]
           p.write_text(s)
           if "imageCache" not in s:
-              cache_decl='private val imageCache=object:android.util.LruCache<String,android.graphics.Bitmap>(24){override fun sizeOf(key:String,value:android.graphics.Bitmap)=value.byteCount/1024}' + chr(10)
-              s=s.replace("private fun loadImage", cache_decl+" private fun loadImage", 1)
+              cache_decl='private val imageCache=object:android.util.LruCache<String,android.graphics.Bitmap>(24){override fun sizeOf(key:String,value:android.graphics.Bitmap)=value.byteCount/1024}'
+              marker="private fun loadImage"
+              if marker in s:
+                  s=s.replace(marker,cache_decl+"\n "+marker,1)
+              else:
+                  end=s.rfind("\n}")
+                  if end >= 0:
+                      s=s[:end]+"\n "+cache_decl+s[end:]
+                  else:
+                      raise SystemExit("MainActivity class end not found for image cache")
           p.write_text(s)
           print("COMPILE HARDENING: JSONArray import =", "import org.json.JSONArray" in s)
           print("COMPILE HARDENING: setupBase(Int) =", "private fun setupBase(selectedNav:Int" in s)
