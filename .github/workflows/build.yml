@@ -33,6 +33,9 @@ jobs:
       - name: Apply premium cart interface
         run: python3 premium_cart_fix.py
 
+      - name: Final stability pass from video review
+        run: python3 final_stability_fix.py
+
       - name: Verify required UI patches
         run: |
           grep -Fq 'Your Order' app/src/main/java/com/foodvexa/app/MainActivity.kt
