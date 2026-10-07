@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "775682824585",
+    "project_id": "foodvexa-2daca",
+    "storage_bucket": "foodvexa-2daca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775682824585:android:23795fbfc1dbac9b1be958",
+        "android_client_info": {
+          "package_name": "com.foodvexa.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "775682824585-9hk9eanipt1mo2tqi4qsj7kkci9ufclq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.foodvexa.app",
+            "certificate_hash": "791512fdb5cec0aa27a5a204421b47b71a847a1b"
+          }
+        },
+        {
+          "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-doTIDcp8CiuvmkMv-As2iVvrkdhb-fU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
