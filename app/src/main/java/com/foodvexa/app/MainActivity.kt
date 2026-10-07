@@ -15,6 +15,7 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
+import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
@@ -125,13 +126,13 @@ filtered.forEachIndexed{index,p->
 }
  private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
  private fun locationDialog(){val current=prefs.getString("location","").orEmpty();val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))};val search=EditText(this).apply{hint="Search area, street or landmark";setSingleLine(true);setText(current);setPadding(dp(14),0,dp(14),0);background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)};panel.addView(search,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(12)});val use=primaryButton("⌖  Use current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()};panel.addView(use,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)});val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home")};panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)});val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work")};panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)));AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()}
- private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};prefs.edit().putString("location",v).putString("location_label",label).apply();showHome()}
+ private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};val e=prefs.edit().putString("location",v).putString("location_label",label);when(label){"Home"->e.putString("home_address",v);"Work"->e.putString("work_address",v);"Delivery"->e.putString("delivery_address",v)};e.apply();showHome()}
  private fun placeOrderAndShowOrders(){ val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n"); val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}; if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}; prefs.edit().putString("last_order",summary+"\n\nTotal: ₹"+(subtotal+30)).apply(); cart.clear();saveCart();updateCartBadge();Toast.makeText(this,"Order placed successfully",Toast.LENGTH_SHORT).show();showOrders()}
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"🛒\nCART $count" else "🛒\nCART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){ showHome() }
 }
-private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Color.WHITE),margin(0,8,0,18))};private fun showOrders(){ setupBase(); content.addView(label("My Orders",24f,true,Color.WHITE),margin(0,8,0,18)); val order=prefs.getString("last_order","").orEmpty(); if(order.isBlank()){content.addView(label("No orders yet",18f,false,Color.LTGRAY),margin(0,8,0,8))}else{content.addView(label("Latest Order",20f,true,Color.WHITE),margin(0,0,0,10));content.addView(label(order,16f,false,Color.WHITE),margin(0,0,0,16));content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,0,0,10))}}private fun showProfile(){
+private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Color.WHITE),margin(0,8,0,18))};private fun showOrders(){setupBase();content.addView(label("My Orders",24f,true,Color.WHITE),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,Color.LTGRAY),margin(0,8,0,8))else{content.addView(label("Order",20f,true,Color.WHITE),margin(0,0,0,10));content.addView(label(legacy,16f,false,Color.WHITE),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
  setupBase()
  content.addView(label("Profile",28f,true,Color.WHITE),margin(0,10,0,18))
  fun item(title:String, subtitle:String="", action:()->Unit={}){
@@ -145,11 +146,11 @@ private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Co
  }
  item("👤  My Profile","Name and mobile number")
  item("📦  My Orders","Order history"){showOrders()}
- item("📍  Address Book","Saved delivery locations"){locationDialog()}
+ item("📍  Address Book","Saved delivery locations"){showAddressBook()}
  item("❤️  Collection","Your saved items")
  item("💳  Payment Settings","COD and online payment")
- item("📞  Call Support","Contact Samosa King"){
-  AlertDialog.Builder(this).setTitle("Call Support").setMessage("Support calling number is not configured yet.").setPositiveButton("OK",null).show()
+ item("📞  Call Support","Call or WhatsApp support"){
+  AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose how you want to contact support.").setNegativeButton("CANCEL",null).setNeutralButton("WHATSAPP"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}.setPositiveButton("CALL"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}.show()
  }
  item("🗺️  Navigate to Shop","Open shop location"){
   try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
@@ -160,6 +161,25 @@ private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Co
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
  item("🚪  Logout","Sign out"){prefs.edit().clear().apply();showHome()}
+}
+private fun showAddressBook(){
+ setupBase()
+ content.addView(label("Address Book",28f,true,Color.WHITE),margin(0,10,0,8))
+ content.addView(label("Your saved delivery addresses",15f,false,Color.LTGRAY),margin(0,0,0,16))
+ fun addressCard(title:String,key:String,icon:String){
+  val value=prefs.getString(key,"").orEmpty()
+  val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(14),dp(16),dp(14));background=rounded(Color.rgb(38,38,44),16)}
+  box.addView(label(icon+"  "+title,17f,true,Color.WHITE))
+  box.addView(label(if(value.isBlank())"No address saved" else value,14f,false,Color.LTGRAY),margin(0,5,0,8))
+  box.setOnClickListener{editSavedAddress(title,key,value)}
+  content.addView(box,margin(0,0,0,10))
+ }
+ addressCard("Home","home_address","⌂");addressCard("Work","work_address","▣");addressCard("Delivery","delivery_address","📍")
+ content.addView(primaryButton("＋  Add / Change Address"){editSavedAddress("Delivery","delivery_address",prefs.getString("delivery_address","").orEmpty())},margin(0,4,0,10))
+}
+private fun editSavedAddress(title:String,key:String,current:String){
+ val input=EditText(this).apply{hint="Enter "+title+" address";setText(current);setTextColor(ink);setHintTextColor(muted);setPadding(dp(14),0,dp(14),0);setSingleLine(false);minLines=2}
+ AlertDialog.Builder(this).setTitle("Save "+title+" Address").setView(input).setNegativeButton("CANCEL",null).setPositiveButton("SAVE"){_,_->val v=input.text.toString().trim();if(v.isBlank()){Toast.makeText(this,"Please enter an address",Toast.LENGTH_SHORT).show()}else{prefs.edit().putString(key,v).putString("location",v).putString("location_label",title).apply();showAddressBook()}}.show()
 }
 private fun showAppearanceSelector(){
  val options=arrayOf("🌙  Dark","☀️  Light","📱  Use device theme")
