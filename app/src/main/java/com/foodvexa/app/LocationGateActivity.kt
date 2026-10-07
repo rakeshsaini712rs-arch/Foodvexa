@@ -7,6 +7,14 @@ import android.location.Address
 import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.graphics.Color
+import android.graphics.Typeface
+import android.view.Gravity
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import java.util.Locale
@@ -16,8 +24,53 @@ class LocationGateActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        obtainLocation()
+        showFoodvexaSplash()
+        Handler(Looper.getMainLooper()).postDelayed({ obtainLocation() }, 1800)
     }
+
+    private fun showFoodvexaSplash() {
+        window.statusBarColor = Color.rgb(230, 45, 65)
+        window.navigationBarColor = Color.rgb(230, 45, 65)
+        window.decorView.systemUiVisibility = 0
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.rgb(230, 45, 65))
+            setPadding(24, 0, 24, 0)
+        }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.foodvexa_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setColorFilter(Color.WHITE)
+        }
+        root.addView(logo, LinearLayout.LayoutParams(-1, dp(110)).apply {
+            bottomMargin = dp(18)
+        })
+
+        val line = TextView(this).apply {
+            setBackgroundColor(Color.argb(45, 255, 255, 255))
+        }
+        root.addView(line, LinearLayout.LayoutParams(dp(390), dp(1)).apply {
+            bottomMargin = dp(28)
+        })
+
+        val tagline = TextView(this).apply {
+            text = "AN ETERNAL COMPANY"
+            textSize = 17f
+            letterSpacing = 0.18f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+        }
+        root.addView(tagline, LinearLayout.LayoutParams(-1, dp(34)))
+
+        setContentView(root)
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun obtainLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
