@@ -5,7 +5,7 @@ p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
 
 if "private var cartNavLabel:TextView?=null" not in s:
-    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;",1)
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;private var cartDialog:android.app.Dialog?=null;",1)
 
 def remove_method(src,name):
     pat=re.compile(r"private fun "+re.escape(name)+r"\s*\([^)]*\)\s*\{")
@@ -27,11 +27,25 @@ body=r'''private fun updateCartBadge(){
     cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
 }
 private fun placeOrderAndShowOrders(){
-    val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\\n")
+    if(cart.isEmpty()){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
     val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
-    if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
-    prefs.edit().putString("last_order",summary+"\\n\\nTotal: ₹"+(subtotal+30)).apply()
+    val total=subtotal+30
+    val methods=arrayOf("💵  Cash on Delivery","💳  UPI Payments")
+    android.app.AlertDialog.Builder(this).setTitle("Choose Payment Method").setItems(methods){_,which->
+        if(which==0) completeOrder("Cash on Delivery",total) else showUpiApps(total)
+    }.setNegativeButton("CANCEL",null).show()
+}
+private fun showUpiApps(total:Int){
+    val apps=arrayOf("📱  PhonePe","💬  WhatsApp","🔵  Google Pay")
+    android.app.AlertDialog.Builder(this).setTitle("UPI Payments").setMessage("Choose UPI app").setItems(apps){_,which->
+        completeOrder(apps[which].substringAfter("  "),total)
+    }.setNegativeButton("CANCEL",null).show()
+}
+private fun completeOrder(payment:String,total:Int){
+    val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
+    prefs.edit().putString("last_order",summary+"\n\nPayment: "+payment+"\nTotal: ₹"+total).apply()
     cart.clear();saveCart();updateCartBadge()
+    cartDialog?.dismiss();cartDialog=null
     Toast.makeText(this,"Order placed successfully",Toast.LENGTH_SHORT).show()
     showOrders()
 }
@@ -58,7 +72,7 @@ private fun showCart(){
     list.addView(this@MainActivity.label("✅  Current location selected",16f,false,Color.LTGRAY),this@MainActivity.margin(0,8,0,8))
     list.addView(this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else {dialog.dismiss();placeOrderAndShowOrders()}},LinearLayout.LayoutParams(-1,dp(58)))
     scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-    val dialog=android.app.Dialog(this@MainActivity);dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
+    val dialog=android.app.Dialog(this@MainActivity);cartDialog=dialog;dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
 }'''
 idx=s.rfind("}")
 if idx<0:
