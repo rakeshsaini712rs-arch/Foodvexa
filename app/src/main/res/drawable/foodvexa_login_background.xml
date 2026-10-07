@@ -1,0 +1,19 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#F51F35" android:centerColor="#E9152E" android:endColor="#C90024" android:angle="270"/>
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:top="28dp" android:left="-35dp">
+        <shape android:shape="oval"><solid android:color="#D51A2E"/></shape>
+    </item>
+    <item android:gravity="top|right" android:top="55dp" android:right="-40dp">
+        <shape android:shape="oval"><solid android:color="#FF3348"/></shape>
+    </item>
+    <item android:gravity="bottom|left" android:bottom="70dp" android:left="-55dp">
+        <shape android:shape="oval"><solid android:color="#E20F29"/></shape>
+    </item>
+    <item android:gravity="bottom|right" android:bottom="120dp" android:right="-45dp">
+        <shape android:shape="oval"><solid android:color="#F52A3D"/></shape>
+    </item>
+</layer-list>
