@@ -68,8 +68,22 @@ jobs:
                   if end >= 0:
                       s=s[:start]+"private fun setupBase(selectedNav:Int=0){setupHomeBase()}"+s[end+2:]
           p.write_text(s)
+          if "imageCache" not in s:
+              old_loader='private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}'
+              new_loader='''private val imageCache=object:android.util.LruCache<String,android.graphics.Bitmap>(24){override fun sizeOf(key:String,value:android.graphics.Bitmap)=value.byteCount/1024}
+ private fun loadImage(view:ImageView,url:String){
+  view.setTag(url);view.setImageDrawable(null)
+  imageCache.get(url)?.let{bmp->mainHandler.post{if(!isFinishing&&view.getTag()==url)view.setImageBitmap(bmp)};return}
+  imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.instanceFollowRedirects=true;con.useCaches=true;con.connect();val bmp=con.inputStream.use{BitmapFactory.decodeStream(it)};con.disconnect();if(bmp!=null){imageCache.put(url,bmp);mainHandler.post{if(!isFinishing&&view.getTag()==url)view.setImageBitmap(bmp)}}}catch(_:Exception){}}
+ }'''
+              if old_loader in s:
+                  s=s.replace(old_loader,new_loader,1)
+              else:
+                  raise SystemExit("Image loader source not found for hardening")
+          p.write_text(s)
           print("COMPILE HARDENING: JSONArray import =", "import org.json.JSONArray" in s)
           print("COMPILE HARDENING: setupBase(Int) =", "private fun setupBase(selectedNav:Int" in s)
+          print("COMPILE HARDENING: imageCache =", "imageCache" in s)
           PY
 
       - name: VERIFY exact final patch
