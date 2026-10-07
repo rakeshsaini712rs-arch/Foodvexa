@@ -30,13 +30,15 @@ jobs:
           grep -Eq 'Choose your current location|Choose delivery location' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
-      - name: Print debug signing SHA-1 for Firebase
-        run: |
-          mkdir -p ~/.android
-          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep -E 'SHA1:|SHA-1:' || true
-
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
+
+      - name: Print actual debug SHA-1 for Firebase
+        run: |
+          echo "=== Foodvexa debug signing certificate ==="
+          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep -E 'Alias name:|SHA1:|SHA-1:'
+          echo "=== Gradle signing report ==="
+          gradle :app:signingReport --no-daemon | grep -E 'Variant: debug|SHA1:|SHA-1:' || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
