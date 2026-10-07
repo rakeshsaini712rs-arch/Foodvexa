@@ -103,7 +103,7 @@ nav_code=""" private fun bottomNav():LinearLayout{
   return nav
  }
 """
-s=s[:start]+nav_code+s[end_nav:]
+s=s[:start_nav]+nav_code+s[end_nav:]
 s=s.replace("setPadding(dp(16),dp(10),dp(16),dp(24));clipToPadding=false","setPadding(dp(16),dp(10),dp(16),dp(104));clipToPadding=false",1)
 s=s.replace("frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM))","frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM))",1)
 p.write_text(s)
