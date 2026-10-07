@@ -3,6 +3,12 @@ import re
 
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
+if "private var cartNavLabel:TextView?=null" not in s:
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;")
+navOld='listOf("⌂\\nHOME","⌕\\nSEARCH","▣\\nORDERS","🛒\\nCART","♙\\nPROFILE").forEachIndexed{i,t->nav.addView(TextView(this).apply{text=t;textSize=11f;gravity=Gravity.CENTER;setTextColor(if(i==0)orange else ink);typeface=Typeface.DEFAULT_BOLD;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}},LinearLayout.LayoutParams(0,-1,1f))};return nav}'
+navNew='listOf("⌂\\nHOME","⌕\\nSEARCH","▣\\nORDERS","🛒\\nCART","♙\\nPROFILE").forEachIndexed{i,t->{val item=TextView(this).apply{text=t;textSize=11f;gravity=Gravity.CENTER;setTextColor(if(i==0)orange else ink);typeface=Typeface.DEFAULT_BOLD;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}};if(i==3)cartNavLabel=item;nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))}};updateCartBadge();return nav}'
+if navOld not in s: raise SystemExit("bottom nav pattern not found")
+s=s.replace(navOld,navNew)
 # Ensure required Android classes are imported.
 if "import android.view.View" not in s:
     s=s.replace("import android.view.Gravity\n", "import android.view.Gravity\nimport android.view.View\n")
