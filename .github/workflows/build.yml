@@ -89,6 +89,11 @@ jobs:
           PY
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
+      - name: Print exact debug SHA-1 for Firebase
+        run: |
+          echo "=== FOODVEXA DEBUG SHA-1 ==="
+          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep -E "SHA1:|SHA-1:"
+          echo "============================="
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
