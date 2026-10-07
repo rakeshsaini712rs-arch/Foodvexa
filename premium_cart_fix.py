@@ -60,7 +60,7 @@ body=r'''private fun showCart(){
     header.addView(close,LinearLayout.LayoutParams(dp(54),dp(54)))
     root.addView(header)
 
-    val scroll=ScrollView(this).apply{fillViewport=true;clipToPadding=false}
+    val scroll=ScrollView(this).apply{isFillViewport=true;clipToPadding=false}
     val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
 
     fun divider(){
