@@ -156,7 +156,7 @@ body=r'''private fun showCart(){
     })
     list.addView(primaryButton("🛒  BUY NOW"){
         if(cart.isEmpty())Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show()
-        else Toast.makeText(this,"Please select a payment method",Toast.LENGTH_SHORT).show()
+        else placeOrderAndShowOrders()
     },LinearLayout.LayoutParams(-1,dp(58)).apply{topMargin=dp(10);bottomMargin=dp(12)})
 
     scroll.addView(list)
