@@ -42,7 +42,20 @@ for a,b in sorted(set(ranges),reverse=True):
 s=s.replace('val add=primaryButton("Add to Cart"){addToCart(p);showCart()}',
             'val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}')
 
-body=r'''private fun showCart(){
+body=r'''private fun updateCartBadge(){
+    val count=cart.values.sum()
+    cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
+}
+private fun placeOrderAndShowOrders(){
+    val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\\n")
+    val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
+    if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
+    prefs.edit().putString("last_order",summary+"\\n\\nTotal: ₹"+(subtotal+30)).apply()
+    cart.clear();saveCart();updateCartBadge()
+    Toast.makeText(this,"Order placed successfully",Toast.LENGTH_SHORT).show()
+    showOrders()
+}
+private fun showCart(){
     updateCartBadge()
     val root=LinearLayout(this).apply{
         orientation=LinearLayout.VERTICAL
