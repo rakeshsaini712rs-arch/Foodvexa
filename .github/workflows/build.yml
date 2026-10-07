@@ -53,6 +53,30 @@ jobs:
           print("PAYMENT_SELECTED:", "Selected: " in s)
           PY
 
+      - name: Compile hardening for final transformed source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+          # final_stability_fix uses JSONArray; guarantee the Android JSON import survives all prior patches.
+          if "import org.json.JSONArray" not in s:
+              s=s.replace("import org.json.JSONObject", "import org.json.JSONObject\nimport org.json.JSONArray", 1)
+          # Main workflow's home transformation may leave setupBase() while final stability
+          # routes profile screens through setupBase(4). Normalize the declaration safely.
+          if not re.search(r"private\\s+fun\\s+setupBase\\(selectedNav:Int", s):
+              s=re.sub(
+                  r"private\\s+fun\\s+setupBase\\(\\)\\s*\\{[^}]*\\}",
+                  "private fun setupBase(selectedNav:Int=0){setupHomeBase()}",
+                  s,
+                  count=1
+              )
+          p.write_text(s)
+          print("COMPILE HARDENING: JSONArray import =", "import org.json.JSONArray" in s)
+          print("COMPILE HARDENING: setupBase(Int) =", bool(re.search(r"private\\s+fun\\s+setupBase\\(selectedNav:Int", s)))
+          PY
+
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
