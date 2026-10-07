@@ -101,7 +101,7 @@ nav_repl=''' private fun bottomNav():LinearLayout{
   return nav
  }
  private fun showHome()'''
-s=re.sub(nav_pattern,nav_repl,s,flags=re.S)
+s=re.sub(nav_pattern,lambda _:nav_repl,s,flags=re.S)
 old_badge='''private fun updateCartBadge(){
     val count=cart.values.sum()
     cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
