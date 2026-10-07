@@ -139,7 +139,7 @@ body=r'''private fun showCart(){
     list.addView(field("Your name"))
     list.addView(field("Phone number"))
     list.addView(EditText(this).apply{
-        hint="Delivery address";text=prefs.getString("location",SHOP_LOCATION).orEmpty();textSize=17f
+        hint="Delivery address";setText(prefs.getString("location",SHOP_LOCATION).orEmpty());textSize=17f
         setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP
         setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2
         background=rounded(Color.TRANSPARENT,14)
