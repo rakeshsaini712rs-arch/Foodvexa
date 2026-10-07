@@ -36,11 +36,19 @@ jobs:
           s=p.read_text()
           selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
           if "Selected: " not in s:
-              pos=s.find("showPaymentSettings")
-              if pos < 0: raise SystemExit("showPaymentSettings not found")
-              brace=s.find("{",pos)
-              if brace < 0: raise SystemExit("showPaymentSettings body not found")
-              s=s[:brace+1]+"\n "+selected+s[brace+1:]
+              marker="private fun showPaymentSettings()"
+              pos=s.find(marker)
+              if pos >= 0:
+                  brace=s.find("{",pos)
+                  if brace >= 0:
+                      s=s[:brace+1]+"\n "+selected+s[brace+1:]
+              else:
+                  marker="private fun showProfile()"
+                  pos=s.find(marker)
+                  if pos < 0: raise SystemExit("No payment/profile method found")
+                  brace=s.find("{",pos)
+                  if brace < 0: raise SystemExit("Profile body not found")
+                  s=s[:brace+1]+"\n "+selected+s[brace+1:]
           p.write_text(s)
           print("PAYMENT_SELECTED:", "Selected: " in s)
           PY
