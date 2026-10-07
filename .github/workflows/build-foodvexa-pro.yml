@@ -33,12 +33,11 @@ jobs:
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: Print actual debug SHA-1 for Firebase
+      - name: Print exact APK SHA-1 for Firebase
         run: |
-          echo "=== Foodvexa debug signing certificate ==="
-          keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android -keypass android | grep -E 'Alias name:|SHA1:|SHA-1:'
-          echo "=== Gradle signing report ==="
-          gradle :app:signingReport --no-daemon | grep -E 'Variant: debug|SHA1:|SHA-1:' || true
+          echo "=== FOODVEXA APK SHA-1 ==="
+          keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk | grep -E 'SHA1:|SHA-1:'
+          echo "==========================="
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
