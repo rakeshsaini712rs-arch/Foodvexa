@@ -25,7 +25,7 @@ jobs:
           grep -Fq 'Your Order' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'Delivery details' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'Choose your current location' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'Buy Now' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
