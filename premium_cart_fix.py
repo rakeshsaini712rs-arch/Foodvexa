@@ -79,7 +79,7 @@ private fun showCart(){
     list.addView(this@MainActivity.label("✓  Current location selected",15f,true,Color.rgb(76,210,145)),this@MainActivity.margin(0,5,0,6))
     list.addView(this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else placeOrderAndShowOrders()}.apply{background=rounded(Color.rgb(46,190,126),14)},LinearLayout.LayoutParams(-1,dp(48)))
     scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-    val dialog=android.app.Dialog(this@MainActivity);cartDialog=dialog;dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout((resources.displayMetrics.widthPixels*0.94f).toInt(),(resources.displayMetrics.heightPixels*0.78f).toInt())
+    val dialog=android.app.Dialog(this@MainActivity);cartDialog=dialog;dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);dialog.window?.setLayout((resources.displayMetrics.widthPixels*0.94f).toInt(),(resources.displayMetrics.heightPixels*0.78f).toInt())
 }'''
 # Harden persisted cart storage from the 223 base.
 old_cart='private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}}'
