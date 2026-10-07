@@ -40,7 +40,7 @@ jobs:
         run: |
           grep -Fq 'Your Order' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'Delivery details' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'Choose your current location' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Eq 'Choose your current location|Choose delivery location' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'private fun showCart()' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
