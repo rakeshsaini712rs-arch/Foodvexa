@@ -3,6 +3,11 @@ import re
 
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
+# Ensure required Android classes are imported.
+if "import android.view.View" not in s:
+    s=s.replace("import android.view.Gravity\n", "import android.view.Gravity\nimport android.view.View\n")
+if "import android.widget.ScrollView" not in s:
+    s=s.replace("import android.widget.*\n", "import android.widget.*\nimport android.widget.ScrollView\n")
 
 # Required Android view imports for the cart UI.
 if "import android.view.View" not in s:
@@ -34,8 +39,8 @@ for a,b in sorted(set(ranges),reverse=True):
     s=s[:a]+s[b:]
 
 # Adding a product opens the cart immediately.
-s=s.replace('val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}',
-            'val add=primaryButton("Add to Cart"){addToCart(p);showCart()}')
+s=s.replace('val add=primaryButton("Add to Cart"){addToCart(p);showCart()}',
+            'val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}')
 
 body=r'''private fun showCart(){
     val root=LinearLayout(this).apply{
@@ -126,7 +131,7 @@ body=r'''private fun showCart(){
     })
 
     fun field(h:String):EditText=EditText(this).apply{
-        hint=h;textSize=17f;singleLine=true;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY)
+        hint=h;textSize=17f;setSingleLine(true);setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY)
         setPadding(dp(16),0,dp(16),0);background=rounded(Color.TRANSPARENT,14)
         setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(90,75,65)))
         layoutParams=LinearLayout.LayoutParams(-1,dp(58)).apply{topMargin=dp(5);bottomMargin=dp(5)}
@@ -134,7 +139,7 @@ body=r'''private fun showCart(){
     list.addView(field("Your name"))
     list.addView(field("Phone number"))
     list.addView(EditText(this).apply{
-        hint="Delivery address";text=prefs.getString("location",SHOP_LOCATION);textSize=17f
+        hint="Delivery address";text=prefs.getString("location",SHOP_LOCATION).orEmpty();textSize=17f
         setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP
         setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2
         background=rounded(Color.TRANSPARENT,14)
