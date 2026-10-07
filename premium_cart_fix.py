@@ -4,6 +4,10 @@ import re
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
 
+# Required Android view imports for the cart UI.
+if "import android.view.View" not in s:
+    s=s.replace("import re\n", "import re\n")
+
 def method_range(src,name):
     m=re.search(r'\b(?:private\s+|public\s+|protected\s+)?fun\s+'+re.escape(name)+r'\s*\([^)]*\)\s*\{',src)
     if not m:return None
