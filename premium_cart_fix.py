@@ -55,6 +55,7 @@ private fun completeOrder(payment:String,total:Int){
     showOrders()
 }
 private fun showCart(){
+    loadCart()
     updateCartBadge()
     val root=LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(16),dp(20),dp(16));setBackgroundColor(Color.rgb(31,24,19))}
     val header=LinearLayout(this@MainActivity).apply{gravity=Gravity.CENTER_VERTICAL}
@@ -79,6 +80,13 @@ private fun showCart(){
     scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
     val dialog=android.app.Dialog(this@MainActivity);cartDialog=dialog;dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
 }'''
+# Harden persisted cart storage from the 223 base.
+old_cart='private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}}'
+new_cart='private fun loadCart(){cart.clear();try{val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{key->val qty=o.optInt(key,0);if(qty>0)cart[key]=qty}}catch(_:Exception){}}'
+old_save='private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()}'
+new_save='private fun saveCart(){val o=JSONObject();cart.forEach{(key,qty)->if(qty>0)o.put(key,qty)};prefs.edit().putString("cart",o.toString()).apply()}'
+s=s.replace(old_cart,new_cart,1)
+s=s.replace(old_save,new_save,1)
 idx=s.rfind("}")
 if idx<0:
     raise SystemExit("MainActivity closing brace not found")
