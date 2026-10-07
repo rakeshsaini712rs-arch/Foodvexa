@@ -171,8 +171,8 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
  item("👤  My Profile",if(prefs.getString("profile_name","").orEmpty().isBlank())"Name and mobile number" else prefs.getString("profile_name","").orEmpty()){showProfileEditor()}
  item("📦  My Orders","Order history"){showOrders()}
  item("📍  Address Book","Saved delivery locations"){showAddressBook()}
- item("❤️  Collection","Your saved items")
- item("💳  Payment Settings","COD and online payment")
+ item("❤️  Collection","Your saved items"){showCollection()}
+ item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}
  item("📞  Call Support","Call or WhatsApp support"){
   AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose a support option.").setNegativeButton("CANCEL",null).setNeutralButton("WHATSAPP"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}.setPositiveButton("CALL"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}.show()
  }
@@ -180,11 +180,44 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
   try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
  }
  item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
- item("⭐  Feedback","Share your feedback"){Toast.makeText(this,"Thanks for your feedback!",Toast.LENGTH_SHORT).show()}
+ item("⭐  Feedback","Share your feedback"){showFeedback()}
  item("ℹ️  About","About Foodvexa"){
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
  item("🚪  Logout","Sign out"){prefs.edit().clear().apply();showHome()}
+}
+private fun showCollection(){
+ setupBase(4)
+ content.addView(label("Collection",28f,true,Color.WHITE),margin(0,10,0,8))
+ content.addView(label("Your saved items",15f,false,Color.LTGRAY),margin(0,0,0,16))
+ content.addView(label("❤️  No saved items yet",18f,false,Color.WHITE),margin(0,0,0,12))
+ content.addView(primaryButton("🏠  Browse Food"){showHome()},margin(0,0,0,10))
+}
+private fun showPaymentSettings(){
+ setupBase(4)
+ content.addView(label("Payment Settings",28f,true,Color.WHITE),margin(0,10,0,8))
+ content.addView(label("Choose your preferred payment method",15f,false,Color.LTGRAY),margin(0,0,0,16))
+ val methods=arrayOf("💵  Cash on Delivery (COD)","📱  UPI / Online Payment")
+ val current=prefs.getString("payment_method","COD")
+ val checked=if(current=="UPI")1 else 0
+ AlertDialog.Builder(this).setTitle("Payment Method").setSingleChoiceItems(methods,checked){dialog,which->
+   val value=if(which==1)"UPI" else "COD"
+   prefs.edit().putString("payment_method",value).apply()
+   Toast.makeText(this,if(value=="UPI")"UPI selected" else "COD selected",Toast.LENGTH_SHORT).show()
+   dialog.dismiss()
+ }.setNegativeButton("CANCEL",null).show()
+ content.addView(primaryButton("💳  Change Payment Method"){showPaymentSettings()},margin(0,0,0,10))
+}
+private fun showFeedback(){
+ setupBase(4)
+ content.addView(label("Feedback",28f,true,Color.WHITE),margin(0,10,0,8))
+ content.addView(label("Tell us about your experience",15f,false,Color.LTGRAY),margin(0,0,0,14))
+ val input=EditText(this).apply{hint="Write your feedback...";setTextColor(ink);setHintTextColor(muted);minLines=5;gravity=Gravity.TOP;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.WHITE,14)}
+ content.addView(input,margin(0,0,0,12))
+ content.addView(primaryButton("📤  Submit Feedback"){
+   if(input.text.toString().trim().isBlank()){Toast.makeText(this,"Please write your feedback",Toast.LENGTH_SHORT).show()}
+   else{prefs.edit().putString("last_feedback",input.text.toString().trim()).apply();Toast.makeText(this,"Thank you for your feedback!",Toast.LENGTH_SHORT).show();showProfile()}
+ },margin(0,0,0,10))
 }
 private fun showProfileEditor(){
  setupBase(4)
