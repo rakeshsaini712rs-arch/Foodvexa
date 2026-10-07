@@ -32,23 +32,24 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var credentialManager: CredentialManager
     private val googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode != RESULT_OK) {
-            Toast.makeText(this, "Google login cancelled.", Toast.LENGTH_SHORT).show()
-            return@registerForActivityResult
-        }
         try {
-            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).getResult(com.google.android.gms.common.api.ApiException::class.java)
+            val accountTask = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            val account = accountTask.getResult(com.google.android.gms.common.api.ApiException::class.java)
             val idToken = account.idToken
             if (idToken.isNullOrBlank()) {
-                Toast.makeText(this, "Google ID token not received.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Google ID token nahi mila. Firebase SHA-1 check karo.", Toast.LENGTH_LONG).show()
                 return@registerForActivityResult
             }
             val credential = GoogleAuthProvider.getCredential(idToken, null)
-            auth.signInWithCredential(credential).addOnSuccessListener { openHome() }.addOnFailureListener { e ->
-                Toast.makeText(this, "Firebase login failed: ${e.localizedMessage ?: "Try again"}", Toast.LENGTH_LONG).show()
-            }
+            auth.signInWithCredential(credential)
+                .addOnSuccessListener { openHome() }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Firebase login failed: " + (e.localizedMessage ?: "Try again"), Toast.LENGTH_LONG).show()
+                }
+        } catch (e: com.google.android.gms.common.api.ApiException) {
+            Toast.makeText(this, "Google sign-in error " + e.statusCode + ": " + (e.status.statusMessage ?: "Try again"), Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Google login failed: ${e.localizedMessage ?: e.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Google login failed: " + (e.localizedMessage ?: e.javaClass.simpleName), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -64,39 +65,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun googleLogin() {
-        val googleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(getString(R.string.default_web_client_id))
-            .setAutoSelectEnabled(false)
-            .build()
-
-        val request = GetCredentialRequest.Builder()
-            .addCredentialOption(googleIdOption)
-            .build()
-
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val result = credentialManager.getCredential(this@LoginActivity, request)
-                val credential = result.credential
-                if (credential is androidx.credentials.CustomCredential &&
-                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                    val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                    val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
-                    auth.signInWithCredential(firebaseCredential)
-                        .addOnSuccessListener { openHome() }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this@LoginActivity, "Google login failed: ${e.localizedMessage ?: "Try again"}", Toast.LENGTH_LONG).show()
-                        }
-                } else {
-                    Toast.makeText(this@LoginActivity, "Please choose a Google account.", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                startLegacyGoogleLogin()
-            }
-        }
-    }
-
-    private fun startLegacyGoogleLogin() {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
