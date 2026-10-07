@@ -31,23 +31,23 @@ class MainActivity:AppCompatActivity(){
  private val categories=listOf(Category("Restaurant / Hotel","local://restaurant_hotel_logo"),Category("All","https://images.unsplash.com/photo-1669624272709-c5b91f66b1b7?auto=format&fit=crop&w=500&q=80"),Category("Fast Food","https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=85"),Category("Snacks","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=85"),Category("Chaat Special","https://commons.wikimedia.org/wiki/Special:Redirect/file/Dahi_vada_or_dahi_bhalla.jpg"),Category("Meals","https://images.unsplash.com/photo-1742281257707-0c7f7e5ca9c6?auto=format&fit=crop&w=500&q=80"),Category("Birthday Special","https://images.unsplash.com/photo-1587015692860-f3a8481e9865?auto=format&fit=crop&w=500&q=80"),Category("Beverages","https://images.unsplash.com/photo-1592099759599-24b131b8e824?auto=format&fit=crop&w=500&q=80"),Category("Sweets","https://images.unsplash.com/photo-1667185487460-b303881b2bb9?auto=format&fit=crop&w=500&q=80"),Category("Special Sabji","https://images.unsplash.com/photo-1645432524571-0e469b22e43f?auto=format&fit=crop&w=500&q=80"),Category("Restaurant / Hotel","local://restaurant_hotel_logo"))
  private val cart=linkedMapOf<String,Int>();private lateinit var root:FrameLayout;private lateinit var content:LinearLayout;private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;private var categoryRow:LinearLayout?=null;private val prefs by lazy{getSharedPreferences("foodvexa",MODE_PRIVATE)};private var selectedCategory="All";private var query="";private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper())
  override fun onCreate(b:Bundle?){super.onCreate(b);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();showHome()}
- private fun setupBase(){setupHomeBase()}
- private fun setupHomeBase(){
+ private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}
+ private fun setupHomeBase(selectedNav:Int=0){
   root.removeAllViews()
   val frame=FrameLayout(this)
   val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
   val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0);setBackgroundColor(Color.TRANSPARENT)}
   val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true}
-  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(24));clipToPadding=false}
+  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(108));clipToPadding=false}
   scroll.addView(content,FrameLayout.LayoutParams(-1,-1))
   shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))
   shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
   frame.addView(shell,FrameLayout.LayoutParams(-1,-1))
-  frame.addView(bottomNav(),FrameLayout.LayoutParams(-1,dp(76),Gravity.BOTTOM))
+  frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(72),Gravity.BOTTOM))
   root.addView(frame,FrameLayout.LayoutParams(-1,-1))
  }
 
- private fun bottomNav():LinearLayout{val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(dp(4),dp(5),dp(4),dp(5));elevation=dp(8).toFloat();background=GradientDrawable().apply{setColor(Color.rgb(25,22,28));cornerRadius=dp(18).toFloat()}};listOf("⌂\nHOME","⌕\nSEARCH","▣\nORDERS","🛒\nCART","♙\nPROFILE").forEachIndexed{i,t->{val item=TextView(this).apply{text=t;textSize=12f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}};if(i==3)cartNavLabel=item;nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))}};updateCartBadge();return nav}
+ private fun bottomNav(selectedNav:Int=0):LinearLayout{val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER;setPadding(dp(4),dp(5),dp(4),dp(5));elevation=dp(10).toFloat();background=GradientDrawable().apply{setColor(Color.rgb(25,22,28));cornerRadius=dp(18).toFloat()}};listOf("⌂\nHOME","⌕\nSEARCH","▣\nORDERS","🛒\nCART","♙\nPROFILE").forEachIndexed{i,t->{val item=TextView(this).apply{text=t;textSize=12f;gravity=Gravity.CENTER;setTextColor(if(i==selectedNav)orange else Color.LTGRAY);typeface=Typeface.DEFAULT_BOLD;setPadding(0,dp(2),0,dp(2));setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}};if(i==3)cartNavLabel=item;nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))}};updateCartBadge();return nav}
  private fun showHome(){
   setupHomeBase()
   val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
@@ -132,8 +132,8 @@ private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){ showHome() }
 }
-private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Color.WHITE),margin(0,8,0,18))};private fun showOrders(){setupBase();content.addView(label("My Orders",24f,true,Color.WHITE),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,Color.LTGRAY),margin(0,8,0,8))else{content.addView(label("Order",20f,true,Color.WHITE),margin(0,0,0,10));content.addView(label(legacy,16f,false,Color.WHITE),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
- setupBase()
+private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,Color.WHITE),margin(0,8,0,18))};private fun showOrders(){setupBase(2);content.addView(label("My Orders",24f,true,Color.WHITE),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,Color.LTGRAY),margin(0,8,0,8))else{content.addView(label("Order",20f,true,Color.WHITE),margin(0,0,0,10));content.addView(label(legacy,16f,false,Color.WHITE),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
+ setupBase(4)
  content.addView(label("Profile",28f,true,Color.WHITE),margin(0,10,0,18))
  fun item(title:String, subtitle:String="", action:()->Unit={}){
   val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}
@@ -156,7 +156,7 @@ private fun showCart(){setupBase();content.addView(label("Your Cart",24f,true,Co
   try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
  }
  item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
- item("⭐  Feedback","Share your feedback")
+ item("⭐  Feedback","Share your feedback"){Toast.makeText(this,"Thanks for your feedback!",Toast.LENGTH_SHORT).show()}
  item("ℹ️  About","About Foodvexa"){
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
