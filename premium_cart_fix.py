@@ -5,7 +5,9 @@ p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
 
 if "private var cartNavLabel:TextView?=null" not in s:
-    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;private var cartDialog:android.app.Dialog?=null;",1)
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;",1)
+if "private var cartDialog:android.app.Dialog?=null" not in s:
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartDialog:android.app.Dialog?=null;",1)
 
 def remove_method(src,name):
     pat=re.compile(r"private fun "+re.escape(name)+r"\s*\([^)]*\)\s*\{")
