@@ -65,10 +65,22 @@ jobs:
           import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text()
-          if "Selected: " not in s:
-              m=re.search(r'private\\s+fun\\s+showPaymentSettings\\(\\)\\s*\\{',s)
-              if m:
-                  s=s[:m.end()]+'''\n setupBase(4)\n content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'''+s[m.end():]
+          selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
+          m=re.search(r'private\s+fun\s+showPaymentSettings\(\)\s*\{',s)
+          if not m:
+              raise SystemExit("showPaymentSettings method not found")
+          nxt=re.search(r'\nprivate\s+fun\s+',s[m.end():])
+          end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
+          block=s[m.start():end]
+          if "Selected: " not in block:
+              pos=block.find("setupBase(4)")
+              if pos < 0:
+                  block=block[:]+ "\n setupBase(4)\n " + selected + "\n"
+              else:
+                  line_end=block.find("\n",pos)
+                  if line_end < 0: line_end=len(block)
+                  block=block[:line_end+1]+" "+selected+"\n"+block[line_end+1:]
+              s=s[:m.start()]+block+s[end:]
           p.write_text(s)
           print("Selected payment source:", "Selected: " in s)
           PY
