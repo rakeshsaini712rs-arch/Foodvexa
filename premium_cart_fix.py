@@ -3,11 +3,25 @@ import re
 
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
+
 if "private var cartNavLabel:TextView?=null" not in s:
-    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;")
-# Bottom navigation is maintained by the base home patch. Only ensure the cart label field exists.
-if "private var cartNavLabel:TextView?=null" not in s:
-    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;")
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;",1)
+
+def remove_method(src,name):
+    pat=re.compile(r"private fun "+re.escape(name)+r"\\s*\\([^)]*\\)\\s*\\{")
+    while True:
+        m=pat.search(src)
+        if not m: return src
+        i=m.start(); pos=m.end(); depth=1
+        while pos<len(src) and depth:
+            if src[pos]=="{": depth+=1
+            elif src[pos]=="}": depth-=1
+            pos+=1
+        src=src[:i]+src[pos:]
+
+for method in ("showCart","updateCartBadge","placeOrderAndShowOrders"):
+    s=remove_method(s,method)
+
 body=r'''private fun updateCartBadge(){
     val count=cart.values.sum()
     cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
@@ -47,7 +61,8 @@ private fun showCart(){
     val dialog=android.app.Dialog(this);dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
 }'''
 idx=s.rfind("}")
-if idx<0:raise SystemExit("MainActivity closing brace not found")
+if idx<0:
+    raise SystemExit("MainActivity closing brace not found")
 s=s[:idx]+"\n"+body+"\n"+s[idx:]
 p.write_text(s)
-print("installed fixed cart UI; Add to Cart stays on home; cart opens only from bottom CART; persistent cart map is used")
+print("installed fixed cart patch; removed old duplicate cart methods before adding one clean implementation")
