@@ -243,13 +243,34 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun addFeature(panel: LinearLayout, icon: String, title: String, subtitle: String) {
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.addView(label(icon, 23f, false, red).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(dp(52), dp(52)))
-        val text = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_VERTICAL }
-        text.addView(label(title, 17f, true, Color.rgb(25,25,30)))
-        text.addView(label(subtitle, 13f, false, muted))
-        row.addView(text, LinearLayout.LayoutParams(0, dp(60), 1f))
-        panel.addView(row, LinearLayout.LayoutParams(-1, dp(68)))
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        val iconView = label(icon, 22f, false, red).apply {
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(255, 244, 245))
+                shape = GradientDrawable.OVAL
+            }
+        }
+        row.addView(
+            iconView,
+            LinearLayout.LayoutParams(dp(58), dp(58)).apply {
+                rightMargin = dp(14)
+            }
+        )
+
+        val text = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        text.addView(label(title, 18f, true, Color.rgb(25,25,30)))
+        text.addView(label(subtitle, 14f, false, muted))
+        row.addView(text, LinearLayout.LayoutParams(0, dp(64), 1f))
+
+        panel.addView(row, LinearLayout.LayoutParams(-1, dp(74)))
     }
 
     private fun label(text: String, size: Float, bold: Boolean, color: Int): TextView = TextView(this).apply {
