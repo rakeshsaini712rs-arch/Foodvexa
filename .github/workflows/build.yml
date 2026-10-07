@@ -28,6 +28,36 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
+      - name: Force final payment/profile source state
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+          def fix_method(name):
+              global s
+              m=re.search(r"private\\s+fun\\s+"+re.escape(name)+r"\\s*\\(\\)\\s*\\{",s)
+              if not m: return
+              nxt=re.search(r"\\nprivate\\s+fun\\s+",s[m.end():])
+              end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
+              block=s[m.start():end]
+              block=re.sub(r"\\bsetupBase\\(\\)", "setupBase(4)", block, count=1)
+              if name=="showPaymentSettings":
+                  selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
+                  block=re.sub(r'content\\.addView\\(label\\("Choose your preferred payment method".*?\\)\\)', selected, block, count=1)
+                  if "Selected: " not in block:
+                      pos=block.find("setupBase(4)")
+                      if pos>=0:
+                          line_end=block.find("\n",pos)
+                          if line_end<0: line_end=pos+len("setupBase(4)")
+                          block=block[:line_end+1]+" "+selected+"\\n"+block[line_end+1:]
+              s=s[:m.start()]+block+s[end:]
+          for name in ("showAddressBook","showPaymentSettings","showProfile"):
+              fix_method(name)
+          p.write_text(s)
+          print("FORCED payment/profile source state")
+          PY
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
