@@ -47,12 +47,12 @@ new_corrected = '''private fun correctedImageUrl(p:Product):String{
    "Fast Food|Masala Dosa" -> foodImages[1]
    "Fast Food|Veg Sandwich" -> foodImages[3]
    "Fast Food|Maggi" -> "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=800&q=85"
-   "Fast Food|Vada Pav" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/VadaPav.png"
+   "Fast Food|Vada Pav" -> "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"
    "Snacks|Samosa" -> "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85"
    "Snacks|Kachori" -> "https://images.unsplash.com/photo-1608198138971-3ead0dc5a9d5?auto=format&fit=crop&w=800&q=85"
    "Snacks|Mirchi Bada" -> "https://images.unsplash.com/photo-1603048297172-c92544798d5e?auto=format&fit=crop&w=800&q=85"
-   "Meals|Dahi Bhale" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dahi_vada_or_dahi_bhalla.jpg"
-   "Meals|Indian Thali" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg"
+   "Meals|Dahi Bhale" -> "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=85"
+   "Meals|Indian Thali" -> "https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=85"
    "Meals|Vada" -> "https://www.coimbatoretiffinstories.com/assets/meduvada.png"
    "Meals|Masala Dosa" -> "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=800&q=85"
    "Meals|Paneer Dosa" -> "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=800&q=85"
