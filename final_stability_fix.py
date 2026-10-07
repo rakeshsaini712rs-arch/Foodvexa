@@ -4,22 +4,30 @@ import re
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text(encoding="utf-8")
 
-s=re.sub(r'setOnClickListener\{when\(i\)\{0->showHome\(\);1->\{showHome\(\);searchBox\?\.requestFocus\(\)\};2->showOrders\(\);3->showCart\(\);4->showProfile\(\)\}\}',
-'setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}',s,count=1)
+# Keyboard/navigation
+s=s.replace(
+'setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}',
+'setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}',
+1)
 
+# Branding
 s=s.replace('setMessage("Food ordering app for Samosa King.")','setMessage("Food ordering app by Foodvexa.")',1)
 
+# Helper
 if "private fun hideKeyboard()" not in s:
-    anchor="private fun dp(v:Int)="
-    if anchor in s:
-        s=s.replace(anchor,'private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}\n '+anchor,1)
+    s=s.replace("private fun dp(v:Int)=", 'private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}\n private fun dp(v:Int)=',1)
 
-s=re.sub(r'(private fun showAddressBook\(\)\{\s*setupBase\()',r'\g<1>4)',s,count=1)
+# Address Book: force profile tab
+s=s.replace("private fun showAddressBook(){\n setupBase()","private fun showAddressBook(){\n setupBase(4)",1)
+s=s.replace("private fun showAddressBook(){\n setupBase()","private fun showAddressBook(){\n setupBase(4)",1)
 
-s=re.sub(r'content\.addView\(label\("Choose your preferred payment method",15f,false,Color\.LTGRAY\),margin\(0,0,0,16\)\)',
-'content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))',s,count=1)
+# Payment label: replace only if old label remains
+s=s.replace('content.addView(label("Choose your preferred payment method",15f,false,Color.LTGRAY),margin(0,0,0,16))',
+'content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))',1)
 
-helper='''private fun toggleFavorite(p:Product){
+# Collection helper: insert before the first known profile method, independent of showCollection formatting.
+if "private fun toggleFavorite(p:Product)" not in s:
+    helper='''private fun toggleFavorite(p:Product){
  val arr=try{JSONArray(prefs.getString("saved_items","[]").orEmpty())}catch(_:Exception){JSONArray()}
  var found=-1
  for(i in 0 until arr.length()) if(arr.optString(i)==p.name) found=i
@@ -27,10 +35,12 @@ helper='''private fun toggleFavorite(p:Product){
  else{arr.put(p.name);prefs.edit().putString("saved_items",arr.toString()).apply();Toast.makeText(this,"Added to Collection",Toast.LENGTH_SHORT).show()}
 }
 '''
-if "private fun toggleFavorite(p:Product)" not in s:
-    pos=s.find("private fun showCollection()")
+    marker="private fun showProfile()"
+    pos=s.find(marker)
+    if pos<0: pos=s.find("private fun showHome()")
     if pos>=0: s=s[:pos]+helper+s[pos:]
 
+# Make collection screen persisted and functional, replacing its whole method if present.
 start=s.find("private fun showCollection()")
 end=s.find("private fun showPaymentSettings()",start)
 if start>=0 and end>start:
@@ -55,14 +65,15 @@ if start>=0 and end>start:
 '''
     s=s[:start]+collection+s[end:]
 
+# Product heart: locate exact title expression with regex, avoiding quote/format fragility.
 if 'if(saved)"♥" else "♡"' not in s:
-    old=r'card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))'
+    pat=r'card\.addView\(label\(p\.name,14f,true,Color\.WHITE\)\.apply\{maxLines=2;ellipsize=android\.text\.TextUtils\.TruncateAt\.END\},margin\(0,7,0,0\)\)'
     new='''val titleRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     titleRow.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},LinearLayout.LayoutParams(0,dp(40),1f))
     val saved=try{val a=JSONArray(prefs.getString("saved_items","[]").orEmpty());(0 until a.length()).any{a.optString(it)==p.name}}catch(_:Exception){false}
     titleRow.addView(primaryButton(if(saved)"♥" else "♡"){toggleFavorite(p);renderProducts()},LinearLayout.LayoutParams(dp(42),dp(40)))
     card.addView(titleRow,margin(0,7,0,0))'''
-    s,n=re.subn(old,new,s,count=1)
+    s=re.sub(pat,new,s,count=1)
 
 p.write_text(s,encoding="utf-8")
-print("FINAL STABILITY PATCH: source rewritten")
+print("FINAL PATCH APPLIED")
