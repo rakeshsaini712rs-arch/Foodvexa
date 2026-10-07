@@ -102,7 +102,7 @@ class LocationGateActivity : AppCompatActivity() {
                         .putString("location", finalLocation)
                         .apply()
                 }
-                startActivity(Intent(this, MainActivity::class.java))
+                startActivity(Intent(this, LoginActivity::class.java))
                 finish()
             }
         }.start()
