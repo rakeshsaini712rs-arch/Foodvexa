@@ -55,7 +55,7 @@ private fun completeOrder(payment:String,total:Int){
     showOrders()
 }
 private fun showCart(){
-    setupBase(3)
+    setupBase()
     loadCart()
     updateCartBadge()
     val root=LinearLayout(this@MainActivity).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(8),dp(14),dp(8));background=rounded(Color.rgb(22,24,29),22)}
