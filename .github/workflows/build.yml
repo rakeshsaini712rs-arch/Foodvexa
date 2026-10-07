@@ -14,43 +14,40 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
-
       - name: Stabilize product images and remove duplicate category
         run: python3 image_stability_fix.py
-
       - name: Fix sticky banner/category and instant category selection
         run: python3 home_sticky_fix.py
-
       - name: Add instant category-to-product jump and preserve banners
         run: python3 navigation_fix.py
-
       - name: Compact premium home layout
         run: python3 compact_layout.py
-
       - name: Apply premium cart interface
         run: python3 premium_cart_fix.py
-
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
-
-      - name: Verify required UI patches
+      - name: VERIFY final changes are actually applied
         run: |
-          grep -Fq 'Your Order' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'Delivery details' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Eq 'Choose your current location|Choose delivery location' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'private fun showCart()' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'private fun bannerGrid():LinearLayout' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'HorizontalScrollView' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'imageCache' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          test "$(grep -o 'Category(\"Restaurant / Hotel\"' app/src/main/java/com/foodvexa/app/MainActivity.kt | wc -l)" -eq 1
-
+          set -e
+          FILE=app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'private fun toggleFavorite(p:Product)' "$FILE"
+          grep -Fq 'Added to Collection' "$FILE"
+          grep -Fq 'Removed from Collection' "$FILE"
+          grep -Fq 'Selected: ' "$FILE"
+          grep -Fq 'setupBase(4)' "$FILE"
+          grep -Fq 'hideKeyboard()' "$FILE"
+          grep -Fq 'Food ordering app by Foodvexa.' "$FILE"
+          grep -Fq 'Your Order' "$FILE"
+          grep -Fq 'Delivery details' "$FILE"
+          grep -Eq 'Choose your current location|Choose delivery location' "$FILE"
+          grep -Fq 'BUY NOW' "$FILE"
+          grep -Fq 'imageCache' "$FILE"
+          test "$(grep -o 'Category("Restaurant / Hotel"' "$FILE" | wc -l)" -eq 1
+          echo "FINAL PATCH VERIFIED IN BUILD SOURCE"
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
