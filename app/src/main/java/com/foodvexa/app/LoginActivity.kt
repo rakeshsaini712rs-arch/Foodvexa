@@ -113,21 +113,76 @@ class LoginActivity : AppCompatActivity() {
         window.statusBarColor = red
         window.navigationBarColor = red
         window.decorView.systemUiVisibility = 0
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE) }
-        val hero = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            setPadding(dp(24), dp(18), dp(24), dp(22))
-            background = GradientDrawable().apply { setColor(red) }
-        }
-        val logo = ImageView(this).apply { setImageResource(R.drawable.foodvexa_logo); scaleType = ImageView.ScaleType.FIT_CENTER }
-        hero.addView(logo, LinearLayout.LayoutParams(dp(105), dp(105)).apply { bottomMargin = dp(8) })
-        hero.addView(label("FOODVEXA", 29f, true, Color.WHITE))
-        hero.addView(label("FOOD ORDERING MADE EASY", 12f, true, Color.WHITE).apply { letterSpacing = 0.16f }, LinearLayout.LayoutParams(-1, dp(34)))
 
-        val scroll = ScrollView(this).apply { isFillViewport = true }
-        val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(28), dp(22), dp(28), dp(28)); background = ColorDrawableCompat.white() }
-        panel.addView(label("Welcome to FOODVEXA 👋", 26f, true, Color.rgb(20,20,24)), LinearLayout.LayoutParams(-1, dp(42)))
-        panel.addView(label("Login to order your favorite food", 15f, false, muted), LinearLayout.LayoutParams(-1, dp(34)))
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(red)
+        }
+
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(22), dp(18), dp(22), dp(22))
+            background = GradientDrawable().apply {
+                setColor(red)
+            }
+        }
+
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.foodvexa_logo)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+        }
+        hero.addView(logo, LinearLayout.LayoutParams(dp(145), dp(145)).apply {
+            bottomMargin = dp(6)
+        })
+
+        hero.addView(
+            label("FOODVEXA", 32f, true, Color.WHITE),
+            LinearLayout.LayoutParams(-1, dp(48))
+        )
+        hero.addView(
+            label("FOOD ORDERING MADE EASY", 13f, true, Color.WHITE).apply {
+                gravity = Gravity.CENTER
+                letterSpacing = 0.14f
+            },
+            LinearLayout.LayoutParams(-1, dp(34))
+        )
+
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            clipToPadding = false
+        }
+
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(28), dp(28), dp(28), dp(30))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadii = floatArrayOf(
+                    dp(34).toFloat(), dp(34).toFloat(),
+                    dp(34).toFloat(), dp(34).toFloat(),
+                    0f, 0f, 0f, 0f
+                )
+            }
+        }
+
+        val handle = TextView(this).apply {
+            text = "━━━━"
+            textSize = 13f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+        }
+        panel.addView(handle, LinearLayout.LayoutParams(-1, dp(24)))
+
+        panel.addView(
+            label("Welcome to FOODVEXA 👋", 27f, true, Color.rgb(20,20,24)),
+            LinearLayout.LayoutParams(-1, dp(48))
+        )
+        panel.addView(
+            label("Login to order your favorite food", 16f, false, muted),
+            LinearLayout.LayoutParams(-1, dp(38))
+        )
+
         addFeature(panel, "🛵", "Fast Delivery", "Get your food delivered quickly")
         addFeature(panel, "🍽", "Wide Variety", "Explore snacks, meals, sweets & more")
         addFeature(panel, "★", "Best Quality", "Fresh and delicious food always")
@@ -135,22 +190,54 @@ class LoginActivity : AppCompatActivity() {
 
         val google = Button(this).apply {
             text = "G   Continue with Google     ›"
-            textSize = 16f; isAllCaps = false; typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(25,25,30)); background = roundedWhite()
+            textSize = 16f
+            isAllCaps = false
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(25,25,30))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(30).toFloat()
+                setStroke(dp(1), Color.rgb(230,230,235))
+            }
             setOnClickListener { googleLogin() }
         }
-        panel.addView(google, LinearLayout.LayoutParams(-1, dp(58)).apply { topMargin = dp(16) })
-        panel.addView(label("────────   OR   ────────", 12f, false, Color.GRAY).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, dp(42)))
+        panel.addView(
+            google,
+            LinearLayout.LayoutParams(-1, dp(62)).apply { topMargin = dp(16) }
+        )
+
+        panel.addView(
+            label("────────   OR   ────────", 12f, false, Color.GRAY).apply {
+                gravity = Gravity.CENTER
+            },
+            LinearLayout.LayoutParams(-1, dp(44))
+        )
+
         val guest = Button(this).apply {
             text = "  👤  Continue as Guest     ›"
-            textSize = 16f; isAllCaps = false; typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(25,25,30)); background = roundedWhite()
+            textSize = 16f
+            isAllCaps = false
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.rgb(25,25,30))
+            background = GradientDrawable().apply {
+                setColor(Color.WHITE)
+                cornerRadius = dp(30).toFloat()
+                setStroke(dp(1), Color.rgb(230,230,235))
+            }
             setOnClickListener { openHome() }
         }
-        panel.addView(guest, LinearLayout.LayoutParams(-1, dp(58)))
-        panel.addView(label("By continuing, you agree to our Terms of Service\nand Privacy Policy", 11f, false, Color.GRAY).apply { gravity = Gravity.CENTER }, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(10) })
+        panel.addView(guest, LinearLayout.LayoutParams(-1, dp(62)))
+
+        panel.addView(
+            label(
+                "By continuing, you agree to our Terms of Service\nand Privacy Policy",
+                11f, false, Color.GRAY
+            ).apply { gravity = Gravity.CENTER },
+            LinearLayout.LayoutParams(-1, dp(54)).apply { topMargin = dp(12) }
+        )
+
         scroll.addView(panel, LinearLayout.LayoutParams(-1, -2))
-        root.addView(hero, LinearLayout.LayoutParams(-1, dp(300)))
+        root.addView(hero, LinearLayout.LayoutParams(-1, dp(355)))
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
     }
