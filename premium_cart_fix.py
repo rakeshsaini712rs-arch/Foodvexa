@@ -5,49 +5,9 @@ p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
 if "private var cartNavLabel:TextView?=null" not in s:
     s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;")
-navOld='listOf("⌂\\nHOME","⌕\\nSEARCH","▣\\nORDERS","🛒\\nCART","♙\\nPROFILE").forEachIndexed{i,t->nav.addView(TextView(this).apply{text=t;textSize=11f;gravity=Gravity.CENTER;setTextColor(if(i==0)orange else ink);typeface=Typeface.DEFAULT_BOLD;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}},LinearLayout.LayoutParams(0,-1,1f))};return nav}'
-navNew='listOf("⌂\\nHOME","⌕\\nSEARCH","▣\\nORDERS","🛒\\nCART","♙\\nPROFILE").forEachIndexed{i,t->{val item=TextView(this).apply{text=t;textSize=11f;gravity=Gravity.CENTER;setTextColor(if(i==0)orange else ink);typeface=Typeface.DEFAULT_BOLD;setOnClickListener{when(i){0->showHome();1->{showHome();searchBox?.requestFocus()};2->showOrders();3->showCart();4->showProfile()}}};if(i==3)cartNavLabel=item;nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))}};updateCartBadge();return nav}'
-if navOld not in s: raise SystemExit("bottom nav pattern not found")
-s=s.replace(navOld,navNew)
-# Ensure required Android classes are imported.
-if "import android.view.View" not in s:
-    s=s.replace("import android.view.Gravity\n", "import android.view.Gravity\nimport android.view.View\n")
-if "import android.widget.ScrollView" not in s:
-    s=s.replace("import android.widget.*\n", "import android.widget.*\nimport android.widget.ScrollView\n")
-
-# Required Android view imports for the cart UI.
-if "import android.view.View" not in s:
-    s=s.replace("import re\n", "import re\n")
-
-def method_range(src,name):
-    m=re.search(r'\b(?:private\s+|public\s+|protected\s+)?fun\s+'+re.escape(name)+r'\s*\([^)]*\)\s*\{',src)
-    if not m:return None
-    brace=src.find("{",m.start());depth=0;ins=False;esc=False
-    for i in range(brace,len(src)):
-        c=src[i]
-        if ins:
-            if esc:esc=False
-            elif c=="\\":esc=True
-            elif c=='"':ins=False
-        else:
-            if c=='"':ins=True
-            elif c=="{":depth+=1
-            elif c=="}":
-                depth-=1
-                if depth==0:return (m.start(),i+1)
-    return None
-
-ranges=[]
-for n in ("showCart","showCartDialog","openCart","displayCart"):
-    r=method_range(s,n)
-    if r:ranges.append(r)
-for a,b in sorted(set(ranges),reverse=True):
-    s=s[:a]+s[b:]
-
-# Adding a product opens the cart immediately.
-s=s.replace('val add=primaryButton("Add to Cart"){addToCart(p);showCart()}',
-            'val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}')
-
+# Bottom navigation is maintained by the base home patch. Only ensure the cart label field exists.
+if "private var cartNavLabel:TextView?=null" not in s:
+    s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;")
 body=r'''private fun updateCartBadge(){
     val count=cart.values.sum()
     cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
