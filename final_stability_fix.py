@@ -82,5 +82,13 @@ if 'if(saved)"♥" else "♡"' not in s:
     card.addView(titleRow,margin(0,7,0,0))'''
     s=re.sub(pat,new,s,count=1)
 
+# Final exact enforcement after every transformation above.
+s=s.replace('private fun showAddressBook(){\n setupBase()','private fun showAddressBook(){\n setupBase(4)',1)
+s=s.replace('private fun showPaymentSettings(){\n setupBase()','private fun showPaymentSettings(){\n setupBase(4)',1)
+s=s.replace('private fun showProfile(){\n setupBase()','private fun showProfile(){\n setupBase(4)',1)
+s=s.replace('content.addView(label("Choose your preferred payment method",15f,false,Color.LTGRAY),margin(0,0,0,16))','content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))',1)
+print("FINAL HAS Selected:", "Selected: " in s)
+print("FINAL HAS setupBase4:", "setupBase(4)" in s)
+
 p.write_text(s,encoding="utf-8")
 print("FINAL PATCH APPLIED")
