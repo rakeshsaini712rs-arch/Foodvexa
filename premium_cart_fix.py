@@ -43,6 +43,7 @@ s=s.replace('val add=primaryButton("Add to Cart"){addToCart(p);showCart()}',
             'val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}')
 
 body=r'''private fun showCart(){
+    updateCartBadge()
     val root=LinearLayout(this).apply{
         orientation=LinearLayout.VERTICAL
         setPadding(dp(20),dp(16),dp(20),dp(16))
