@@ -18,8 +18,15 @@ if "private fun hideKeyboard()" not in s:
     s=s.replace("private fun dp(v:Int)=", 'private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}\n private fun dp(v:Int)=',1)
 
 # Address Book: force profile tab
-s=s.replace("private fun showAddressBook(){\n setupBase()","private fun showAddressBook(){\n setupBase(4)",1)
-s=s.replace("private fun showAddressBook(){\n setupBase()","private fun showAddressBook(){\n setupBase(4)",1)
+# Force profile tab on profile-related screens.
+for method in ("showAddressBook","showPaymentSettings","showFeedback","showProfileEditor"):
+    m=re.search(r"private fun "+method+r"\(\)\{",s)
+    if m:
+        nxt=re.search(r"\nprivate fun ",s[m.end():])
+        end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
+        block=s[m.start():end]
+        block=block.replace("setupBase()","setupBase(4)",1)
+        s=s[:m.start()]+block+s[end:]
 
 # Payment label: replace only if old label remains
 s=s.replace('content.addView(label("Choose your preferred payment method",15f,false,Color.LTGRAY),margin(0,0,0,16))',
