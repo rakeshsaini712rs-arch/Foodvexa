@@ -83,6 +83,32 @@ if 'if(saved)"♥" else "♡"' not in s:
     s=re.sub(pat,new,s,count=1)
 
 # Final exact enforcement after every transformation above.
+# Re-scope the profile/payment methods after all earlier patches so later
+# formatting changes cannot silently remove the selected-payment UI.
+for method in ("showAddressBook","showPaymentSettings","showProfile"):
+    m=re.search(r"private\\s+fun\\s+"+method+r"\\(\\)\\s*\\{",s)
+    if m:
+        nxt=re.search(r"\\nprivate\\s+fun\\s+",s[m.end():])
+        end=m.end()+(nxt.start() if nxt else len(s[m.end():]))
+        block=s[m.start():end]
+        block=re.sub(r"\\bsetupBase\\(\\)", "setupBase(4)", block, count=1)
+        if method=="showPaymentSettings" and "Selected: " not in block:
+            selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
+            if "setupBase(4)" in block:
+                block=block.replace("setupBase(4)", "setupBase(4)\n "+selected, 1)
+        s=s[:m.start()]+block+s[end:]
+
+# Absolute fallback: if an earlier transformation produced an unusual method
+# shape, insert the selected-payment row immediately after the method header.
+if "Selected: " not in s:
+    m=re.search(r"private\\s+fun\\s+showPaymentSettings\\(\\)\\s*\\{",s)
+    if m:
+        insert='\n setupBase(4)\n content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
+        s=s[:m.end()]+insert+s[m.end():]
+
+print("FINAL HAS Selected:", "Selected: " in s)
+print("FINAL HAS setupBase4:", "setupBase(4)" in s)
+
 s=s.replace('private fun showAddressBook(){\n setupBase()','private fun showAddressBook(){\n setupBase(4)',1)
 s=s.replace('private fun showPaymentSettings(){\n setupBase()','private fun showPaymentSettings(){\n setupBase(4)',1)
 s=s.replace('private fun showProfile(){\n setupBase()','private fun showProfile(){\n setupBase(4)',1)
