@@ -75,7 +75,7 @@ private fun showCart(){
     list.addView(EditText(this@MainActivity).apply{hint="Delivery address";setText(prefs.getString("location",SHOP_LOCATION).orEmpty());textSize=17f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP;setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2;background=rounded(Color.TRANSPARENT,14);layoutParams=LinearLayout.LayoutParams(-1,dp(86)).apply{topMargin=dp(5);bottomMargin=dp(8)}})
     list.addView(this@MainActivity.primaryButton("📍  Choose your current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()},LinearLayout.LayoutParams(-1,dp(54)))
     list.addView(this@MainActivity.label("✅  Current location selected",16f,false,Color.LTGRAY),this@MainActivity.margin(0,8,0,8))
-    list.addView(this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else {dialog.dismiss();placeOrderAndShowOrders()}},LinearLayout.LayoutParams(-1,dp(58)))
+    list.addView(this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(58)))
     scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
     val dialog=android.app.Dialog(this@MainActivity);cartDialog=dialog;dialog.setContentView(root);close.setOnClickListener{dialog.dismiss()};dialog.show();dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));dialog.window?.setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,android.view.WindowManager.LayoutParams.MATCH_PARENT)
 }'''
