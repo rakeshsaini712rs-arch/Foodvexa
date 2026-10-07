@@ -67,7 +67,7 @@ jobs:
           # routes profile screens through setupBase(4). Normalize the declaration safely.
           if "private fun setupBase(selectedNav:Int" not in s:
               s=re.sub(
-                  r"private\\s+fun\\s+setupBase\\(\\)\\s*\\{[^}]*\\}",
+                  r"private\s+fun\s+setupBase\(\)\s*\{[^}]*\}",
                   "private fun setupBase(selectedNav:Int=0){setupHomeBase()}",
                   s,
                   count=1
