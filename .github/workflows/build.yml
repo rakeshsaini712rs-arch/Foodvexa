@@ -28,24 +28,35 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
-      - name: VERIFY final changes are actually applied
+      - name: VERIFY exact final patch
         run: |
-          set -e
-          FILE=app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'private fun toggleFavorite(p:Product)' "$FILE"
-          grep -Fq 'Added to Collection' "$FILE"
-          grep -Fq 'Removed from Collection' "$FILE"
-          grep -Fq 'Selected: ' "$FILE"
-          grep -Fq 'setupBase(4)' "$FILE"
-          grep -Fq 'hideKeyboard()' "$FILE"
-          grep -Fq 'Food ordering app by Foodvexa.' "$FILE"
-          grep -Fq 'Your Order' "$FILE"
-          grep -Fq 'Delivery details' "$FILE"
-          grep -Eq 'Choose your current location|Choose delivery location' "$FILE"
-          grep -Fq 'BUY NOW' "$FILE"
-          grep -Fq 'imageCache' "$FILE"
-          test "$(grep -o 'Category("Restaurant / Hotel"' "$FILE" | wc -l)" -eq 1
-          echo "FINAL PATCH VERIFIED IN BUILD SOURCE"
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt").read_text()
+          checks={
+            "collection helper":"private fun toggleFavorite(p:Product)",
+            "collection add":"Added to Collection",
+            "collection remove":"Removed from Collection",
+            "payment selected":"Selected: ",
+            "profile tab":"setupBase(4)",
+            "keyboard helper":"private fun hideKeyboard()",
+            "Foodvexa branding":"Food ordering app by Foodvexa.",
+            "order UI":"Your Order",
+            "delivery details":"Delivery details",
+            "location button":"Choose your current location",
+            "buy button":"BUY NOW",
+            "image cache":"imageCache",
+          }
+          missing=[k for k,v in checks.items() if v not in s]
+          print("FINAL SOURCE CHECK:")
+          for k,v in checks.items(): print(("PASS " if v in s else "FAIL ")+k)
+          if s.count('Category("Restaurant / Hotel"') != 1:
+              missing.append("exactly one Restaurant / Hotel category")
+              print("FAIL exactly one Restaurant / Hotel category; count=",s.count('Category("Restaurant / Hotel"'))
+          else: print("PASS exactly one Restaurant / Hotel category")
+          if missing: raise SystemExit("Missing final patch: "+", ".join(missing))
+          print("FINAL PATCH VERIFIED")
+          PY
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Upload APK
