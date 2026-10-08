@@ -195,8 +195,9 @@ val loginIntent=Intent(this,LoginActivity::class.java).apply{
     putExtra("force_login",true)
     flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 }
+loginIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
 startActivity(loginIntent)
-finish()
+return
  }}.show()}
 }
 private fun showCollection(){
