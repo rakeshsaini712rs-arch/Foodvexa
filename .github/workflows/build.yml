@@ -14,6 +14,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Verify Google Sign-In configuration
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("app/google-services.json")
+          data=json.loads(p.read_text())
+          client=data["client"][0]
+          package=client["client_info"]["android_client_info"]["package_name"]
+          hashes=[x.get("android_info",{}).get("certificate_hash","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
+          required="69723771323b509a5d5f5ca9a60b7091359fdd4f"
+          if package != "com.foodvexa.app": raise SystemExit("Wrong Android package: "+package)
+          if required not in hashes: raise SystemExit("Current APK SHA-1 is missing from google-services.json")
+          print("GOOGLE SIGN-IN CONFIG VERIFIED: package="+package)
+          print("GOOGLE SIGN-IN CONFIG VERIFIED: current APK SHA-1 present")
+          PY
       - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
       - name: Stabilize product images and remove duplicate category
