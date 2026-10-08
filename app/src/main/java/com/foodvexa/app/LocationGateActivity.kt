@@ -10,11 +10,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.graphics.Color
-import android.graphics.Typeface
-import android.view.Gravity
+import android.view.View
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import java.util.Locale
@@ -32,68 +30,33 @@ class LocationGateActivity : AppCompatActivity() {
         window.statusBarColor = Color.rgb(232, 30, 45)
         window.navigationBarColor = Color.rgb(232, 30, 45)
         window.decorView.systemUiVisibility =
-            android.view.View.SYSTEM_UI_FLAG_FULLSCREEN or
-            android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-            android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-            android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-            android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            View.SYSTEM_UI_FLAG_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
+        val root = FrameLayout(this).apply {
             setBackgroundColor(Color.rgb(232, 30, 45))
-            setPadding(0, 0, 0, 0)
         }
 
-        val mark = ImageView(this).apply {
-            setImageResource(R.drawable.foodvexa_splash_mark)
+        val splash = ImageView(this).apply {
+            setImageResource(R.drawable.file_00000000fb7c820897ba8d22568e3acf)
             scaleType = ImageView.ScaleType.FIT_CENTER
+            adjustViewBounds = true
         }
+
         root.addView(
-            mark,
-            LinearLayout.LayoutParams(dp(270), dp(270)).apply {
-                bottomMargin = dp(18)
-            }
+            splash,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
         )
-
-        val brand = TextView(this).apply {
-            val s = android.text.SpannableString("FOODVEXA")
-            s.setSpan(android.text.style.ForegroundColorSpan(Color.WHITE), 0, 4, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            s.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255, 193, 7)), 4, 8, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            text = s
-            textSize = 43f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            gravity = Gravity.CENTER
-            letterSpacing = 0.01f
-        }
-        root.addView(brand, LinearLayout.LayoutParams(-1, dp(62)))
-
-        val divider = TextView(this).apply {
-            setBackgroundColor(Color.argb(95, 255, 255, 255))
-        }
-        root.addView(
-            divider,
-            LinearLayout.LayoutParams(dp(520), dp(1)).apply {
-                topMargin = dp(4)
-                bottomMargin = dp(14)
-            }
-        )
-
-        val tagline = TextView(this).apply {
-            text = "FOOD ORDERING MADE EASY"
-            textSize = 14f
-            letterSpacing = 0.22f
-            setTextColor(Color.WHITE)
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            gravity = Gravity.CENTER
-        }
-        root.addView(tagline, LinearLayout.LayoutParams(-1, dp(40)))
 
         setContentView(root)
     }
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun obtainLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
@@ -115,7 +78,6 @@ class LocationGateActivity : AppCompatActivity() {
             } catch (_: SecurityException) { }
         }
 
-        // Geocoder can block for several seconds. Keep it off the UI thread to avoid ANR.
         Thread {
             val address = best?.let { reverseGeocode(it.latitude, it.longitude) }
             val finalLocation = address ?: ""
