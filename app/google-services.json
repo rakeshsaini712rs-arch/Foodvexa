@@ -7,12 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:775682824585:android:23795fbfc1db9acb1be958",
+        "mobilesdk_app_id": "1:775682824585:android:23795fbfc1dbac9b1be958",
         "android_client_info": {
           "package_name": "com.foodvexa.app"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "775682824585-609j5nf5u406ika4udajla4d1qahgds9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.foodvexa.app",
+            "certificate_hash": "8bddf78b963c4b4a6c6aefa6bd0288117f56bf51"
+          }
+        },
         {
           "client_id": "775682824585-9bica9nvslub12vnkouuojpvk26i74jn.apps.googleusercontent.com",
           "client_type": 1,
