@@ -29,15 +29,18 @@ class LocationGateActivity : AppCompatActivity() {
     }
 
     private fun showFoodvexaSplash() {
-        window.statusBarColor = Color.rgb(230, 45, 65)
-        window.navigationBarColor = Color.rgb(230, 45, 65)
-        window.decorView.systemUiVisibility = 0
+        window.statusBarColor = Color.rgb(245, 20, 35)
+        window.navigationBarColor = Color.rgb(245, 20, 35)
+        window.decorView.systemUiVisibility =
+            android.view.View.SYSTEM_UI_FLAG_FULLSCREEN or
+            android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.rgb(230, 45, 65))
-            setPadding(24, 0, 24, 0)
+            setBackgroundColor(Color.rgb(245, 20, 35))
+            setPadding(dp(24), 0, dp(24), 0)
         }
 
         val logo = ImageView(this).apply {
@@ -45,26 +48,32 @@ class LocationGateActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.FIT_CENTER
             setColorFilter(Color.WHITE)
         }
-        root.addView(logo, LinearLayout.LayoutParams(-1, dp(110)).apply {
-            bottomMargin = dp(18)
-        })
+        root.addView(
+            logo,
+            LinearLayout.LayoutParams(dp(250), dp(250)).apply {
+                bottomMargin = dp(18)
+            }
+        )
 
-        val line = TextView(this).apply {
-            setBackgroundColor(Color.argb(45, 255, 255, 255))
+        val title = TextView(this).apply {
+            text = "FOODVEXA"
+            textSize = 46f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            letterSpacing = 0.01f
         }
-        root.addView(line, LinearLayout.LayoutParams(dp(390), dp(1)).apply {
-            bottomMargin = dp(28)
-        })
+        root.addView(title, LinearLayout.LayoutParams(-1, dp(68)))
 
         val tagline = TextView(this).apply {
-            text = "AN ETERNAL COMPANY"
-            textSize = 17f
-            letterSpacing = 0.18f
+            text = "FOOD ORDERING MADE EASY"
+            textSize = 15f
+            letterSpacing = 0.20f
             setTextColor(Color.WHITE)
-            typeface = Typeface.DEFAULT_BOLD
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             gravity = Gravity.CENTER
         }
-        root.addView(tagline, LinearLayout.LayoutParams(-1, dp(34)))
+        root.addView(tagline, LinearLayout.LayoutParams(-1, dp(44)))
 
         setContentView(root)
     }
