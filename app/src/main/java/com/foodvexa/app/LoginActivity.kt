@@ -166,7 +166,7 @@ class LoginActivity : AppCompatActivity() {
         content.addView(panel, LinearLayout.LayoutParams(-1, -2))
         content.addView(View(this), LinearLayout.LayoutParams(-1, dp(86)))
 
-        root.addView(content, ScrollView.LayoutParams(-1, -2))
+        root.addView(content, android.widget.FrameLayout.LayoutParams(-1, -2))
         setContentView(root)
     }
 
