@@ -57,7 +57,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
         credentialManager = CredentialManager.create(this)
-        if (auth.currentUser != null) {
+        if (auth.currentUser != null && !intent.getBooleanExtra("force_login", false)) {
             openHome()
             return
         }
