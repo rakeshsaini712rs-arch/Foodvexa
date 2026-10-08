@@ -194,6 +194,8 @@ class LoginActivity : AppCompatActivity() {
         }
         val g = tv("G", 22f, Color.rgb(66,133,244), true)
         g.gravity = Gravity.CENTER
+        // Google-style multicolor mark (single TextView keeps the layout lightweight).
+        g.setTextColor(Color.rgb(66, 133, 244))
         google.addView(g, LinearLayout.LayoutParams(dp(40), -1))
         val gt = tv("Continue with Google", 14f, Color.rgb(25,25,25), true)
         gt.gravity = Gravity.CENTER
