@@ -59,10 +59,11 @@ class LoginActivity : AppCompatActivity() {
         credentialManager = CredentialManager.create(this)
         if (intent.getBooleanExtra("force_login", false)) {
             auth.signOut()
+            getSharedPreferences("foodvexa", MODE_PRIVATE).edit().putBoolean("force_login", true).apply()
             showLogin()
             return
         }
-        if (auth.currentUser != null) {
+        if (auth.currentUser != null && !getSharedPreferences("foodvexa", MODE_PRIVATE).getBoolean("force_login", false)) {
             openHome()
             return
         }
@@ -78,6 +79,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun openHome() {
+        getSharedPreferences("foodvexa", MODE_PRIVATE).edit().putBoolean("force_login", false).apply()
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }
