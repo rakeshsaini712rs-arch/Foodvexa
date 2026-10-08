@@ -57,34 +57,38 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text()
           if "import org.json.JSONArray" not in s:
-              s=s.replace("import org.json.JSONObject", "import org.json.JSONObject\nimport org.json.JSONArray", 1)
+              s=s.replace("import org.json.JSONObject", "import org.json.JSONObject\\nimport org.json.JSONArray", 1)
           if "private fun setupBase(selectedNav:Int" not in s:
-              start=s.find("private fun setupBase()")
-              if start >= 0:
-                  end=s.find("\n}", start)
-                  if end >= 0:
-                      s=s[:start]+"private fun setupBase(selectedNav:Int=0){setupHomeBase()}"+s[end+2:]
-          p.write_text(s)
+              s=re.sub(r"private fun setupBase\\(\\)\\s*\\{[^}]*\\}", "private fun setupBase(selectedNav:Int=0){setupHomeBase()}", s, count=1)
+          if "private fun categoryBackground(selected:Boolean)" not in s:
+              marker="private fun categoryCard(c:Category)"
+              pos=s.find(marker)
+              helper='private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}' + chr(10)
+              if pos>=0: s=s[:pos]+helper+s[pos:]
+          if "private fun showHome()" not in s:
+              marker="private fun setupHomeBase("
+              pos=s.find(marker)
+              helper='private fun showHome(){setupHomeBase();selectedCategory="All";query="";renderProducts()}' + chr(10)
+              if pos>=0: s=s[:pos]+helper+s[pos:]
           if "imageCache" not in s:
               cache_decl='private val imageCache=object:android.util.LruCache<String,android.graphics.Bitmap>(24){override fun sizeOf(key:String,value:android.graphics.Bitmap)=value.byteCount/1024}'
               marker="private fun loadImage"
-              if marker in s:
-                  s=s.replace(marker,cache_decl+"\n "+marker,1)
+              if marker in s: s=s.replace(marker,cache_decl+chr(10)+marker,1)
               else:
-                  end=s.rfind("\n}")
-                  if end >= 0:
-                      s=s[:end]+"\n "+cache_decl+s[end:]
-                  else:
-                      raise SystemExit("MainActivity class end not found for image cache")
+                  e=s.rfind(chr(10)+"}")
+                  if e>=0: s=s[:e]+chr(10)+cache_decl+s[e:]
+                  else: raise SystemExit("MainActivity class end not found for image cache")
           p.write_text(s)
           print("COMPILE HARDENING: JSONArray import =", "import org.json.JSONArray" in s)
           print("COMPILE HARDENING: setupBase(Int) =", "private fun setupBase(selectedNav:Int" in s)
+          print("COMPILE HARDENING: showHome =", "private fun showHome()" in s)
+          print("COMPILE HARDENING: categoryBackground =", "private fun categoryBackground(selected:Boolean)" in s)
           print("COMPILE HARDENING: imageCache =", "imageCache" in s)
           PY
-
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
