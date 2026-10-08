@@ -154,6 +154,12 @@ jobs:
           if missing: raise SystemExit("Missing final patch: "+", ".join(missing))
           print("FINAL PATCH VERIFIED")
           PY
+      - name: Prepare stable Foodvexa debug signing key
+        run: |
+          base64 -d app/foodvexa-debug.keystore.b64 > app/foodvexa-debug.keystore
+          chmod 600 app/foodvexa-debug.keystore
+          keytool -list -v -keystore app/foodvexa-debug.keystore -storepass foodvexa2026 -alias foodvexa | grep "SHA1:"
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
