@@ -7,17 +7,35 @@ plugins {
 android {
     namespace = "com.foodvexa.app"
     compileSdk = 35
-    signingConfigs {\n        create("debug") {\n            storeFile = file("foodvexa-debug.keystore")\n            storePassword = "foodvexa2026"\n            keyAlias = "foodvexa"\n            keyPassword = "foodvexa2026"\n        }\n    }\n    defaultConfig {
+
+    signingConfigs {
+        create("debug") {
+            storeFile = file("foodvexa-debug.keystore")
+            storePassword = "foodvexa2026"
+            keyAlias = "foodvexa"
+            keyPassword = "foodvexa2026"
+        }
+    }
+
+    defaultConfig {
         applicationId = "com.foodvexa.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 5
         versionName = "2.0"
     }
-    buildTypes {\n        getByName("debug") {\n            signingConfig = signingConfigs.getByName("debug")\n        }\n    }\n    compileOptions {
+
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions { jvmTarget = "17" }
 }
 
