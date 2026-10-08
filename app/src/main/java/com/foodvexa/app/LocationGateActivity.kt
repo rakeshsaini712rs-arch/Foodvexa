@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 
 class LocationGateActivity : AppCompatActivity() {
@@ -87,7 +88,16 @@ class LocationGateActivity : AppCompatActivity() {
                         .putString("location", finalLocation)
                         .apply()
                 }
-                startActivity(Intent(this, LoginActivity::class.java))
+                val prefs = getSharedPreferences("foodvexa", MODE_PRIVATE)
+                val forceLogin = prefs.getBoolean("force_login", false)
+                val loggedIn = FirebaseAuth.getInstance().currentUser != null
+                if (forceLogin || !loggedIn) {
+                    startActivity(Intent(this, LoginActivity::class.java).apply {
+                        putExtra("force_login", true)
+                    })
+                } else {
+                    startActivity(Intent(this, MainActivity::class.java))
+                }
                 finish()
             }
         }.start()
