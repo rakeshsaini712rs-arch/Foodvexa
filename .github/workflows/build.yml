@@ -16,19 +16,29 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify Google Sign-In configuration
         run: |
+          set -e
+          gradle :app:signingReport --no-daemon > /tmp/foodvexa-signing.txt
           python3 - <<'PY'
-          import json
+          import json,re
           from pathlib import Path
           p=Path("app/google-services.json")
           data=json.loads(p.read_text())
           client=data["client"][0]
           package=client["client_info"]["android_client_info"]["package_name"]
-          hashes=[x.get("android_info",{}).get("certificate_hash","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
-          required="69723771323b509a5d5f5ca9a60b7091359fdd4f"
-          if package != "com.foodvexa.app": raise SystemExit("Wrong Android package: "+package)
-          if required not in hashes: raise SystemExit("Current APK SHA-1 is missing from google-services.json")
+          if package != "com.foodvexa.app":
+              raise SystemExit("Wrong Android package: "+package)
+          report=Path("/tmp/foodvexa-signing.txt").read_text()
+          m=re.search(r"Variant: debug.*?SHA1:\s*([0-9A-Fa-f:]+)",report,re.S)
+          if not m:
+              raise SystemExit("Could not read actual debug SHA-1 from signingReport")
+          actual=m.group(1).replace(":","").lower()
+          hashes=[x.get("android_info",{}).get("certificate_hash","").replace(":","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
+          print("ACTUAL DEBUG SHA-1:", m.group(1))
+          print("REGISTERED ANDROID SHA-1:", ", ".join(hashes))
+          if actual not in hashes:
+              raise SystemExit("ACTUAL APK SHA-1 is NOT registered in google-services.json. Add this SHA-1 in Firebase Console, download the updated google-services.json, and commit it before building.")
           print("GOOGLE SIGN-IN CONFIG VERIFIED: package="+package)
-          print("GOOGLE SIGN-IN CONFIG VERIFIED: current APK SHA-1 present")
+          print("GOOGLE SIGN-IN CONFIG VERIFIED: actual debug SHA-1 is registered")
           PY
       - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
