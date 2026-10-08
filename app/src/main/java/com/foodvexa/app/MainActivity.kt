@@ -190,11 +190,10 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
  }
  item("🚪  Logout","Sign out"){AlertDialog.Builder(this).setTitle("Logout").setMessage("Are you sure you want to logout?").setNegativeButton("CANCEL",null).setPositiveButton("LOGOUT"){_,_->
 FirebaseAuth.getInstance().signOut()
-com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(this,com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
-prefs.edit().clear().putBoolean("force_login",true).commit()
+prefs.edit().putBoolean("force_login",true).commit()
 val loginIntent=Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP}
 startActivity(loginIntent)
-finish()
+finishAffinity()
  }}.show()}
 }
 private fun showCollection(){
