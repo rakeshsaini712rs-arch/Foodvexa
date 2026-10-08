@@ -194,7 +194,7 @@ com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(this,com.google.an
 prefs.edit().clear().putBoolean("force_login",true).commit()
 val loginIntent=Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP}
 startActivity(loginIntent)
-finishAndRemoveTask()
+finish()
  }}.show()}
 }
 private fun showCollection(){
