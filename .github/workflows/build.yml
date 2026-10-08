@@ -16,30 +16,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify Google Sign-In configuration
         run: |
-          set -e
-          gradle :app:signingReport --no-daemon > /tmp/foodvexa-signing.txt
           python3 - <<'PY'
-          import json,re
+          import json
           from pathlib import Path
-          p=Path("app/google-services.json")
-          data=json.loads(p.read_text())
-          client=data["client"][0]
-          package=client["client_info"]["android_client_info"]["package_name"]
+          data=json.loads(Path("app/google-services.json").read_text())
+          package=data["client"][0]["client_info"]["android_client_info"]["package_name"]
           if package != "com.foodvexa.app":
               raise SystemExit("Wrong Android package: "+package)
-          report=Path("/tmp/foodvexa-signing.txt").read_text()
-          m=re.search(r"Variant: debug.*?SHA1:\s*([0-9A-Fa-f:]+)",report,re.S)
-          if not m:
-              raise SystemExit("Could not read actual debug SHA-1 from signingReport")
-          actual=m.group(1).replace(":","").lower()
-          hashes=[x.get("android_info",{}).get("certificate_hash","").replace(":","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
-          print("ACTUAL DEBUG SHA-1:", m.group(1))
-          print("REGISTERED ANDROID SHA-1:", ", ".join(hashes))
-          if actual not in hashes:
-              raise SystemExit("ACTUAL APK SHA-1 is NOT registered in google-services.json. Add this SHA-1 in Firebase Console, download the updated google-services.json, and commit it before building.")
-          print("GOOGLE SIGN-IN CONFIG VERIFIED: package="+package)
-          print("GOOGLE SIGN-IN CONFIG VERIFIED: actual debug SHA-1 is registered")
+          print("GOOGLE SIGN-IN CONFIG: package="+package)
+          print("GOOGLE SIGN-IN CONFIG: google-services.json loaded")
           PY
+
       - name: Apply 148 base and Zomato-style banner carousel
         run: python3 banner_fix.py
       - name: Stabilize product images and remove duplicate category
@@ -169,11 +156,38 @@ jobs:
           PY
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
-      - name: Print debug signing SHA-1 for Firebase
+      - name: Verify built APK SHA-1 for Google Sign-In
         run: |
-          echo "=== FOODVEXA DEBUG SHA-1 ==="
-          gradle :app:signingReport --no-daemon
-          echo "============================"
+          set -e
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK" ]; then
+            echo "APK not found: $APK"
+            exit 1
+          fi
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "apksigner not found"
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK" > /tmp/foodvexa-certs.txt
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          data=json.loads(Path("app/google-services.json").read_text())
+          client=data["client"][0]
+          hashes=[x.get("android_info",{}).get("certificate_hash","").replace(":","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
+          report=Path("/tmp/foodvexa-certs.txt").read_text()
+          m=re.search(r"certificate SHA-1 digest:\s*([0-9A-Fa-f:]+)",report,re.I)
+          if not m:
+              print(report)
+              raise SystemExit("Could not read SHA-1 from built APK")
+          actual=m.group(1).replace(":","").lower()
+          print("BUILT APK SHA-1:",m.group(1))
+          print("REGISTERED ANDROID SHA-1:",", ".join(hashes))
+          if actual not in hashes:
+              raise SystemExit("BUILT APK SHA-1 is NOT registered in google-services.json")
+          print("GOOGLE SIGN-IN VERIFIED: built APK SHA-1 is registered")
+          PY
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
