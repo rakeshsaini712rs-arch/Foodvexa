@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "775682824585-d73tjs7n7stkp2qm2j84pt2ngpi2incb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.foodvexa.app",
+            "certificate_hash": "69723771323b509a5d5f5ca9a60b7091359fdd4f"
+          }
+        },
+        {
           "client_id": "775682824585-tbakliavajbfk2a5dvoakl4on0a198v3.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
