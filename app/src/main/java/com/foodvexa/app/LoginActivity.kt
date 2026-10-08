@@ -142,14 +142,13 @@ class LoginActivity : AppCompatActivity() {
             setBackgroundColor(red)
         }
 
-        // Keep the supplied Foodvexa splash artwork exact for the branded top section.
         val reference = resources.getDrawable(R.drawable.file_00000000fb7c820897ba8d22568e3acf, theme)
         val source = (reference as android.graphics.drawable.BitmapDrawable).bitmap
         val topCrop = minOf(1050, source.height)
         val topBitmap = Bitmap.createBitmap(source, 0, 0, source.width, topCrop)
         val topImage = object : ImageView(this) {
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                val width = MeasureSpec.getSize(widthMeasure)
+                val width = MeasureSpec.getSize(widthMeasureSpec)
                 val height = (width.toLong() * topBitmap.height / topBitmap.width).toInt()
                 setMeasuredDimension(width, height)
             }
