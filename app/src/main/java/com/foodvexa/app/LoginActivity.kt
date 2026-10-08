@@ -4,6 +4,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Typeface
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
