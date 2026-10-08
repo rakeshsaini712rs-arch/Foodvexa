@@ -69,31 +69,31 @@ class MainActivity:AppCompatActivity(){
   setupHomeBase()
   val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(6),dp(2),dp(6),dp(2))}
   val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
-  header.addView(logo,LinearLayout.LayoutParams(dp(78),dp(68)))
+  header.addView(logo,LinearLayout.LayoutParams(dp(58),dp(58)))
   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  val name=label("FOODVEXA",27f,true,Color.WHITE)
+  val name=label("FOODVEXA",25f,true,Color.WHITE)
   val styled=android.text.SpannableString("FOODVEXA")
   styled.setSpan(android.text.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
   styled.setSpan(android.text.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
   name.text=styled
   brand.addView(name)
-  brand.addView(label("Taste the Happiness",12f,false,Color.LTGRAY))
+  brand.addView(label("Taste the Happiness",10f,false,Color.LTGRAY))
   header.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
   val bell=label("♧",28f,false,Color.WHITE).apply{gravity=Gravity.CENTER}
-  header.addView(bell,LinearLayout.LayoutParams(dp(48),dp(58)))
+  header.addView(bell,LinearLayout.LayoutParams(dp(40),dp(52)))
   val shell=(content.parent as ScrollView).parent as LinearLayout
   val fixed=shell.getChildAt(0) as LinearLayout
   fixed.addView(header)
-  fixed.addView(locationHeader(),margin(0,4,0,10))
+  fixed.addView(locationHeader(),margin(0,2,0,6))
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
-  fixed.addView(search,margin(0,0,0,12))
-  fixed.addView(professionalBanner(),margin(0,0,0,12))
-  fixed.addView(label("Categories",22f,true,Color.WHITE),margin(0,0,0,7))
+  fixed.addView(search,margin(0,0,0,7))
+  fixed.addView(professionalBanner(),margin(0,0,0,7))
+  fixed.addView(label("Categories",21f,true,Color.WHITE),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(116),dp(122)).apply{rightMargin=dp(9)})}
-  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(122)))
-  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,Color.WHITE),margin(0,4,0,8))
+  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(108),dp(104)).apply{rightMargin=dp(9)})}
+  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(104)))
+  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,Color.WHITE),margin(0,2,0,5))
   renderProducts()
  }
 
@@ -126,7 +126,7 @@ filtered.forEachIndexed{index,p->
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
     card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-    bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),0.92f))
+    bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
@@ -135,18 +135,18 @@ filtered.forEachIndexed{index,p->
         add.ellipsize=null
         add.minWidth=0
         add.setPadding(dp(5),dp(4),dp(5),dp(4))
-        bottom.addView(add,LinearLayout.LayoutParams(0,dp(44),1.08f))
+        bottom.addView(add,LinearLayout.LayoutParams(0,dp(30),1.08f))
     }else{
         val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();updateCartBadge();renderProducts()}
         val plus=primaryButton("+"){addToCart(p);renderProducts()}
         val count=label(qty.toString(),15f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
-        controls.addView(minus,LinearLayout.LayoutParams(dp(32),dp(40)))
-        controls.addView(count,LinearLayout.LayoutParams(dp(30),dp(40)))
-        controls.addView(plus,LinearLayout.LayoutParams(dp(32),dp(40)))
+        controls.addView(minus,LinearLayout.LayoutParams(dp(26),dp(30)))
+        controls.addView(count,LinearLayout.LayoutParams(dp(26),dp(30)))
+        controls.addView(plus,LinearLayout.LayoutParams(dp(26),dp(30)))
         bottom.addView(controls)
     }
-    card.addView(bottom,margin(0,7,0,0))
+    card.addView(bottom,margin(0,2,0,0))
     row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
     if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
 }
