@@ -188,17 +188,17 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
  item("ℹ️  About","About Foodvexa"){
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
- item("🚪  Logout","Sign out"){AlertDialog.Builder(this).setTitle("Logout").setMessage("Are you sure you want to logout?").setNegativeButton("CANCEL",null).setPositiveButton("LOGOUT"){_,_->
-FirebaseAuth.getInstance().signOut()
-prefs.edit().putBoolean("force_login",true).commit()
-val loginIntent=Intent(this,LoginActivity::class.java).apply{
-    putExtra("force_login",true)
-    flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-}
-loginIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-startActivity(loginIntent)
-return
- }}.show()}
+ item("🚪  Logout","Sign out"){
+    FirebaseAuth.getInstance().signOut()
+    prefs.edit().putBoolean("force_login",true).apply()
+    val intent=Intent(this,LoginActivity::class.java).apply{
+        putExtra("force_login",true)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    }
+    startActivity(intent)
+    overridePendingTransition(0,0)
+    finish()
+}}
 }
 private fun showCollection(){
  setupBase(4)
