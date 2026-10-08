@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "775682824585-9bica9nvslub12vnkouuojpvk26i74jn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.foodvexa.app",
+            "certificate_hash": "fc8bd0ce91a528ffa1eb59b1e693f75268c71b6e"
+          }
+        },
+        {
           "client_id": "775682824585-9hk9eanipt1mo2tqi4qsj7kkci9ufclq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
