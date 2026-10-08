@@ -8,13 +8,11 @@ android {
     namespace = "com.foodvexa.app"
     compileSdk = 35
 
-    signingConfigs {
-        create("debug") {
-            storeFile = file("foodvexa-debug.keystore")
-            storePassword = "foodvexa2026"
-            keyAlias = "foodvexa"
-            keyPassword = "foodvexa2026"
-        }
+    signingConfigs.getByName("debug") {
+        storeFile = file("foodvexa-debug.keystore")
+        storePassword = "foodvexa2026"
+        keyAlias = "foodvexa"
+        keyPassword = "foodvexa2026"
     }
 
     defaultConfig {
