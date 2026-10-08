@@ -44,9 +44,8 @@ class LocationGateActivity : AppCompatActivity() {
         }
 
         val logo = ImageView(this).apply {
-            setImageResource(R.drawable.foodvexa_logo)
+            setImageResource(R.drawable.foodvexa_splash_logo)
             scaleType = ImageView.ScaleType.FIT_CENTER
-            setColorFilter(Color.WHITE)
         }
         root.addView(
             logo,
