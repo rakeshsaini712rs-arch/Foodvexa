@@ -144,8 +144,10 @@ class LoginActivity : AppCompatActivity() {
 
         val reference = resources.getDrawable(R.drawable.file_00000000fb7c820897ba8d22568e3acf, theme)
         val source = (reference as android.graphics.drawable.BitmapDrawable).bitmap
-        val topCrop = minOf(1050, source.height)
-        val topBitmap = Bitmap.createBitmap(source, 0, 0, source.width, topCrop)
+        // Keep the login screen compact: the reference panel starts soon after the full Foodvexa mark.
+        val cropTop = minOf(250, maxOf(0, source.height - 700))
+        val topCrop = minOf(700, source.height - cropTop)
+        val topBitmap = Bitmap.createBitmap(source, 0, cropTop, source.width, topCrop)
         val topImage = object : ImageView(this) {
             override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                 val width = MeasureSpec.getSize(widthMeasureSpec)
