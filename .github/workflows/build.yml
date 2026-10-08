@@ -63,6 +63,11 @@ jobs:
           if "import org.json.JSONArray" not in s:
               s=s.replace("import org.json.JSONObject", "import org.json.JSONObject" + chr(10) + "import org.json.JSONArray", 1)
 
+          # Some transformed bases collapse setupHomeBase() to a no-argument function.
+          # Normalize that signature so setupBase(selectedNav) remains source-compatible.
+          if "private fun setupHomeBase(selectedNav:Int=0)" not in s:
+              s=s.replace("private fun setupHomeBase(){", "private fun setupHomeBase(selectedNav:Int=0){", 1)
+
           if "private fun setupBase(selectedNav:Int" not in s:
               marker="private fun setupHomeBase("
               pos=s.find(marker)
