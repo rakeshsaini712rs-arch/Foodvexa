@@ -1,5 +1,7 @@
 package com.foodvexa.app
 
+import android.content.Intent
+
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -186,7 +188,7 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
  item("ℹ️  About","About Foodvexa"){
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
- item("🚪  Logout","Sign out"){prefs.edit().clear().apply();FirebaseAuth.getInstance().signOut();startActivity(Intent(this,LoginActivity::class.java).apply{flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish()}
+ item("🚪  Logout","Sign out"){prefs.edit().clear().apply();FirebaseAuth.getInstance().signOut();val loginIntent=Intent(this,LoginActivity::class.java).apply{flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK};startActivity(loginIntent);finishAffinity()}
 }
 private fun showCollection(){
  setupBase(4)
