@@ -1,12 +1,26 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="512dp" android:height="512dp" android:viewportWidth="512" android:viewportHeight="512">
-<path android:fillColor="#E81E2D" android:pathData="M48,0h416c26.5,0 48,21.5 48,48v416c0,26.5-21.5,48-48,48H48c-26.5,0-48-21.5-48-48V48C0,21.5 21.5,0 48,0z"/>
-<path android:fillColor="#FFFFFF" android:pathData="M155,183c0,-42 34,-76 76,-76c23,0 44,10 58,28c8,-4 17,-6 27,-6c35,0 63,28 63,63c0,9 -2,18 -6,26H155z"/>
-<path android:fillColor="#E81E2D" android:pathData="M286,116c24,7 42,25 48,49c3,10 3,20 1,29h18c4,-9 6,-18 6,-28c0,-29 -23,-53 -52,-53c-7,0 -14,1 -21,3z"/>
-<path android:fillColor="#FFFFFF" android:pathData="M190,207h196c9,0 16,7 16,16v15c0,9 -7,16 -16,16H264v44h78c9,0 16,7 16,16v15c0,9 -7,16 -16,16h-78v73c0,18 -14,32 -32,32h-17c-18,0 -32,-14 -32,-32V239c0,-18 14,-32 32,-32z"/>
-<path android:fillColor="#FFC400" android:pathData="M91,228h91c9,0 16,7 16,16v8c0,9 -7,16 -16,16H91c-9,0 -16,-7 -16,-16v-8c0,-9 7,-16 16,-16z"/>
-<path android:fillColor="#FFC400" android:pathData="M66,275h116c9,0 16,7 16,16v8c0,9 -7,16 -16,16H66c-9,0 -16,-7 -16,-16v-8c0,-9 7,-16 16,-16z"/>
-<path android:fillColor="#FFC400" android:pathData="M91,322h91c9,0 16,7 16,16v8c0,9 -7,16 -16,16H91c-9,0 -16,-7 -16,-16v-8c0,-9 7,-16 16,-16z"/>
-<path android:fillColor="#39B54A" android:pathData="M350,293c-4,-42 17,-70 61,-79c-1,39 -18,69 -61,79z"/>
-<path android:fillColor="#39B54A" android:pathData="M350,293c4,-42 -17,-70 -61,-79c1,39 18,69 61,79z"/>
-<path android:fillColor="#39B54A" android:pathData="M346,288h8v42h-8z"/>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="512dp"
+    android:height="512dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <path android:fillColor="#FFFFFF" android:pathData="M56,0h400c31,0 56,25 56,56v400c0,31 -25,56 -56,56H56c-31,0 -56,-25 -56,-56V56C0,25 25,0 56,0z"/>
+
+    <!-- green leaves -->
+    <path android:fillColor="#39A84A" android:pathData="M151,177C113,127 124,81 178,66c10,52 -2,86 -27,111z"/>
+    <path android:fillColor="#2E9B45" android:pathData="M361,177C399,127 388,81 334,66c-10,52 2,86 27,111z"/>
+
+    <!-- dark green food/chef ring -->
+    <path android:fillColor="#073F39" android:pathData="M117,245c0,-74 62,-134 139,-134s139,60 139,134h-32c0,-57 -48,-103 -107,-103s-107,46 -107,103z"/>
+    <path android:fillColor="#073F39" android:pathData="M91,253h330c0,92 -73,158 -165,158S91,345 91,253z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M118,285c21,46 70,78 138,78s117,-32 138,-78c-18,64 -75,105 -138,105S136,349 118,285z"/>
+
+    <!-- orange spoon / central mark -->
+    <path android:fillColor="#FF8A00" android:pathData="M244,102c0,-20 16,-36 36,-36s36,16 36,36v178h-72z"/>
+    <circle android:fillColor="#FF8A00" android:cx="280" android:cy="64" android:r="30"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M264,109h32v145h-32z"/>
+
+    <!-- orange bowl accent -->
+    <path android:fillColor="#FF8A00" android:pathData="M95,251h330v24H95z"/>
+    <path android:fillColor="#FF8A00" android:pathData="M137,319c31,32 76,49 143,49s112,-17 143,-49c-21,48 -74,79 -143,79s-122,-31 -143,-79z"/>
 </vector>
