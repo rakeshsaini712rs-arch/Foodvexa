@@ -67,10 +67,20 @@ class MainActivity:AppCompatActivity(){
  }
  private fun showHome(){
   setupHomeBase()
-  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_exact_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
-  header.addView(logo,LinearLayout.LayoutParams(dp(70),dp(70)))
-  header.addView(label("FOODVEXA",26f,true,Color.WHITE),LinearLayout.LayoutParams(0,-2,1f))
+  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(6),dp(2),dp(6),dp(2))}
+  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
+  header.addView(logo,LinearLayout.LayoutParams(dp(78),dp(68)))
+  val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+  val name=label("FOODVEXA",27f,true,Color.WHITE)
+  val styled=android.text.SpannableString("FOODVEXA")
+  styled.setSpan(android.text.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  styled.setSpan(android.text.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  name.text=styled
+  brand.addView(name)
+  brand.addView(label("Taste the Happiness",12f,false,Color.LTGRAY))
+  header.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
+  val bell=label("♧",28f,false,Color.WHITE).apply{gravity=Gravity.CENTER}
+  header.addView(bell,LinearLayout.LayoutParams(dp(48),dp(58)))
   val shell=(content.parent as ScrollView).parent as LinearLayout
   val fixed=shell.getChildAt(0) as LinearLayout
   fixed.addView(header)
@@ -108,15 +118,15 @@ val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCate
 var row:LinearLayout?=null
 filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
-    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(8),dp(8),dp(8),dp(9));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-    card.addView(pic,LinearLayout.LayoutParams(-1,dp(140)))
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(102)))
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
-    card.addView(label(p.name,14f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,7,0,0))
-    card.addView(label("• Available",12f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
+    card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
+    card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-    bottom.addView(label("₹${p.price}",18f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),0.92f))
+    bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(44),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
