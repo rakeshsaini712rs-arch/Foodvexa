@@ -163,7 +163,7 @@ class LoginActivity : AppCompatActivity() {
         // Red bottom area from the supplied reference.
         content.addView(View(this), LinearLayout.LayoutParams(-1, dp(86)))
 
-        root.addView(content, ScrollView.LayoutParams(-1, -2))
+        root.addView(content, FrameLayout.LayoutParams(-1, -2))
         setContentView(root)
     }
 
