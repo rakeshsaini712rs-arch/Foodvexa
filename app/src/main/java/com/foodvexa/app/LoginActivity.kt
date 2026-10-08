@@ -108,22 +108,22 @@ class LoginActivity : AppCompatActivity() {
         }
         val circle = TextView(this).apply {
             text = icon
-            textSize = 24f
+            textSize = 16f
             gravity = Gravity.CENTER
             setTextColor(iconFg)
-            background = rounded(iconBg, dp(32).toFloat())
+            background = rounded(iconBg, dp(28).toFloat())
         }
-        row.addView(circle, LinearLayout.LayoutParams(dp(58), dp(58)))
+        row.addView(circle, LinearLayout.LayoutParams(dp(42), dp(42)))
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(28), 0, 0, 0)
+            setPadding(dp(18), 0, 0, 0)
         }
-        texts.addView(tv(title, 19f, Color.rgb(20,20,20), true))
-        val sub = tv(subtitle, 15.5f, Color.rgb(105,105,105))
-        sub.setPadding(0, dp(6), 0, 0)
-        texts.addView(sub)
-        row.addView(texts, LinearLayout.LayoutParams(0, dp(76), 1f))
+        texts.addView(tv(title, 15f, Color.rgb(20,20,20), true))
+        val sub = tv(subtitle, 11.5f, Color.rgb(105,105,105))
+        sub.maxLines = 1
+        texts.addView(sub, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
+        row.addView(texts, LinearLayout.LayoutParams(0, dp(50), 1f))
         return row
     }
 
@@ -132,94 +132,92 @@ class LoginActivity : AppCompatActivity() {
         window.navigationBarColor = red
         window.decorView.systemUiVisibility = 0
 
-        val root = ScrollView(this).apply {
-            setBackgroundColor(red)
-            isFillViewport = true
-            clipToPadding = false
-        }
-        val content = LinearLayout(this).apply {
+        // One-screen layout: no ScrollView. Everything is scaled to the available height.
+        val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(red)
+            clipToPadding = false
         }
 
         val reference = resources.getDrawable(R.drawable.file_00000000fb7c820897ba8d22568e3acf, theme)
         val source = (reference as android.graphics.drawable.BitmapDrawable).bitmap
-        // Keep the login screen compact: the reference panel starts soon after the full Foodvexa mark.
-        val cropTop = minOf(250, maxOf(0, source.height - 700))
-        val topCrop = minOf(700, source.height - cropTop)
-        val topBitmap = Bitmap.createBitmap(source, 0, cropTop, source.width, topCrop)
-        val topImage = object : ImageView(this) {
-            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                val width = MeasureSpec.getSize(widthMeasureSpec)
-                val height = (width.toLong() * topBitmap.height / topBitmap.width).toInt()
-                setMeasuredDimension(width, height)
-            }
-        }.apply {
-            setImageBitmap(topBitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
+
+        // Compact branded header. CENTER_CROP keeps the original logo artwork while placing it at the top.
+        val top = ImageView(this).apply {
+            setImageBitmap(source)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            adjustViewBounds = false
         }
-        content.addView(topImage)
+        root.addView(top, LinearLayout.LayoutParams(-1, 0, 0.38f))
 
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(44), dp(24), dp(44), dp(30))
+            setPadding(dp(26), dp(10), dp(26), dp(8))
             background = GradientDrawable().apply {
                 setColor(Color.WHITE)
-                cornerRadii = floatArrayOf(dp(42).toFloat(), dp(42).toFloat(), dp(42).toFloat(), dp(42).toFloat(), dp(70).toFloat(), dp(70).toFloat(), dp(70).toFloat(), dp(70).toFloat())
+                cornerRadii = floatArrayOf(
+                    dp(34).toFloat(), dp(34).toFloat(), dp(34).toFloat(), dp(34).toFloat(),
+                    0f, 0f, 0f, 0f
+                )
             }
         }
 
-        val handle = View(this).apply { background = rounded(Color.rgb(205,205,208), dp(6).toFloat()) }
-        panel.addView(handle, LinearLayout.LayoutParams(dp(92), dp(8)).apply { bottomMargin = dp(34) })
+        val handle = View(this).apply { background = rounded(Color.rgb(205,205,208), dp(5).toFloat()) }
+        panel.addView(handle, LinearLayout.LayoutParams(dp(70), dp(5)).apply { bottomMargin = dp(10) })
 
-        val title = tv("Welcome to FOODVEXA 👋", 28f, Color.rgb(18,18,18), true)
+        val title = tv("Welcome to FOODVEXA 👋", 20f, Color.rgb(18,18,18), true)
         title.gravity = Gravity.CENTER
-        panel.addView(title, LinearLayout.LayoutParams(-1, -2))
-        val sub = tv("Login to order your favorite food", 18f, Color.rgb(115,115,120))
-        sub.gravity = Gravity.CENTER
-        panel.addView(sub, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12); bottomMargin = dp(30) })
+        panel.addView(title, LinearLayout.LayoutParams(-1, 0, 0.10f))
 
-        panel.addView(featureRow("🛵", "Fast Delivery", "Get your food delivered quickly", Color.rgb(255,229,232), Color.rgb(225,35,55)))
-        panel.addView(featureRow("🍽", "Wide Variety", "Explore snacks, meals, sweets & more", Color.rgb(228,246,236), Color.rgb(20,145,70)))
-        panel.addView(featureRow("★", "Best Quality", "Fresh and delicious food always", Color.rgb(255,241,210), Color.rgb(245,170,0)))
-        panel.addView(featureRow("✓", "Safe & Secure", "Your data is always protected", Color.rgb(221,241,255), Color.rgb(25,145,225)))
+        val sub = tv("Login to order your favorite food", 12.5f, Color.rgb(115,115,120))
+        sub.gravity = Gravity.CENTER
+        panel.addView(sub, LinearLayout.LayoutParams(-1, 0, 0.07f))
+
+        val features = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        features.addView(featureRow("🛵", "Fast Delivery", "Get your food delivered quickly", Color.rgb(255,229,232), Color.rgb(225,35,55)))
+        features.addView(featureRow("🍽", "Wide Variety", "Explore snacks, meals, sweets & more", Color.rgb(228,246,236), Color.rgb(20,145,70)))
+        features.addView(featureRow("★", "Best Quality", "Fresh and delicious food always", Color.rgb(255,241,210), Color.rgb(245,170,0)))
+        features.addView(featureRow("✓", "Safe & Secure", "Your data is always protected", Color.rgb(221,241,255), Color.rgb(25,145,225)))
+        panel.addView(features, LinearLayout.LayoutParams(-1, 0, 0.43f))
 
         val google = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(26), 0, dp(20), 0)
-            background = rounded(Color.WHITE, dp(32).toFloat(), Color.rgb(232,232,235))
-            elevation = dp(3).toFloat()
+            setPadding(dp(18), 0, dp(14), 0)
+            background = rounded(Color.WHITE, dp(28).toFloat(), Color.rgb(232,232,235))
+            elevation = dp(2).toFloat()
             setOnClickListener { googleLogin() }
             contentDescription = "Continue with Google"
         }
-        val g = tv("G", 30f, Color.rgb(66,133,244), true)
-        google.addView(g, LinearLayout.LayoutParams(dp(56), dp(58)))
-        val gt = tv("Continue with Google", 18f, Color.rgb(25,25,25), true)
+        val g = tv("G", 22f, Color.rgb(66,133,244), true)
+        g.gravity = Gravity.CENTER
+        google.addView(g, LinearLayout.LayoutParams(dp(40), -1))
+        val gt = tv("Continue with Google", 14f, Color.rgb(25,25,25), true)
         gt.gravity = Gravity.CENTER
-        google.addView(gt, LinearLayout.LayoutParams(0, dp(58), 1f))
-        val arrow = tv("›", 34f, Color.rgb(55,55,60), false)
+        google.addView(gt, LinearLayout.LayoutParams(0, -1, 1f))
+        val arrow = tv("›", 27f, Color.rgb(55,55,60))
         arrow.gravity = Gravity.CENTER
-        google.addView(arrow, LinearLayout.LayoutParams(dp(35), dp(58)))
-        panel.addView(google, LinearLayout.LayoutParams(-1, dp(60)).apply { topMargin = dp(28) })
+        google.addView(arrow, LinearLayout.LayoutParams(dp(28), -1))
+        panel.addView(google, LinearLayout.LayoutParams(-1, 0, 0.11f).apply { topMargin = dp(4) })
 
         val divider = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        val l = View(this).apply { setBackgroundColor(Color.rgb(205,205,210)) }
-        val or = tv("OR", 15f, Color.rgb(145,145,150), false).apply { gravity = Gravity.CENTER }
-        val r = View(this).apply { setBackgroundColor(Color.rgb(205,205,210)) }
+        val l = View(this).apply { setBackgroundColor(Color.rgb(210,210,215)) }
+        val or = tv("OR", 11f, Color.rgb(145,145,150)).apply { gravity = Gravity.CENTER }
+        val rr = View(this).apply { setBackgroundColor(Color.rgb(210,210,215)) }
         divider.addView(l, LinearLayout.LayoutParams(0, dp(1), 1f))
-        divider.addView(or, LinearLayout.LayoutParams(dp(70), dp(40)))
-        divider.addView(r, LinearLayout.LayoutParams(0, dp(1), 1f))
-        panel.addView(divider, LinearLayout.LayoutParams(-1, dp(40)).apply { topMargin = dp(12) })
+        divider.addView(or, LinearLayout.LayoutParams(dp(42), -1))
+        divider.addView(rr, LinearLayout.LayoutParams(0, dp(1), 1f))
+        panel.addView(divider, LinearLayout.LayoutParams(-1, 0, 0.07f))
 
-        val terms = tv("By continuing, you agree to our Terms of Service\nand Privacy Policy", 14.5f, Color.rgb(120,120,125))
+        val terms = tv("By continuing, you agree to our Terms of Service\nand Privacy Policy", 9.5f, Color.rgb(120,120,125))
         terms.gravity = Gravity.CENTER
-        panel.addView(terms, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+        terms.maxLines = 2
+        panel.addView(terms, LinearLayout.LayoutParams(-1, 0, 0.10f))
 
-        content.addView(panel, LinearLayout.LayoutParams(-1, -2))
-        content.addView(View(this), LinearLayout.LayoutParams(-1, dp(70)))
-        root.addView(content, android.widget.FrameLayout.LayoutParams(-1, -2))
+        root.addView(panel, LinearLayout.LayoutParams(-1, 0, 0.62f))
         setContentView(root)
     }
 
