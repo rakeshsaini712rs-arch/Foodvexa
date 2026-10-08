@@ -104,50 +104,55 @@ class LoginActivity : AppCompatActivity() {
             setBackgroundColor(red)
         }
 
-        // The uploaded reference image is used directly, so the login screen
-        // matches the supplied design instead of rebuilding it with different fonts/icons.
-        val reference = resources.getDrawable(R.drawable.file_00000000fb7c820897ba8d22568e3acf, theme)
+        val reference = resources.getDrawable(
+            R.drawable.file_00000000fb7c820897ba8d22568e3acf,
+            theme
+        )
         val source = (reference as android.graphics.drawable.BitmapDrawable).bitmap
 
-        // Top Foodvexa image from the supplied reference.
-        val topBitmap = Bitmap.createBitmap(
-            source, 0, 0, source.width, minOf(575, source.height)
-        )
-        val top = ImageView(this).apply {
-            setImageBitmap(topBitmap)
+        // Show the supplied reference image in pixel-accurate aspect ratio.
+        fun exactImage(bitmap: Bitmap): ImageView = object : ImageView(this) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                val width = MeasureSpec.getSize(widthMeasureSpec)
+                val height = (width.toLong() * bitmap.height / bitmap.width).toInt()
+                setMeasuredDimension(width, height)
+            }
+        }.apply {
+            setImageBitmap(bitmap)
             scaleType = ImageView.ScaleType.FIT_XY
-            adjustViewBounds = true
+            adjustViewBounds = false
         }
-        content.addView(top, LinearLayout.LayoutParams(-1, -2))
 
-        // Login panel from the same supplied reference.
-        val panelHeight = minOf(875, source.height - 575)
-        val panelBitmap = Bitmap.createBitmap(source, 0, 575, source.width, panelHeight).copy(Bitmap.Config.ARGB_8888, true)
+        // The supplied reference is 720x1536; the login panel starts at y=575.
+        val splitY = minOf(575, source.height)
+        val topBitmap = Bitmap.createBitmap(source, 0, 0, source.width, splitY)
+        content.addView(exactImage(topBitmap))
 
-        // Remove only the Guest button area; everything else stays exactly as in the reference.
+        val panelHeight = minOf(875, source.height - splitY)
+        val panelBitmap = Bitmap.createBitmap(
+            source, 0, splitY, source.width, panelHeight
+        ).copy(Bitmap.Config.ARGB_8888, true)
+
+        // Remove only the Guest button from the supplied reference.
         Canvas(panelBitmap).drawRect(
             45f, 675f, (source.width - 45).toFloat(), 765f,
             Paint().apply { color = Color.WHITE; style = Paint.Style.FILL }
         )
 
         val panel = FrameLayout(this)
-        val panelImage = ImageView(this).apply {
-            setImageBitmap(panelBitmap)
-            scaleType = ImageView.ScaleType.FIT_XY
-            adjustViewBounds = true
-        }
+        val panelImage = exactImage(panelBitmap)
         panel.addView(panelImage, FrameLayout.LayoutParams(-1, -2))
 
-        // Transparent clickable area over the Google button.
         val googleHit = View(this).apply {
             setOnClickListener { googleLogin() }
             contentDescription = "Continue with Google"
             background = GradientDrawable().apply { setColor(Color.TRANSPARENT) }
         }
         panel.addView(googleHit)
+
         panel.post {
             val w = panel.width
-            val h = panelImage.height.takeIf { it > 0 } ?: ((w.toFloat() * panelHeight / source.width).toInt())
+            val h = panelImage.height
             googleHit.layoutParams = FrameLayout.LayoutParams(
                 (w * 0.84f).toInt(),
                 (h * 0.092f).toInt()
@@ -159,11 +164,9 @@ class LoginActivity : AppCompatActivity() {
         }
 
         content.addView(panel, LinearLayout.LayoutParams(-1, -2))
-
-        // Red bottom area from the supplied reference.
         content.addView(View(this), LinearLayout.LayoutParams(-1, dp(86)))
 
-        root.addView(content, FrameLayout.LayoutParams(-1, -2))
+        root.addView(content, ScrollView.LayoutParams(-1, -2))
         setContentView(root)
     }
 
