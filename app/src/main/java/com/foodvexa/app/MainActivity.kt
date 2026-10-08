@@ -189,15 +189,14 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,C
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
  }
  item("🚪  Logout","Sign out"){
+    val saved=prefs.edit().putBoolean("force_login",true).commit()
     FirebaseAuth.getInstance().signOut()
-    prefs.edit().putBoolean("force_login",true).apply()
-    val intent=Intent(this,LoginActivity::class.java).apply{
+    val intent=Intent(applicationContext,LoginActivity::class.java).apply{
         putExtra("force_login",true)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
     startActivity(intent)
-    overridePendingTransition(0,0)
-    finish()
+    finishAffinity()
 }}
 }
 private fun showCollection(){
