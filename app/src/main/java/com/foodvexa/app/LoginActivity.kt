@@ -141,7 +141,7 @@ class LoginActivity : AppCompatActivity() {
 
         val panel = FrameLayout(this)
         val panelImage = exactImage(panelBitmap)
-        panel.addView(panelImage, FrameLayout.LayoutParams(-1, -2))
+        panel.addView(panelImage, android.widget.FrameLayout.LayoutParams(-1, -2))
 
         val googleHit = View(this).apply {
             setOnClickListener { googleLogin() }
@@ -153,7 +153,7 @@ class LoginActivity : AppCompatActivity() {
         panel.post {
             val w = panel.width
             val h = panelImage.height
-            googleHit.layoutParams = FrameLayout.LayoutParams(
+            googleHit.layoutParams = android.widget.FrameLayout.LayoutParams(
                 (w * 0.84f).toInt(),
                 (h * 0.092f).toInt()
             ).apply {
