@@ -68,7 +68,7 @@ class MainActivity:AppCompatActivity(){
  private fun showHome(){
   setupHomeBase()
   val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
+  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_exact_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
   header.addView(logo,LinearLayout.LayoutParams(dp(70),dp(70)))
   header.addView(label("FOODVEXA",26f,true,Color.WHITE),LinearLayout.LayoutParams(0,-2,1f))
   val shell=(content.parent as ScrollView).parent as LinearLayout
