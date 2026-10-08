@@ -3,6 +3,9 @@ package com.foodvexa.app
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.Spanned
@@ -195,10 +198,21 @@ class LoginActivity : AppCompatActivity() {
             setOnClickListener { googleLogin() }
             contentDescription = "Continue with Google"
         }
-        val g = tv("G", 22f, Color.rgb(66,133,244), true)
-        g.gravity = Gravity.CENTER
-        // Google-style multicolor mark (single TextView keeps the layout lightweight).
-        g.setTextColor(Color.rgb(66, 133, 244))
+        val g = object : View(this) {
+            private val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(5).toFloat(); strokeCap = Paint.Cap.SQUARE }
+            override fun onDraw(canvas: Canvas) {
+                val s = minOf(width, height).toFloat()
+                val pad = s * 0.18f
+                val box = RectF(pad, pad, s - pad, s - pad)
+                p.color = Color.rgb(66, 133, 244); canvas.drawArc(box, -35f, 95f, false, p)
+                p.color = Color.rgb(234, 67, 53); canvas.drawArc(box, 60f, 100f, false, p)
+                p.color = Color.rgb(251, 188, 5); canvas.drawArc(box, 160f, 85f, false, p)
+                p.color = Color.rgb(52, 168, 83); canvas.drawArc(box, 245f, 80f, false, p)
+                p.color = Color.rgb(66, 133, 244); p.style = Paint.Style.FILL
+                canvas.drawRect(s * 0.48f, s * 0.43f, s * 0.82f, s * 0.57f, p)
+                p.style = Paint.Style.STROKE
+            }
+        }
         google.addView(g, LinearLayout.LayoutParams(dp(40), -1))
         val gt = tv("Continue with Google", 14f, Color.rgb(25,25,25), true)
         gt.gravity = Gravity.CENTER
@@ -217,9 +231,16 @@ class LoginActivity : AppCompatActivity() {
         divider.addView(rr, LinearLayout.LayoutParams(0, dp(1), 1f))
         panel.addView(divider, LinearLayout.LayoutParams(-1, 0, 0.07f))
 
-        val terms = tv("By continuing, you agree to our Terms of Service\nand Privacy Policy", 9.5f, Color.rgb(120,120,125))
+        val legal = "By continuing, you agree to our Terms of Service\\nand Privacy Policy"
+        val terms = tv(legal, 9.5f, Color.rgb(120,120,125))
         terms.gravity = Gravity.CENTER
         terms.maxLines = 2
+        val sp = android.text.SpannableString(legal)
+        val tosStart = legal.indexOf("Terms of Service")
+        val ppStart = legal.indexOf("Privacy Policy")
+        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), tosStart, tosStart + 16, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), ppStart, ppStart + 13, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        terms.text = sp
         panel.addView(terms, LinearLayout.LayoutParams(-1, 0, 0.10f))
 
         root.addView(panel, LinearLayout.LayoutParams(-1, 0, 0.62f))
