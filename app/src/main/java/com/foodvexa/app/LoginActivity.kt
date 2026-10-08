@@ -187,8 +187,6 @@ class LoginActivity : AppCompatActivity() {
             },
             LinearLayout.LayoutParams(-1, dp(44))
         )
-
-
         panel.addView(
             label(
                 "By continuing, you agree to our Terms of Service\nand Privacy Policy",
