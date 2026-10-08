@@ -181,20 +181,6 @@ class LoginActivity : AppCompatActivity() {
             LinearLayout.LayoutParams(-1, dp(44))
         )
 
-        val guest = Button(this).apply {
-            text = "  👤  Continue as Guest     ›"
-            textSize = 16f
-            isAllCaps = false
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(25,25,30))
-            background = GradientDrawable().apply {
-                setColor(Color.WHITE)
-                cornerRadius = dp(30).toFloat()
-                setStroke(dp(1), Color.rgb(230,230,235))
-            }
-            setOnClickListener { openHome() }
-        }
-        panel.addView(guest, LinearLayout.LayoutParams(-1, dp(62)))
 
         panel.addView(
             label(
