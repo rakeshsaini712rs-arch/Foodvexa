@@ -231,15 +231,15 @@ class LoginActivity : AppCompatActivity() {
         divider.addView(rr, LinearLayout.LayoutParams(0, dp(1), 1f))
         panel.addView(divider, LinearLayout.LayoutParams(-1, 0, 0.07f))
 
-        val legal = "By continuing, you agree to our Terms of Service\\nand Privacy Policy"
+        val legal = "By continuing, you agree to our Terms of Service\nand Privacy Policy"
         val terms = tv(legal, 9.5f, Color.rgb(120,120,125))
         terms.gravity = Gravity.CENTER
         terms.maxLines = 2
         val sp = android.text.SpannableString(legal)
         val tosStart = legal.indexOf("Terms of Service")
         val ppStart = legal.indexOf("Privacy Policy")
-        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), tosStart, tosStart + 16, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), ppStart, ppStart + 13, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), tosStart, tosStart + "Terms of Service".length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), ppStart, ppStart + "Privacy Policy".length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         terms.text = sp
         panel.addView(terms, LinearLayout.LayoutParams(-1, 0, 0.10f))
 
