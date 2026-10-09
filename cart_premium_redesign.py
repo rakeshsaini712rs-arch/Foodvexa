@@ -4,7 +4,7 @@ import re
 p = Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s = p.read_text(encoding="utf-8")
 a = s.find("private fun showCart(){")
-b = s.find("private fun showOrders(){", a)
+b = s.rfind("\n}")
 if a < 0 or b < 0:
     raise SystemExit("Cart screen boundaries not found")
 block = s[a:b]
