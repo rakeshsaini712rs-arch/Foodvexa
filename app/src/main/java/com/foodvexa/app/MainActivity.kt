@@ -213,8 +213,8 @@ private fun placeOrderAndShowOrders(){
   "subtotal" to subtotal,
   "deliveryFee" to 30,
   "total" to total,
-  "paymentMethod" to "COD",
-  "paymentStatus" to "COD_DUE",
+  "paymentMethod" to paymentMethod,
+  "paymentStatus" to paymentStatus,
   "status" to "New",
   "createdAt" to FieldValue.serverTimestamp(),
   "updatedAt" to FieldValue.serverTimestamp()
