@@ -140,6 +140,110 @@ jobs:
           print("PASS android.view.View import present")
           PY
 
+      - name: Polish location and search UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+
+          # Search text must contrast with the white field; preserve user-visible query state.
+          a=s.find("val search=EditText(this).apply{")
+          b=s.find("searchBox=search", a)
+          if a < 0 or b < 0:
+              raise SystemExit("Home search field not found")
+          block=s[a:b]
+          block=block.replace("setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE)",
+                              "setHintTextColor(Color.rgb(135,135,145));setTextColor(ink);textSize=16f")
+          block=block.replace("setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;",
+                              "setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH;")
+          s=s[:a]+block+s[b:]
+
+          # Replace the location card with a clear, readable two-line address.
+          a=s.find(" private fun locationHeader():LinearLayout{")
+          b=s.find(" private fun ",a+20)
+          if a < 0 or b < 0:
+              raise SystemExit("Location header function not found")
+          header=''' private fun locationHeader():LinearLayout{
+           val saved=prefs.getString("location","").orEmpty()
+           val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(9),dp(10),dp(9));background=rounded(Color.WHITE,18);isClickable=true;setOnClickListener{locationDialog()};elevation=dp(2).toFloat()}
+           val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER}
+           box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(48)))
+           val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+           texts.addView(label("DELIVER TO",10f,true,muted))
+           texts.addView(label(if(saved.isBlank())"Choose your delivery address" else saved,14f,true,ink).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END})
+           box.addView(texts,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=dp(5);rightMargin=dp(4)})
+           box.addView(label("⌄",20f,true,muted).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(24),dp(44)))
+           box.addView(TextView(this).apply{text="◎";textSize=22f;gravity=Gravity.CENTER;setTextColor(orange);setOnClickListener{requestCurrentDeliveryLocation()}},LinearLayout.LayoutParams(dp(38),dp(44)))
+           return box
+          }
+          '''
+          s=s[:a]+header+s[b:]
+
+          # Replace the location dialog with professional address entry and a working GPS attempt.
+          a=s.find(" private fun locationDialog(){")
+          b=s.find(" private fun saveLocation(",a)
+          if a < 0 or b < 0:
+              raise SystemExit("Location dialog/save function not found")
+          dialog=''' private fun locationDialog(){
+           val current=prefs.getString("location","").orEmpty()
+           val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),dp(4))}
+           panel.addView(label("Delivery address",14f,true,ink),LinearLayout.LayoutParams(-1,dp(28)))
+           val search=EditText(this).apply{hint="House no., street, area or landmark";setSingleLine(false);minLines=1;maxLines=3;inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;setText(current);setTextColor(ink);setHintTextColor(muted);textSize=15f;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.rgb(247,247,249),14)}
+           panel.addView(search,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12);topMargin=dp(4)})
+           panel.addView(primaryButton("◎  Use my current location"){requestCurrentDeliveryLocation()},LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)})
+           panel.addView(label("SAVED ADDRESSES",11f,true,muted),LinearLayout.LayoutParams(-1,dp(25)))
+           val saved=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+           val home=prefs.getString("home_address","").orEmpty()
+           val work=prefs.getString("work_address","").orEmpty()
+           if(home.isNotBlank()) saved.addView(primaryButton("⌂  Home"){saveLocation(home,"Home")},LinearLayout.LayoutParams(0,dp(42),1f).apply{rightMargin=dp(6)})
+           if(work.isNotBlank()) saved.addView(primaryButton("▣  Work"){saveLocation(work,"Work")},LinearLayout.LayoutParams(0,dp(42),1f))
+           if(saved.childCount>0)panel.addView(saved,LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(8)})
+           AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save address"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()
+          }
+          private fun requestCurrentDeliveryLocation(){
+           val fine="android.permission.ACCESS_FINE_LOCATION"
+           val coarse="android.permission.ACCESS_COARSE_LOCATION"
+           if(android.os.Build.VERSION.SDK_INT>=23 && checkSelfPermission(fine)!=android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(coarse)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+            requestPermissions(arrayOf(fine,coarse),741);return
+           }
+           resolveCurrentDeliveryLocation()
+          }
+          private fun resolveCurrentDeliveryLocation(){
+           try{
+            val manager=getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+            val location=try{manager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)}catch(_:Exception){null}
+             ?: try{manager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)}catch(_:Exception){null}
+            if(location==null){Toast.makeText(this,"Location unavailable. Turn on GPS and try again.",Toast.LENGTH_LONG).show();return}
+            val address=try{android.location.Geocoder(this,java.util.Locale.getDefault()).getFromLocation(location.latitude,location.longitude,1)?.firstOrNull()?.getAddressLine(0)}catch(_:Exception){null}
+            val value=address?.takeIf{it.isNotBlank()} ?: String.format(java.util.Locale.US,"%.5f, %.5f",location.latitude,location.longitude)
+            saveLocation(value,"Delivery")
+           }catch(_:SecurityException){Toast.makeText(this,"Allow location permission and try again.",Toast.LENGTH_LONG).show()}
+           catch(_:Exception){Toast.makeText(this,"Could not get your location. Please try again.",Toast.LENGTH_LONG).show()}
+          }
+          override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
+           super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+           if(requestCode==741){
+            if(grantResults.isNotEmpty() && grantResults.any{it==android.content.pm.PackageManager.PERMISSION_GRANTED}) resolveCurrentDeliveryLocation()
+            else Toast.makeText(this,"Location permission is needed to detect your address.",Toast.LENGTH_LONG).show()
+           }
+          }
+          '''
+          s=s[:a]+dialog+s[b:]
+
+          checks={
+           "search text contrast":'setHintTextColor(Color.rgb(135,135,145));setTextColor(ink);textSize=16f' in s,
+           "professional two-line location card":'DELIVER TO' in s and 'maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END' in s,
+           "GPS permission request":'requestPermissions(arrayOf(fine,coarse),741)' in s,
+           "reverse geocoded address":'getFromLocation(location.latitude,location.longitude,1)' in s,
+           "address save":'setPositiveButton("Save address"' in s
+          }
+          for k,v in checks.items(): print(("PASS " if v else "FAIL ")+k)
+          if not all(checks.values()): raise SystemExit("Location/search UI patch verification failed")
+          p.write_text(s,encoding="utf-8")
+          print("LOCATION AND SEARCH UI PATCH APPLIED")
+          PY
+
       - name: Skip unsafe inline home layout rewrite
         run: echo "Keeping the verified MainActivity home layout; avoiding source rewrite that breaks Kotlin scope"
 
