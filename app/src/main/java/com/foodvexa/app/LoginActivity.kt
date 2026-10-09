@@ -44,7 +44,15 @@ class LoginActivity : AppCompatActivity() {
                 return@registerForActivityResult
             }
             auth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))
-                .addOnSuccessListener { openHome() }
+                .addOnSuccessListener {
+                    getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
+                        .putString("google_name", account.displayName.orEmpty())
+                        .putString("google_email", account.email.orEmpty())
+                        .putString("profile_name", account.displayName.orEmpty())
+                        .putString("profile_email", account.email.orEmpty())
+                        .apply()
+                    openHome(openProfile = true)
+                }
                 .addOnFailureListener { e ->
                     Toast.makeText(this, "Firebase login failed: " + (e.localizedMessage ?: "Try again"), Toast.LENGTH_LONG).show()
                 }
@@ -85,9 +93,11 @@ class LoginActivity : AppCompatActivity() {
         googleLauncher.launch(GoogleSignIn.getClient(this, options).signInIntent)
     }
 
-    private fun openHome() {
+    private fun openHome(openProfile: Boolean = false) {
         getSharedPreferences("foodvexa", MODE_PRIVATE).edit().putBoolean("force_login", false).apply()
-        startActivity(Intent(this, MainActivity::class.java))
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            if (openProfile) putExtra("open_profile", true)
+        })
         finish()
     }
 
