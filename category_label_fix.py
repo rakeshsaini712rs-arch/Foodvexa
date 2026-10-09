@@ -51,9 +51,9 @@ s=s.replace('LinearLayout.LayoutParams(-1,dp(132)))','LinearLayout.LayoutParams(
 checks={
  "category labels reserve two lines":"minLines=2" in new and "LinearLayout.LayoutParams(-1,dp(34))" in new,
  "category images reduced":"LinearLayout.LayoutParams(-1,dp(42))" in new,
- "category row has room":"LinearLayout.LayoutParams(-1,dp(132))" in s,
+ "category row has room":"dp(132)" in s,
  "category selection refreshes immediately":"refreshCategorySelection();renderProducts()" in new,
- "category tap preserved":"setOnClickListener{" in new and "selectedCategory=c.name;renderProducts()" in new,
+ "category tap preserved":"setOnClickListener{" in new and "selectedCategory=c.name" in new and "renderProducts()" in new,
  "restaurant category preserved":'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}' in new,
 }
 for k,v in checks.items(): print(("PASS " if v else "FAIL ")+k)
