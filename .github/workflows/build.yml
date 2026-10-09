@@ -49,8 +49,8 @@ jobs:
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
           # Regex-based edits tolerate earlier build transformations changing spacing/heights.
-          s,n1=re.subn(r'box\.addView\(image,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\.apply\{bottomMargin=dp\(\d+\)\}\)', 'box.addView(image,LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)})', s, count=1)
-          s,n2=re.subn(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\)', 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))', s, count=1)
+          s,n1=re.subn(r'box\.addView\(image,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\.apply\{bottomMargin=dp\(\d+\)\}\)', 'box.addView(image,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(2)})', s, count=1)
+          s,n2=re.subn(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\)', 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(58)))', s, count=1)
           s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(82)).apply{rightMargin=dp(7)}')
           s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(82)))')
           # Fit product labels, availability and price/action row into compact cards.
@@ -65,9 +65,9 @@ jobs:
               b=s.find('private fun professionalBanner()',a)
               if b<0: b=len(s)
               block=s[a:b]
-              block=re.sub(r'LinearLayout\.LayoutParams\(w,dp\(\d+\)\)', 'LinearLayout.LayoutParams(w,dp(62))', block, count=1)
-              block=re.sub(r'LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)', 'LinearLayout.LayoutParams(-1,dp(62))', block, count=1)
-              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(76))')
+              block=re.sub(r'LinearLayout\.LayoutParams\(w,dp\(\d+\)\)', 'LinearLayout.LayoutParams(w,dp(150))', block, count=1)
+              block=re.sub(r'LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)', 'LinearLayout.LayoutParams(-1,dp(150))', block, count=1)
+              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(150))')
               block=block.replace('textSize=18f','textSize=15f')
               s=s[:a]+block+s[b:]
           p.write_text(s,encoding="utf-8")
