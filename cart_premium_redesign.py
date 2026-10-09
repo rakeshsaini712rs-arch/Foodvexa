@@ -45,6 +45,33 @@ if old in block:
     if anchor not in block: raise SystemExit("Cart scroll layout anchor not found")
     block=block.replace(anchor,'    }\n'+anchor,1)
 
+# Validate required delivery information before opening payment selection.
+name_old='list.addView(field("Your name").apply{setText(prefs.getString("profile_name","").orEmpty())});list.addView(field("Phone number").apply{setText(prefs.getString("profile_mobile","").orEmpty())})'
+name_new='''val customerName=field("Your name").apply{setText(prefs.getString("profile_name","").orEmpty())}
+    val customerPhone=field("Phone number").apply{setText(prefs.getString("profile_mobile","").orEmpty());inputType=android.text.InputType.TYPE_CLASS_PHONE}
+    list.addView(customerName);list.addView(customerPhone)'''
+if name_old not in block: raise SystemExit("Name/mobile fields anchor missing")
+block=block.replace(name_old,name_new,1)
+address_old='list.addView(EditText(this@MainActivity).apply{hint="Delivery address";setText(prefs.getString("profile_address",prefs.getString("location",SHOP_LOCATION)).orEmpty());textSize=17f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP;setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2;background=rounded(Color.TRANSPARENT,14);layoutParams=LinearLayout.LayoutParams(-1,dp(60)).apply{topMargin=dp(3);bottomMargin=dp(5)}})'
+address_new='''val deliveryAddress=EditText(this@MainActivity).apply{hint="Delivery address";setText(prefs.getString("profile_address",prefs.getString("location",SHOP_LOCATION)).orEmpty());textSize=16f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP;setPadding(dp(14),dp(10),dp(14),dp(10));minLines=2;background=rounded(Color.rgb(36,39,46),14);layoutParams=LinearLayout.LayoutParams(-1,dp(72)).apply{topMargin=dp(3);bottomMargin=dp(5)}}
+    list.addView(deliveryAddress)'''
+if address_old not in block: raise SystemExit("Delivery address field anchor missing")
+block=block.replace(address_old,address_new,1)
+button_old='this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else placeOrderAndShowOrders()}'
+button_new='''this@MainActivity.primaryButton("🛒  BUY NOW"){
+        if(cart.isEmpty()){Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show();return@primaryButton}
+        val customer=customerName.text.toString().trim()
+        val phone=customerPhone.text.toString().trim()
+        val address=deliveryAddress.text.toString().trim()
+        if(customer.length<2){customerName.error="Please enter your name";customerName.requestFocus();return@primaryButton}
+        if(!phone.matches(Regex("[6-9][0-9]{9}"))){customerPhone.error="Enter a valid 10-digit mobile number";customerPhone.requestFocus();return@primaryButton}
+        if(address.length<8){deliveryAddress.error="Please enter your complete delivery address";deliveryAddress.requestFocus();return@primaryButton}
+        prefs.edit().putString("profile_name",customer).putString("profile_mobile",phone).putString("profile_address",address).apply()
+        placeOrderAndShowOrders()
+    }'''
+if button_old not in block: raise SystemExit("BUY NOW click handler anchor missing")
+block=block.replace(button_old,button_new,1)
+
 # Premium sheet polish, keeping all other methods intact.
 block=block.replace('setPadding(dp(14),dp(8),dp(14),dp(8));background=rounded(Color.rgb(22,24,29),22)',
                     'setPadding(dp(16),dp(14),dp(16),dp(14));background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.rgb(27,29,35),Color.rgb(17,19,24))).apply{cornerRadius=dp(26).toFloat();setStroke(dp(1),Color.rgb(49,52,60))}')
@@ -94,6 +121,11 @@ orders='''private fun showOrders(){
 s=s[:oa]+orders+s[ob:]
 
 checks={
+ "required name validation":"customer.length<2" in block,
+ "10 digit Indian mobile validation":'Regex("[6-9][0-9]{9}")' in block,
+ "delivery address required":"address.length<8" in block,
+ "customer details saved":"putString("profile_mobile",phone)" in block,
+ "validation occurs before payment":"placeOrderAndShowOrders()" in block and "customerPhone.error=" in block,
  "cart method remains bounded":"private fun showCart(){" in s,
  "order history remains implemented":"Your placed orders will appear here." in s and 'arr.optString(i)' in s,
  "cart checkout preserved":"placeOrderAndShowOrders()" in block,
