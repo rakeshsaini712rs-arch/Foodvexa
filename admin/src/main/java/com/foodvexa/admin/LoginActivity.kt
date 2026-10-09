@@ -50,14 +50,14 @@ class LoginActivity : Activity() {
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5); bottomMargin = dp(24) })
 
         val username = EditText(this).apply {
-            hint = "Admin username"; singleLine = true
+            hint = "Admin username"; isSingleLine = true
             setTextColor(ink); setPadding(dp(14), 0, dp(14), 0)
             background = rounded(Color.rgb(246, 246, 248), 12)
         }
         card.addView(username, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
 
         val password = EditText(this).apply {
-            hint = "Password"; singleLine = true
+            hint = "Password"; isSingleLine = true
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             setTextColor(ink); setPadding(dp(14), 0, dp(14), 0)
             background = rounded(Color.rgb(246, 246, 248), 12)
