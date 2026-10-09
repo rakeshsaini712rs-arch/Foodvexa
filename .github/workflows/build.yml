@@ -41,50 +41,8 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
-      - name: Apply Swiggy-style Foodvexa home layout
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
-          s=p.read_text(encoding="utf-8")
-          # Expand carousel card height without changing the banner's contents.
-          if 'private fun bannerGrid():LinearLayout' in s:
-              a=s.index('private fun bannerGrid():LinearLayout')
-              b=s.find('private fun professionalBanner()',a)
-              if b<0: b=s.find('private fun categoryCard(',a)
-              if b<0: b=len(s)
-              block=s[a:b]
-              for old in ('dp(108)','dp(112)','dp(120)','dp(148)','dp(150)','dp(160)'):
-                  block=block.replace(old,'dp(190)')
-              s=s[:a]+block+s[b:]
-          # Set category image height to a balanced, non-clipped size.
-          needle='box.addView(image,LinearLayout.LayoutParams(-1,dp('
-          i=s.find(needle)
-          if i>=0:
-              j=s.find(')))',i)
-              if j>=0: s=s[:i]+needle+'66)))'+s[j+3:]
-          # Product cards: update the first product image view height robustly.
-          needle='card.addView(pic,LinearLayout.LayoutParams(-1,dp('
-          i=s.find(needle)
-          if i>=0:
-              j=s.find(')))',i)
-              if j>=0: s=s[:i]+needle+'104)))'+s[j+3:]
-          # Three compact columns per row; all existing cart handlers stay attached.
-          s=s.replace('index%2==0','index%3==0').replace('index%2==1','index%3==2')
-          s=s.replace('row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})','row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%3==0)0 else dp(3);rightMargin=if(index%3==2)0 else dp(3)})')
-          s=s.replace('if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))','if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))')
-          s=s.replace('label("• Available",10.5f,true,Color.rgb(50,205,120))','label("• Available",9f,true,Color.rgb(50,205,120))')
-          s=s.replace('label("₹${p.price}",15f,true,Color.WHITE)','label("₹${p.price}",12f,true,Color.WHITE)')
-          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)').replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(2),dp(3),dp(2),dp(3))')
-          p.write_text(s,encoding="utf-8")
-          checks={
-            "three-column product rows":'if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}' in s,
-            "three-column row wrap":'if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))' in s,
-            "product image height":'card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))' in s
-          }
-          for name,ok in checks.items(): print(("PASS " if ok else "FAIL ")+name)
-          print("Home layout patch completed; continuing to compiler verification")
-          PY
+      - name: Skip unsafe inline home layout rewrite
+        run: echo "Keeping the verified MainActivity home layout; avoiding source rewrite that breaks Kotlin scope"
 
       - name: Enforce final payment/profile source state
         run: |
