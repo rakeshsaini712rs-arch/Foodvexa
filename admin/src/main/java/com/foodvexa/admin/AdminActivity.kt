@@ -8,166 +8,196 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.*
-import org.json.JSONArray
-import org.json.JSONObject
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class AdminActivity : Activity() {
-    private val bg = Color.rgb(246,247,249)
-    private val ink = Color.rgb(32,34,40)
-    private val red = Color.rgb(190,25,42)
-    private val green = Color.rgb(24,132,83)
-    private val prefs by lazy { getSharedPreferences("foodvexa_admin", MODE_PRIVATE) }
-    private lateinit var body: LinearLayout
-    private var page = "Dashboard"
+    private val bg=Color.rgb(246,247,249)
+    private val ink=Color.rgb(32,34,40)
+    private val red=Color.rgb(190,25,42)
+    private val green=Color.rgb(24,132,83)
+    private val db by lazy { FirebaseFirestore.getInstance() }
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private lateinit var body:LinearLayout
+    private var page="Dashboard"
+    private var ordersListener:ListenerRegistration?=null
+    private var menuListener:ListenerRegistration?=null
+    private val products=mutableListOf<Pair<String,Map<String,Any>>>()
+    private val orders=mutableListOf<Pair<String,Map<String,Any>>>()
 
-    private data class Product(val name:String, val category:String, val price:Int, val available:Boolean)
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
-    private fun panel(color:Int=Color.WHITE,radius:Int=16)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
-    private fun label(value:String,size:Float=14f,color:Int=ink,bold:Boolean=false)=TextView(this).apply{
-        text=value;textSize=size;setTextColor(color);gravity=Gravity.CENTER_VERTICAL
+    private fun shape(color:Int=Color.WHITE,radius:Int=16)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
+    private fun text(s:String,size:Float=14f,color:Int=ink,bold:Boolean=false)=TextView(this).apply{
+        text=s;textSize=size;setTextColor(color);gravity=Gravity.CENTER_VERTICAL
         if(bold)setTypeface(null,Typeface.BOLD)
     }
-    private fun action(value:String,fn:()->Unit,color:Int=red)=TextView(this).apply{
-        text=value;textSize=13f;setTextColor(Color.WHITE);setTypeface(null,Typeface.BOLD);gravity=Gravity.CENTER
-        setPadding(dp(14),dp(12),dp(14),dp(12));background=panel(color,11);setOnClickListener{fn()}
+    private fun button(s:String,fn:()->Unit,color:Int=red)=TextView(this).apply{
+        text=s;textSize=13f;setTextColor(Color.WHITE);setTypeface(null,Typeface.BOLD);gravity=Gravity.CENTER
+        setPadding(dp(12),dp(12),dp(12),dp(12));background=shape(color,11);setOnClickListener{fn()}
     }
-    private fun gap(h:Int)=View(this).apply{layoutParams=LinearLayout.LayoutParams(1,dp(h))}
-    private fun addLine(text:String,size:Float=14f,color:Int=ink,bold:Boolean=false){
-        body.addView(label(text,size,color,bold),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+    private fun addLine(s:String,size:Float=14f,color:Int=ink,bold:Boolean=false){
+        body.addView(text(s,size,color,bold),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
     }
-    private fun addCard(title:String,value:String,detail:String){
-        val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(15),dp(16),dp(15));background=panel();elevation=dp(1).toFloat()}
-        c.addView(label(title,12f,Color.GRAY,true))
-        c.addView(label(value,23f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6);bottomMargin=dp(5)})
-        c.addView(label(detail,12f,Color.DKGRAY))
-        body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+    private fun card(title:String,value:String,detail:String){
+        val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(15),dp(14),dp(15),dp(14));background=shape();elevation=dp(1).toFloat()}
+        c.addView(text(title,12f,Color.GRAY,true))
+        c.addView(text(value,22f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5);bottomMargin=dp(4)})
+        c.addView(text(detail,12f,Color.DKGRAY))
+        body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(11)})
     }
-
-    override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);showPage("Dashboard")}
-
+    override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState)
+        if(auth.currentUser==null){goLogin();return};showPage("Dashboard")
+    }
+    override fun onDestroy(){ordersListener?.remove();menuListener?.remove();super.onDestroy()}
+    private fun goLogin(){getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();auth.signOut();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()}
     private fun showPage(target:String){
         page=target
         val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
-        val head=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(16));background=panel(Color.rgb(38,25,30),0)}
-        head.addView(label("FOODVEXA",23f,Color.WHITE,true))
-        head.addView(label("ADMIN CONSOLE  •  SAMOSA KING, NAWALGARH",11f,Color.LTGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
-        val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-        top.addView(head,LinearLayout.LayoutParams(0,-2,1f))
-        top.addView(action("LOG OUT",{getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()},Color.rgb(92,55,62)),LinearLayout.LayoutParams(-2,-2).apply{leftMargin=dp(6)})
+        val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(17),dp(17),dp(12),dp(17));background=shape(Color.rgb(38,25,30),0)}
+        val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        brand.addView(text("FOODVEXA ADMIN",20f,Color.WHITE,true))
+        brand.addView(text("SAMOSA KING · NAWALGARH",11f,Color.LTGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+        top.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
+        top.addView(button("LOG OUT",{goLogin()},Color.rgb(90,55,62}))
         root.addView(top)
         val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(Color.WHITE)}
         val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(8),dp(8),dp(8))}
-        listOf("Dashboard","Orders","Payments","Menu","Delivery","Settings").forEach{item->
-            val v=label(item,13f,if(page==item)red else ink,page==item);v.gravity=Gravity.CENTER
-            v.setPadding(dp(12),dp(12),dp(12),dp(12));v.background=if(page==item)panel(Color.rgb(255,239,241),10) else panel(Color.WHITE,10)
-            v.setOnClickListener{showPage(item)}
+        listOf("Dashboard","Orders","Payments","Menu","Delivery").forEach{item->
+            val v=text(item,13f,if(page==item)red else ink,page==item);v.gravity=Gravity.CENTER;v.setPadding(dp(12),dp(12),dp(12),dp(12))
+            v.background=shape(if(page==item)Color.rgb(255,239,241) else Color.WHITE,10);v.setOnClickListener{showPage(item)}
             nav.addView(v,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(4)})
         }
         navScroll.addView(nav);root.addView(navScroll)
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(28))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
+        ordersListener?.remove();menuListener?.remove()
         when(target){
             "Dashboard"->dashboard()
-            "Orders"->orders()
-            "Payments"->payments()
-            "Menu"->menu()
-            "Delivery"->delivery()
-            "Settings"->settings()
+            "Orders"->ordersPage()
+            "Payments"->paymentsPage()
+            "Menu"->menuPage()
+            "Delivery"->deliveryPage()
         }
     }
-
     private fun backendNotice(){
-        val n=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(13),dp(14),dp(13));background=panel(Color.rgb(255,247,225),13)}
-        n.addView(label("BACKEND CONNECTION REQUIRED",12f,Color.rgb(130,83,0),true))
-        n.addView(label("Abhi customer app orders phone par locally save hote hain. Isliye yahan live orders/payment status nahi aa sakta. Dono apps ko secure shared database se connect karna hoga.",13f,Color.rgb(91,66,28)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-        body.addView(n,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
+        val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape(Color.rgb(255,247,225),12)}
+        box.addView(text("LIVE FIRESTORE CONNECTION",12f,Color.rgb(130,83,0),true))
+        box.addView(text("Orders/menu live updates Firebase se aate hain. Agar data nahi dikh raha, Firebase Authentication, admins/{UID}, aur Firestore rules/config check karein.",12f,Color.rgb(91,66,28)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+        body.addView(box,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
     }
-
     private fun dashboard(){
-        addLine("Store overview",22f,ink,true)
-        addLine("Daily operations at a glance",13f,Color.GRAY)
+        addLine("Store overview",22f,ink,true);addLine("Live operations summary",13f,Color.GRAY);backendNotice()
+        card("TOTAL ORDERS",orders.size.toString(),"Orders loaded from shared Firestore")
+        card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
+        card("PAYMENTS NEEDING REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
+        body.addView(button("OPEN ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+        body.addView(button("MANAGE MENU",{showPage("Menu")},Color.rgb(55,48,52)),LinearLayout.LayoutParams(-1,-2))
+        db.collection("orders").addSnapshotListener(this){snap,error->
+            if(error==null&&snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")showPage("Dashboard")}
+        }
+    }
+    private fun listenOrders(onLoaded:()->Unit){
         backendNotice()
-        addCard("NEW ORDERS","—","Shared database connect hone par live count")
-        addCard("PAYMENTS TO VERIFY","—","UPI transactions awaiting admin review")
-        addCard("TODAY'S SALES","—","Confirmed orders se calculate hoga")
-        addLine("Quick actions",16f,ink,true)
-        addViewAction("Manage customer orders","Orders")
-        addViewAction("Review COD / UPI payments","Payments")
-        addViewAction("Edit product menu","Menu")
+        ordersListener=db.collection("orders").addSnapshotListener(this){snap,error->
+            if(error!=null){if(page=="Orders"||page=="Payments")Toast.makeText(this,"Orders load nahi hue: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
+            orders.clear();snap?.documents?.forEach{orders.add(it.id to (it.data?:emptyMap()))}
+            if(page=="Orders")renderOrders()
+            if(page=="Payments")renderPayments()
+            if(page=="Dashboard")showPage("Dashboard")
+        }
+        onLoaded()
     }
-    private fun addViewAction(title:String,target:String){
-        body.addView(action(title,{showPage(target)},Color.rgb(55,48,52)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+    private fun ordersPage(){addLine("Customer orders",22f,ink,true);addLine("Real-time order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
+    private fun renderOrders(){
+        body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true)
+        if(orders.isEmpty()){addLine("Abhi koi order nahi mila.",14f,Color.GRAY);return}
+        orders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
+            val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
+            val total=d["total"]?.toString()?: "—"
+            card.addView(text("Order #"+id.takeLast(7)+"   ·   ₹"+total,16f,ink,true))
+            card.addView(text("Status: "+(d["status"]?.toString()?: "New"),13f,red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            card.addView(text("Customer: "+(d["customerName"]?.toString()?: "Customer"),13f))
+            card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
+            card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
+            card.addView(text("Items: "+(d["itemsText"]?.toString()?: "—"),13f))
+            val payment=(d["paymentMethod"]?.toString()?: "COD")
+            val pStatus=(d["paymentStatus"]?.toString()?: "COD_DUE")
+            card.addView(text("Payment: $payment · $pStatus",13f,if(pStatus=="VERIFIED")green else Color.rgb(145,90,0),true))
+            val statuses=listOf("New","Accepted","Preparing","Ready","Out for delivery","Delivered","Cancelled")
+            val spinner=Spinner(this)
+            spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,statuses)
+            spinner.setSelection(statuses.indexOf(d["status"]?.toString()).coerceAtLeast(0))
+            card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(7)})
+            card.addView(button("UPDATE ORDER STATUS",{val chosen=spinner.selectedItem.toString();db.collection("orders").document(id).update(mapOf("status" to chosen,"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            card.addView(button(if(payment=="COD")"COD: CUSTOMER SE ₹$total COLLECT" else if(pStatus=="VERIFIED")"UPI VERIFIED · CASH COLLECT NAHI KARNA" else "VERIFY UPI PAYMENT",{
+                if(payment=="COD")Toast.makeText(this,"Delivery instruction: customer se ₹$total collect karein",Toast.LENGTH_LONG).show()
+                else Toast.makeText(this,"UPI ko merchant/payment provider record se verify karke hi mark karein.",Toast.LENGTH_LONG).show()
+            },Color.rgb(40,120,80)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+            if(payment=="UPI"&&pStatus!="VERIFIED")card.addView(button("MARK UPI VERIFIED",{
+                db.collection("orders").document(id).update(mapOf("paymentStatus" to "VERIFIED","paymentVerifiedAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Verification save nahi hua",Toast.LENGTH_LONG).show()}
+            },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+            body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+        }
     }
-
-    private fun orders(){
-        addLine("Customer orders",22f,ink,true)
-        addLine("Accept → Preparing → Out for delivery → Delivered",13f,Color.GRAY)
-        backendNotice()
-        addCard("ORDER INBOX","Not connected","No orders are being shown as live until the customer app and admin app share the same database.")
-        addLine("Order processing rules",16f,ink,true)
-        listOf("1. Verify customer, phone, delivery address and order items.",
-               "2. Accept the order, then update preparation status.",
-               "3. Before dispatch, verify payment method and delivery instructions.",
-               "4. Mark Delivered only after delivery is complete.").forEach{addLine("•  $it",14f)}
+    private fun paymentsPage(){addLine("Payments",22f,ink,true);addLine("COD collection and UPI verification",13f,Color.GRAY);listenOrders{renderPayments()}}
+    private fun renderPayments(){
+        body.removeAllViews();addLine("Payment review",21f,ink,true)
+        val filtered=orders.filter{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}
+        card("UPI NEEDING REVIEW",filtered.size.toString(),"Payment provider/merchant record se transaction verify karein.")
+        orders.forEach{(id,d)->
+            val method=d["paymentMethod"]?.toString()?: "COD";val state=d["paymentStatus"]?.toString()?: "COD_DUE"
+            val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(13),dp(13),dp(13));background=shape()}
+            c.addView(text("Order #"+id.takeLast(7)+" · ₹"+(d["total"]?.toString()?: "—"),15f,ink,true))
+            c.addView(text("$method · $state",13f,if(state=="VERIFIED")green else Color.rgb(145,90,0),true))
+            if(method=="UPI"&&state!="VERIFIED")c.addView(button("MARK VERIFIED AFTER CHECK",{
+                db.collection("orders").document(id).update(mapOf("paymentStatus" to "VERIFIED","paymentVerifiedAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp()))
+            },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            if(method=="COD")c.addView(text("Delivery: ₹"+(d["total"]?.toString()?: "—")+" cash collect karein",13f))
+            body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+        }
     }
-
-    private fun payments(){
-        addLine("Payment verification",22f,ink,true)
-        addLine("Confirm payment before giving delivery instructions.",13f,Color.GRAY)
-        backendNotice()
-        addCard("CASH ON DELIVERY","Collect order total","Delivery boy instruction: Collect ₹ amount from customer.")
-        addCard("UPI — PENDING","Admin verification required","Check transaction against the payment provider/merchant record, not just a screenshot.")
-        addCard("UPI — VERIFIED","Payment successfully submitted","Delivery boy instruction: No cash to collect.")
-        addLine("Payment states",16f,ink,true)
-        addLine("Pending → Verified / Failed. Only authorized admin can verify; every decision should be saved with order ID and timestamp.",14f)
-    }
-
-    private fun readProducts():JSONArray=try{JSONArray(prefs.getString("products","[]"))}catch(_:Exception){JSONArray()}
-    private fun saveProducts(a:JSONArray){prefs.edit().putString("products",a.toString()).apply()}
-    private fun menu(){
-        addLine("Menu management",22f,ink,true)
-        addLine("Local draft editor · shared customer menu still needs backend",13f,Color.GRAY)
-        val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=panel()}
+    private fun menuPage(){
+        addLine("Shared menu management",22f,ink,true);addLine("Yahan save kiya product customer app ko live mil sakta hai.",13f,Color.GRAY)
+        val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape()}
         val name=EditText(this).apply{hint="Product name";isSingleLine=true}
         val category=EditText(this).apply{hint="Category (Snacks, Chaat, Fast Food...)";isSingleLine=true}
-        val price=EditText(this).apply{hint="Price in ₹";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true}
-        listOf(name,category,price).forEach{form.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(8)})}
-        form.addView(action("SAVE PRODUCT DRAFT",{
-            val n=name.text.toString().trim();val c=category.text.toString().trim();val p=price.text.toString().toIntOrNull()
-            if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Name, category aur valid price bharein",Toast.LENGTH_SHORT).show()}
-            else{val a=readProducts();a.put(JSONObject().put("name",n).put("category",c).put("price",p).put("available",true));saveProducts(a);showPage("Menu");Toast.makeText(this,"Product draft saved on this device",Toast.LENGTH_SHORT).show()}
+        val price=EditText(this).apply{hint="Price ₹";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true}
+        val image=EditText(this).apply{hint="Food image URL (https://...)";isSingleLine=true}
+        listOf(name,category,price,image).forEach{form.addView(it,LinearLayout.LayoutParams(-1,dp(49)).apply{bottomMargin=dp(7)})}
+        form.addView(button("SAVE TO SHARED MENU",{
+            val n=name.text.toString().trim();val c=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val u=image.text.toString().trim()
+            if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Name, category aur valid price bharein",Toast.LENGTH_SHORT).show();return@button}
+            val data=hashMapOf<String,Any>("name" to n,"category" to c,"price" to p,"imageUrl" to u,"available" to true,"updatedAt" to FieldValue.serverTimestamp())
+            db.collection("menu").add(data).addOnSuccessListener{Toast.makeText(this,"Shared menu me save ho gaya",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
+                .addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
         }),LinearLayout.LayoutParams(-1,-2))
-        body.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(16)})
-        addLine("Saved product drafts ("+readProducts().length()+")",16f,ink,true)
-        val products=readProducts()
-        if(products.length()==0)addLine("Abhi koi draft nahi. Upar se product add karein.",13f,Color.GRAY)
-        for(i in 0 until products.length()){
-            val p=products.optJSONObject(i)?:continue
-            val row=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=panel();}
-            row.addView(label(p.optString("name"),15f,ink,true))
-            row.addView(label(p.optString("category")+" · ₹"+p.optInt("price"),13f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
-            row.addView(action("DELETE DRAFT",{val a=readProducts();val new=JSONArray();for(j in 0 until a.length())if(j!=i)new.put(a.get(j));saveProducts(new);showPage("Menu")},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
-            body.addView(row,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+        body.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
+        menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
+            if(error!=null){Toast.makeText(this,"Menu load error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
+            products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
+            if(page=="Menu")renderMenuList()
         }
-        backendNotice()
+        renderMenuList()
     }
-
-    private fun delivery(){
-        addLine("Delivery operations",22f,ink,true)
-        backendNotice()
-        addCard("COD INSTRUCTION","Collect ₹ order total","Delivery partner should collect cash from customer.")
-        addCard("UPI VERIFIED","No cash to collect","Show this only after payment is verified by admin.")
-        addLine("Delivery tracking",16f,ink,true)
-        addLine("Live delivery-boy location, distance and ETA require location permissions, a delivery app, and shared backend. Tracking should stop when order is marked Delivered.",14f)
+    private fun renderMenuList(){
+        val form=body.getChildAt(2)
+        while(body.childCount>3)body.removeViewAt(3)
+        addLine("Shared products · "+products.size,16f,ink,true)
+        products.forEach{(id,p)->
+            val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape()}
+            c.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
+            c.addView(text((p["category"]?.toString()?: "Category")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY))
+            c.addView(button("DELETE PRODUCT",{db.collection("menu").document(id).delete().addOnFailureListener{Toast.makeText(this,"Delete failed",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+        }
     }
-
-    private fun settings(){
-        addLine("Admin settings",22f,ink,true)
-        addLine("Store: SAMOSA KING · Nansa Gate, Nawalgarh",14f)
-        addLine("Account: admin demo login",14f)
-        addLine("Security",16f,ink,true)
-        addLine("Current login is a demo credential stored in the app. Before production, replace it with server-side authentication and role-based access; do not use the demo password for real orders.",13f,Color.DKGRAY)
-        body.addView(action("LOG OUT",{getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()}),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
+    private fun deliveryPage(){
+        addLine("Delivery instructions",22f,ink,true)
+        card("COD","Collect the order total","Customer se cash collect karein aur delivery ke baad order delivered mark karein.")
+        card("UPI VERIFIED","No cash to collect","Sirf verified UPI status par cash collect na karein.")
+        addLine("Instructions order record se generate hoti hain. Real-time delivery-boy assignment/location ke liye alag delivery app aur permissions chahiye.",13f,Color.DKGRAY)
     }
 }
