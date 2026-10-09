@@ -15,7 +15,7 @@ new='''private fun categoryCard(c:Category):LinearLayout{
   isFocusable=true
   setOnClickListener{
    if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}
-   else if(selectedCategory!=c.name){selectedCategory=c.name;renderProducts()}
+   else if(selectedCategory!=c.name){selectedCategory=c.name;refreshCategorySelection();renderProducts()}
   }
  }
  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
@@ -42,16 +42,17 @@ s=s.replace('LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)}','Li
 s=s.replace('LinearLayout.LayoutParams(-1,dp(34))','LinearLayout.LayoutParams(-1,dp(50))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(96))','LinearLayout.LayoutParams(-1,dp(120))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(90))','LinearLayout.LayoutParams(-1,dp(120))')
-s=s.replace('LinearLayout.LayoutParams(-1,dp(82))','LinearLayout.LayoutParams(-1,dp(96))')
-s=s.replace('LinearLayout.LayoutParams(-1,dp(80))','LinearLayout.LayoutParams(-1,dp(96))')
-s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(78))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
-s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(96)))')
-s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(74))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
-s=s.replace('LinearLayout.LayoutParams(-1,dp(74)))','LinearLayout.LayoutParams(-1,dp(90)))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(82))','LinearLayout.LayoutParams(-1,dp(132))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(80))','LinearLayout.LayoutParams(-1,dp(132))')
+s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(132))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(132)))','LinearLayout.LayoutParams(-1,dp(96)))')
+s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(132))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(132)))','LinearLayout.LayoutParams(-1,dp(90)))')
 checks={
  "category labels reserve two lines":"minLines=2" in new and "LinearLayout.LayoutParams(-1,dp(34))" in new,
  "category images reduced":"LinearLayout.LayoutParams(-1,dp(42))" in new,
- "category row has room":any(x in s for x in ["LinearLayout.LayoutParams(-1,dp(120))","LinearLayout.LayoutParams(-1,dp(96))","LinearLayout.LayoutParams(-1,dp(90))"]),
+ "category row has room":"LinearLayout.LayoutParams(-1,dp(132))" in s,
+ "category selection refreshes immediately":"refreshCategorySelection();renderProducts()" in new,
  "category tap preserved":"setOnClickListener{" in new and "selectedCategory=c.name;renderProducts()" in new,
  "restaurant category preserved":'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}' in new,
 }
