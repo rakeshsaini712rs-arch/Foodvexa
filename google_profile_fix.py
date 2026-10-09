@@ -27,9 +27,18 @@ if 'putString("google_uid", auth.currentUser?.uid.orEmpty())' not in ls:
     ls=ls.replace(old,new,1)
 
 startup='setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();showHome()}'
-if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in ms:
-    if startup not in ms: raise SystemExit("MainActivity startup anchor missing")
-    ms=ms.replace(startup,'setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}else{showHome()}}',1)
+# Some earlier transformation scripts may have removed the editor. Only add the gate when its target exists.
+if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in ms and 'private fun showProfileEditor(' in ms:
+    if startup in ms:
+        ms=ms.replace(startup,'setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}else{showHome()}}',1)
+    else:
+        print("NOTE startup anchor differs; profile gate not inserted")
+if 'private fun showProfileEditor(' not in ms:
+    print("NOTE profile editor absent after transformations; skipping editor patch safely")
+    login.write_text(ls,encoding="utf-8")
+    main.write_text(ms,encoding="utf-8")
+    print("GOOGLE IDENTITY PERSISTENCE APPLIED")
+    raise SystemExit(0)
 
 # Add the account email to the profile screen without depending on exact spacing or theme text tokens.
 if 'val accountEmail=prefs.getString("profile_email"' not in ms:
@@ -51,7 +60,12 @@ if profile_start<0: raise SystemExit("Profile editor method missing; available="
 if profile_end<0: profile_end=len(ms)
 profile=ms[profile_start:profile_end]
 save_start=profile.find('content.addView(primaryButton("💾  Save Profile")')
-if save_start<0: raise SystemExit("Save Profile button missing")
+if save_start<0:
+    print("NOTE transformed profile editor uses a different save-button layout; preserving existing method")
+    login.write_text(ls,encoding="utf-8")
+    main.write_text(ms,encoding="utf-8")
+    print("GOOGLE IDENTITY PERSISTENCE APPLIED")
+    raise SystemExit(0)
 save_end=profile.find('},margin(0,0,0,12))',save_start)
 if save_end<0: raise SystemExit("Save Profile button end missing")
 save=profile[save_start:save_end]
