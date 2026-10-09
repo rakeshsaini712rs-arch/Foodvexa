@@ -158,6 +158,9 @@ filtered.forEachIndexed{index,p->
         bottom.addView(controls)
     }
     card.addView(bottom,margin(0,2,0,0))
+    val favorite=primaryButton(if(p.name in savedFavoriteNames())"♥  Saved" else "♡  Save"){toggleFavorite(p)}
+    favorite.setTextSize(11f)
+    card.addView(favorite,LinearLayout.LayoutParams(-1,dp(30)).apply{topMargin=dp(4)})
     row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})
     if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
 }
@@ -229,12 +232,40 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
     finishAffinity()
 }}
 }
+private fun savedFavoriteNames():MutableSet<String>{
+ return prefs.getStringSet("favorite_products", emptySet())?.toMutableSet() ?: mutableSetOf()
+}
+private fun toggleFavorite(p:Product){
+ val saved=savedFavoriteNames()
+ if(!saved.add(p.name)) saved.remove(p.name)
+ prefs.edit().putStringSet("favorite_products",saved).apply()
+ Toast.makeText(this,if(p.name in saved)"Added to Collection" else "Removed from Collection",Toast.LENGTH_SHORT).show()
+ showCollection()
+}
 private fun showCollection(){
  setupBase(4)
  content.addView(label("Collection",28f,true,primaryText),margin(0,10,0,8))
- content.addView(label("Your saved items",15f,false,secondaryText),margin(0,0,0,16))
- content.addView(label("❤️  No saved items yet",18f,false,primaryText),margin(0,0,0,12))
- content.addView(primaryButton("🏠  Browse Food"){showHome()},margin(0,0,0,10))
+ content.addView(label("Your saved items",15f,false,primaryText),margin(0,0,0,16))
+ val saved=savedFavoriteNames()
+ val items=products.filter{it.name in saved}
+ if(items.isEmpty()){
+  content.addView(label("❤️  No saved items yet",18f,false,primaryText),margin(0,0,0,12))
+  content.addView(primaryButton("🏠  Browse Food"){showHome()},margin(0,0,0,10))
+  return
+ }
+ items.forEach{p->
+  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(8),dp(10),dp(8));background=rounded(Color.rgb(38,29,22),16)}
+  val photo=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+  card.addView(photo,LinearLayout.LayoutParams(dp(82),dp(76)))
+  loadImage(photo,p.imageUrl)
+  val details=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(10),0,0,0)}
+  details.addView(label(p.name,15f,true,primaryText))
+  details.addView(label("₹"+p.price,14f,true,primaryText),margin(0,4,0,5))
+  details.addView(primaryButton("Add to Cart"){addToCart(p);Toast.makeText(this,"Added to cart",Toast.LENGTH_SHORT).show()},LinearLayout.LayoutParams(-1,dp(36)))
+  card.addView(details,LinearLayout.LayoutParams(0,-2,1f))
+  card.addView(primaryButton("♥"){toggleFavorite(p)},LinearLayout.LayoutParams(dp(42),dp(40)))
+  content.addView(card,margin(0,0,0,10))
+ }
 }
 private fun showPaymentSettings(){
  setupBase(4)
