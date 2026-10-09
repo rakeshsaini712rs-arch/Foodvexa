@@ -50,7 +50,7 @@ class MainActivity:AppCompatActivity(){
   shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))
   shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
   frame.addView(shell,FrameLayout.LayoutParams(-1,-1))
-  frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(58),Gravity.BOTTOM))
+  frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(46),Gravity.BOTTOM))
   root.addView(frame,FrameLayout.LayoutParams(-1,-1))
  }
 
@@ -62,12 +62,16 @@ class MainActivity:AppCompatActivity(){
   val active=i==selectedNav
   val item=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(1),0,dp(1),0);isClickable=true;isFocusable=true;background=rounded(if(active&&isLightTheme)Color.rgb(255,242,237) else Color.TRANSPARENT,10);setOnClickListener{when(i){0->{hideKeyboard();showHome(0)};1->{showHome(1);searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}}
   val tint=if(active)orange else if(isLightTheme)Color.rgb(40,40,45) else Color.LTGRAY
-  val icon=TextView(this).apply{text=icons[i];textSize=if(i==3)19f else 21f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint)}
-  val text=TextView(this).apply{text=title;textSize=10f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint);typeface=Typeface.DEFAULT_BOLD;maxLines=1}
-  item.addView(icon,LinearLayout.LayoutParams(-1,dp(25)))
-  item.addView(text,LinearLayout.LayoutParams(-1,dp(15)).apply{topMargin=dp(1)})
+  val icon=TextView(this).apply{text=icons[i];textSize=if(i==3)16f else 18f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint)}
+  val text=TextView(this).apply{text=title;textSize=9f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint);typeface=Typeface.DEFAULT_BOLD;maxLines=1}
+  item.addView(icon,LinearLayout.LayoutParams(-1,dp(19)))
+  item.addView(text,LinearLayout.LayoutParams(-1,dp(12)).apply{topMargin=0})
   val indicator=View(this).apply{background=rounded(if(active)orange else Color.TRANSPARENT,4)}
-  item.addView(indicator,LinearLayout.LayoutParams(dp(if(active)24 else 1),dp(3)).apply{topMargin=dp(2)})
+  item.addView(indicator,LinearLayout.LayoutParams(dp(if(active)22 else 1),dp(2)).apply{topMargin=dp(1)})
+  val selectTab={when(i){0->{hideKeyboard();showHome(0)};1->{showHome(1);searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}
+  item.setOnClickListener{selectTab()}
+  icon.setOnClickListener{selectTab()}
+  text.setOnClickListener{selectTab()}
   if(i==3)cartNavLabel=text
   nav.addView(item,LinearLayout.LayoutParams(0,-1,1f).apply{setMargins(dp(1),0,dp(1),0)})
  }
