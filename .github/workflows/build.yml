@@ -41,6 +41,51 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
+      - name: Enforce compact four-product home layout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          # Keep category artwork and its two-line label inside the visible card.
+          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)}','LinearLayout.LayoutParams(-1,dp(44)).apply{bottomMargin=dp(2)}')
+          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(84)))')
+          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(84)).apply{rightMargin=dp(7)}')
+          # Shorten the banner itself, not just its image child.
+          if 'private fun bannerGrid():LinearLayout' in s:
+              a=s.index('private fun bannerGrid():LinearLayout')
+              b=s.find('private fun professionalBanner()',a)
+              if b<0: b=len(s)
+              block=s[a:b]
+              block=block.replace('LinearLayout.LayoutParams(w,dp(76))','LinearLayout.LayoutParams(w,dp(62))')
+              block=block.replace('LinearLayout.LayoutParams(-1,dp(76))','LinearLayout.LayoutParams(-1,dp(62))')
+              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(76))')
+              block=block.replace('LinearLayout.LayoutParams(-1,dp(12))','LinearLayout.LayoutParams(-1,dp(8))')
+              block=block.replace('setPadding(dp(16),0,dp(16),0)','setPadding(dp(12),0,dp(12),0)')
+              block=block.replace('textSize=18f','textSize=15f')
+              s=s[:a]+block+s[b:]
+          # Compact each product card so two rows (four products) fit above bottom navigation.
+          s=s.replace('card.addView(pic,LinearLayout.LayoutParams(-1,dp(64)))','card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))')
+          s=s.replace('card.addView(pic,LinearLayout.LayoutParams(-1,dp(48)))','card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))')
+          s=s.replace('card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))','card.addView(label(p.name,11.5f,true,Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,1,0,0))')
+          s=s.replace('card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))','card.addView(label("• Available",9f,true,Color.rgb(50,205,120)),margin(0,1,0,0))')
+          s=s.replace('LinearLayout.LayoutParams(0,dp(30),0.92f)','LinearLayout.LayoutParams(0,dp(25),0.92f)')
+          s=s.replace('LinearLayout.LayoutParams(0,dp(30),1.08f)','LinearLayout.LayoutParams(0,dp(25),1.08f)')
+          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)')
+          s=s.replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(3),dp(2),dp(3),dp(2))')
+          p.write_text(s,encoding="utf-8")
+          checks={
+            "category image compact":"LinearLayout.LayoutParams(-1,dp(44)).apply{bottomMargin=dp(2)}",
+            "product image compact":'card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))',
+            "compact banner":'LinearLayout.LayoutParams(-1,dp(76))',
+          }
+          for k,v in checks.items():
+              print(("PASS " if v in s else "FAIL ")+k)
+          if any(v not in s for v in checks.values()):
+              raise SystemExit("Compact home layout verification failed")
+          PY
+
       - name: Enforce final payment/profile source state
         run: |
           python3 - <<'PY'
