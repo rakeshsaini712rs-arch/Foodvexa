@@ -132,9 +132,9 @@ jobs:
           if "import android.view.View" not in s:
               anchor="import android.view.Gravity"
               if anchor in s:
-                  s=s.replace(anchor, anchor+"\\nimport android.view.View", 1)
+                  s=s.replace(anchor, anchor+chr(10)+"import android.view.View", 1)
               else:
-                  s=s.replace("package com.foodvexa.app", "package com.foodvexa.app\\n\\nimport android.view.View", 1)
+                  s=s.replace("package com.foodvexa.app", "package com.foodvexa.app"+chr(10)+chr(10)+"import android.view.View", 1)
           p.write_text(s)
           assert "import android.view.View" in s, "android.view.View import still missing"
           print("PASS android.view.View import present")
