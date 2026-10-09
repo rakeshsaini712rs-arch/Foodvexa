@@ -60,7 +60,7 @@ class AdminActivity : Activity() {
         brand.addView(text("FOODVEXA ADMIN",20f,Color.WHITE,true))
         brand.addView(text("SAMOSA KING · NAWALGARH",11f,Color.LTGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         top.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
-        top.addView(button("LOG OUT",{goLogin()},Color.rgb(90,55,62}))
+        top.addView(button("LOG OUT",{goLogin()},Color.rgb(90,55,62)))
         root.addView(top)
         val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(Color.WHITE)}
         val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(8),dp(8),dp(8))}
