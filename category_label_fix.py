@@ -19,7 +19,7 @@ new='''private fun categoryCard(c:Category):LinearLayout{
   }
  }
  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
- box.addView(image,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(2)})
+ box.addView(image,LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)})
  val title=label(c.name,10.5f,true,if(selected)Color.WHITE else ink).apply{
   gravity=Gravity.CENTER
   textAlignment=TextView.TEXT_ALIGNMENT_CENTER
@@ -29,19 +29,19 @@ new='''private fun categoryCard(c:Category):LinearLayout{
   includeFontPadding=false
   setPadding(dp(1),0,dp(1),0)
  }
- box.addView(title,LinearLayout.LayoutParams(-1,dp(27)))
+ box.addView(title,LinearLayout.LayoutParams(-1,dp(34)))
  if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)
  return box
 }
 '''
 s=s[:a]+new+s[b:]
-s=s.replace('LinearLayout.LayoutParams(dp(88),dp(70)).apply{rightMargin=dp(6)}','LinearLayout.LayoutParams(dp(88),dp(86)).apply{rightMargin=dp(6)}')
-s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(74))','stickyScroll,LinearLayout.LayoutParams(-1,dp(90))')
+s=s.replace('LinearLayout.LayoutParams(dp(88),dp(70)).apply{rightMargin=dp(6)}','LinearLayout.LayoutParams(dp(88),dp(90)).apply{rightMargin=dp(6)}')
+s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(74))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(74)))','LinearLayout.LayoutParams(-1,dp(90)))')
 checks={
- "category labels reserve two lines":"minLines=2" in new and "LinearLayout.LayoutParams(-1,dp(27))" in new,
- "category images reduced":"LinearLayout.LayoutParams(-1,dp(48))" in new,
- "category row has room":"LinearLayout.LayoutParams(-1,dp(90))" in s,
+ "category labels reserve two lines":"minLines=2" in new and "LinearLayout.LayoutParams(-1,dp(34))" in new,
+ "category images reduced":"LinearLayout.LayoutParams(-1,dp(42))" in new,
+ "category row has room":"LinearLayout.LayoutParams(-1,dp(96))" in s,
  "category tap preserved":"setOnClickListener{" in new and "selectedCategory=c.name;renderProducts()" in new,
  "restaurant category preserved":'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}' in new,
 }
