@@ -35,7 +35,9 @@ new='''private fun categoryCard(c:Category):LinearLayout{
 }
 '''
 s=s[:a]+new+s[b:]
-s=s.replace('LinearLayout.LayoutParams(dp(88),dp(70)).apply{rightMargin=dp(6)}','LinearLayout.LayoutParams(dp(88),dp(90)).apply{rightMargin=dp(6)}')
+s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(88),dp(90)).apply{rightMargin=dp(6)}')
+s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(78))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(96)))')
 s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(74))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(74)))','LinearLayout.LayoutParams(-1,dp(90)))')
 checks={
