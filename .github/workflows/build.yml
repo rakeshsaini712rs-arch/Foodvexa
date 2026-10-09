@@ -452,6 +452,9 @@ jobs:
           chmod 600 app/foodvexa-debug.keystore
           keytool -list -v -keystore app/foodvexa-debug.keystore -storepass foodvexa2026 -alias foodvexa | grep "SHA1:"
 
+      - name: Apply Google sign-in profile creation flow
+        run: python3 google_profile_fix.py
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
