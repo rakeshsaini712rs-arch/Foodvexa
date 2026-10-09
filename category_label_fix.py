@@ -42,6 +42,7 @@ s=s.replace('LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)}','Li
 s=s.replace('LinearLayout.LayoutParams(-1,dp(34))','LinearLayout.LayoutParams(-1,dp(50))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(96))','LinearLayout.LayoutParams(-1,dp(120))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(90))','LinearLayout.LayoutParams(-1,dp(120))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(74))','LinearLayout.LayoutParams(-1,dp(132))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(82))','LinearLayout.LayoutParams(-1,dp(132))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(80))','LinearLayout.LayoutParams(-1,dp(132))')
 s=s.replace('stickyScroll,LinearLayout.LayoutParams(-1,dp(132))','stickyScroll,LinearLayout.LayoutParams(-1,dp(96))')
@@ -51,7 +52,7 @@ s=s.replace('LinearLayout.LayoutParams(-1,dp(82)))','LinearLayout.LayoutParams(-
 checks={
  "category labels reserve two lines":"minLines=2" in new and "LinearLayout.LayoutParams(-1,dp(34))" in new,
  "category images reduced":"LinearLayout.LayoutParams(-1,dp(42))" in new,
- "category row has room":("dp(132)" in s or "dp(120)" in s),
+ "category row has room":"LinearLayout.LayoutParams(-1,dp(132))" in s,
  "category selection refreshes immediately":"refreshCategorySelection();renderProducts()" in new,
  "category tap preserved":"setOnClickListener{" in new and "selectedCategory=c.name" in new and "renderProducts()" in new,
  "restaurant category preserved":'if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}' in new,
