@@ -43,9 +43,9 @@ if 'val accountEmail=prefs.getString("profile_email"' not in ms:
 
 # Save and validate the customer profile before marking setup complete.
 import re
-profile_match=re.search(r"fun\\s+showProfileEditor\\s*\\(",ms)\nprofile_start=ms.rfind("fun ",0,profile_match.start()) if profile_match else -1
-profile_end=re.search(r"\\n\\s*(?:private\\s+)?fun\\s+",ms[profile_start+10:])\nprofile_end=(profile_start+10+profile_end.start()) if profile_end else -1
-if profile_start<0: raise SystemExit("Profile editor method missing; available="+str([m.group(0) for m in re.finditer(r"fun\\s+\\w*Profile\\w*\\s*\\(",ms)]))
+profile_match=re.search(r"fun\s+showProfileEditor\s*\(",ms)\nprofile_start=ms.rfind("fun ",0,profile_match.start()) if profile_match else -1
+profile_end=re.search(r"\n\s*(?:private\s+)?fun\s+",ms[profile_start+10:])\nprofile_end=(profile_start+10+profile_end.start()) if profile_end else -1
+if profile_start<0: raise SystemExit("Profile editor method missing; available="+str([m.group(0) for m in re.finditer(r"fun\s+\w*Profile\w*\s*\(",ms)]))
 if profile_end<0: profile_end=len(ms)
 profile=ms[profile_start:profile_end]
 save_start=profile.find('content.addView(primaryButton("💾  Save Profile")')
