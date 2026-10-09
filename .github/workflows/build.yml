@@ -331,6 +331,72 @@ jobs:
           print("COMPILE HARDENING: categoryBackground =", "private fun categoryBackground(selected:Boolean)" in s)
           print("COMPILE HARDENING: imageCache =", "imageCache" in s)
           PY
+      - name: Enforce compact bottom navigation after source transforms
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          # Keep the selected tab through home/search and all other screens.
+          if "private var selectedNavIndex=0" not in s:
+              needle='private var selectedCategory="All"'
+              if needle not in s: raise SystemExit("selectedCategory field not found")
+              s=s.replace(needle, needle+";private var selectedNavIndex=0", 1)
+          s=re.sub(r'frame\.addView\(bottomNav\(selectedNav\),FrameLayout\.LayoutParams\(-1,dp\(\d+\),Gravity\.BOTTOM\)\)',
+                   'frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(46),Gravity.BOTTOM))',s,count=1)
+          # setupBase records the active page before rebuilding the navigation bar.
+          s=re.sub(r'private fun setupBase\(selectedNav:Int=0\)\s*\{\s*setupHomeBase\(selectedNav\)\s*\}',
+                   'private fun setupBase(selectedNav:Int=0){selectedNavIndex=selectedNav;setupHomeBase(selectedNav)}',s,count=1)
+          a=s.find("private fun bottomNav(")
+          b=s.find("private fun showHome(",a)
+          if a<0 or b<0: raise SystemExit("Could not locate bottomNav/showHome boundaries")
+          nav='''private fun bottomNav(selectedNav:Int=selectedNavIndex):LinearLayout{
+           selectedNavIndex=selectedNav
+           val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(3),dp(2),dp(3),dp(2));elevation=dp(8).toFloat();background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(25,22,28));cornerRadius=dp(12).toFloat()}}
+           val icons=listOf("⌂","⌕","▣","🛒","♙")
+           val labels=listOf("HOME","SEARCH","ORDERS","CART","PROFILE")
+           labels.forEachIndexed{i,title->
+            val active=i==selectedNavIndex
+            val tint=if(active)orange else if(isLightTheme)Color.rgb(40,40,45) else Color.LTGRAY
+            val item=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(1),0,dp(1),0);isClickable=true;isFocusable=true;background=rounded(if(active&&isLightTheme)Color.rgb(255,242,237) else Color.TRANSPARENT,8)}
+            val icon=TextView(this).apply{text=icons[i];textSize=if(i==3)16f else 18f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint)}
+            val text=TextView(this).apply{text=title;textSize=9f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint);typeface=Typeface.DEFAULT_BOLD;maxLines=1}
+            val indicator=View(this).apply{background=rounded(if(active)orange else Color.TRANSPARENT,4)}
+            item.addView(icon,LinearLayout.LayoutParams(-1,dp(19)))
+            item.addView(text,LinearLayout.LayoutParams(-1,dp(12)))
+            item.addView(indicator,LinearLayout.LayoutParams(dp(if(active)22 else 1),dp(2)).apply{topMargin=dp(1)})
+            val selectTab={selectedNavIndex=i;when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}
+            item.setOnClickListener{selectTab()}
+            icon.setOnClickListener{selectTab()}
+            text.setOnClickListener{selectTab()}
+            if(i==3)cartNavLabel=text
+            nav.addView(item,LinearLayout.LayoutParams(0,-1,1f).apply{setMargins(dp(1),0,dp(1),0)})
+           }
+           updateCartBadge()
+           return nav
+          }
+          '''
+          s=s[:a]+nav+s[b:]
+          # Home must keep SEARCH highlighted when the search tab opened it.
+          a=s.find("private fun showHome(")
+          b=s.find("private fun locationHeader(",a)
+          if a<0 or b<0: raise SystemExit("Could not locate showHome/locationHeader boundaries")
+          block=s[a:b]
+          block=block.replace("setupHomeBase()", "setupHomeBase(selectedNavIndex)", 1)
+          s=s[:a]+block+s[b:]
+          checks={
+            "46dp bottom bar":"FrameLayout.LayoutParams(-1,dp(46),Gravity.BOTTOM)" in s,
+            "selected tab state":"private var selectedNavIndex=0" in s,
+            "orange selected indicator":"if(active)orange else Color.TRANSPARENT" in s,
+            "tap handlers on icon and label":"icon.setOnClickListener{selectTab()}" in s and "text.setOnClickListener{selectTab()}" in s,
+            "search selection preserved":"setupHomeBase(selectedNavIndex)" in s,
+          }
+          for name,ok in checks.items(): print(("PASS " if ok else "FAIL ")+name)
+          if not all(checks.values()): raise SystemExit("Compact bottom navigation enforcement failed")
+          p.write_text(s,encoding="utf-8")
+          PY
+
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
