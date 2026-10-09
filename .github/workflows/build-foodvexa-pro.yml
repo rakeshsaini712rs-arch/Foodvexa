@@ -22,6 +22,9 @@ jobs:
       - name: Apply final stability pass
         run: python3 final_stability_fix.py
 
+      - name: Apply premium cart redesign and empty-cart fix
+        run: python3 cart_premium_redesign.py
+
       - name: Verify cart screen
         run: |
           grep -Fq 'private fun showCart(){' app/src/main/java/com/foodvexa/app/MainActivity.kt
