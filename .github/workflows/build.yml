@@ -41,43 +41,52 @@ jobs:
         run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
-      - name: Enforce compact four-product home layout
+      - name: Apply Swiggy-style Foodvexa home layout
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          # Regex-based edits tolerate earlier build transformations changing spacing/heights.
-          s,n1=re.subn(r'box\.addView\(image,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\.apply\{bottomMargin=dp\(\d+\)\}\)', 'box.addView(image,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(2)})', s, count=1)
-          s,n2=re.subn(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\)', 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(58)))', s, count=1)
-          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(82)).apply{rightMargin=dp(7)}')
-          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(82)))')
-          # Fit product labels, availability and price/action row into compact cards.
-          s=re.sub(r'card\.addView\(label\(p\.name,\d+(?:\.\d+)?f,true,Color\.WHITE\)\.apply\{maxLines=2;ellipsize=android\.text\.TextUtils\.TruncateAt\.END\},margin\(0,\d+,0,0\)\)', 'card.addView(label(p.name,11.5f,true,Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,1,0,0))', s, count=1)
-          s=re.sub(r'card\.addView\(label\("• Available",\d+(?:\.\d+)?f,true,Color\.rgb\(50,205,120\)\),margin\(0,\d+,0,0\)\)', 'card.addView(label("• Available",9f,true,Color.rgb(50,205,120)),margin(0,1,0,0))', s, count=1)
-          s=s.replace('LinearLayout.LayoutParams(0,dp(30),0.92f)','LinearLayout.LayoutParams(0,dp(25),0.92f)')
-          s=s.replace('LinearLayout.LayoutParams(0,dp(30),1.08f)','LinearLayout.LayoutParams(0,dp(25),1.08f)')
-          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)').replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(3),dp(2),dp(3),dp(2))')
-          # Reduce banner height if the generated carousel exists.
+          # Keep the full banner visible: carousel card and its viewport must use the same height.
           if 'private fun bannerGrid():LinearLayout' in s:
               a=s.index('private fun bannerGrid():LinearLayout')
               b=s.find('private fun professionalBanner()',a)
+              if b<0: b=s.find('private fun categoryCard(',a)
               if b<0: b=len(s)
               block=s[a:b]
-              block=re.sub(r'LinearLayout\.LayoutParams\(w,dp\(\d+\)\)', 'LinearLayout.LayoutParams(w,dp(150))', block, count=1)
-              block=re.sub(r'LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)', 'LinearLayout.LayoutParams(-1,dp(150))', block, count=1)
-              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(150))')
-              block=block.replace('textSize=18f','textSize=15f')
+              block=re.sub(r'LinearLayout\\.LayoutParams\\(w,dp\\(\\d+\\)\\)', 'LinearLayout.LayoutParams(w,dp(190))', block)
+              block=re.sub(r'LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)', 'LinearLayout.LayoutParams(-1,dp(190))', block)
+              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(190))')
               s=s[:a]+block+s[b:]
+          # Keep category images and labels fully visible.
+          s=re.sub(r'box\\.addView\\(image,LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)\\.apply\\{bottomMargin=dp\\(\\d+\\)\\}\\)',
+                   'box.addView(image,LinearLayout.LayoutParams(-1,dp(66)).apply{bottomMargin=dp(3)})',s,count=1)
+          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(84)).apply{rightMargin=dp(7)}')
+          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(84)))')
+          # Three compact columns like the reference; preserve product order and Add to Cart actions.
+          s=s.replace('if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}','if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}')
+          s=s.replace('row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})','row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%3==0)0 else dp(3);rightMargin=if(index%3==2)0 else dp(3)})')
+          s=s.replace('if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))','if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))')
+          # Restore image height and use small, legible labels on 3-column cards.
+          s=re.sub(r'card\\.addView\\(pic,LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)\\)','card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))',s,count=1)
+          s=re.sub(r'card\\.addView\\(label\\(p\\.name,\\d+(?:\\.\\d+)?f,true,Color\\.WHITE\\)\\.apply\\{maxLines=2;ellipsize=android\\.text\\.TextUtils\\.TruncateAt\\.END\\},margin\\(0,\\d+,0,0\\)\\)',
+                   'card.addView(label(p.name,11f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))',s,count=1)
+          s=s.replace('label("• Available",10.5f,true,Color.rgb(50,205,120))','label("• Available",9f,true,Color.rgb(50,205,120))')
+          s=s.replace('label("₹${p.price}",15f,true,Color.WHITE)','label("₹${p.price}",12f,true,Color.WHITE)')
+          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)').replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(2),dp(3),dp(2),dp(3))')
           p.write_text(s,encoding="utf-8")
-          print("COMPACT LAYOUT: category image replacements =",n1)
-          print("COMPACT LAYOUT: product image replacements =",n2)
-          if n1!=1 or n2!=1:
-              raise SystemExit("Could not identify category/product image layout in transformed source")
-          if not re.search(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(40\)\)\)',s):
-              raise SystemExit("Compact product image verification failed")
-          print("COMPACT LAYOUT VERIFIED")
+          checks={
+            "banner card full height":"LinearLayout.LayoutParams(-1,dp(190))",
+            "product image height":"card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))",
+            "three column rows":"if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}",
+            "three column wrap":"if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))"
+          }
+          for name,needle in checks.items():
+              ok=needle in s
+              print(("PASS " if ok else "FAIL ")+name)
+          if not all(needle in s for needle in checks.values()):
+              raise SystemExit("Home layout patch verification failed")
           PY
 
       - name: Enforce final payment/profile source state
