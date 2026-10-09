@@ -455,6 +455,8 @@ jobs:
       - name: Apply Google sign-in profile creation flow
         run: python3 google_profile_fix.py
 
+      - name: Apply Google profile creation flow
+        run: python3 google_profile_fix.py
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
