@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="Foodvexa Admin" android:usesCleartextTraffic="false">
         <activity android:name=".AdminActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="true">
