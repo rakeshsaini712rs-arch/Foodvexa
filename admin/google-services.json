@@ -7,6 +7,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:775682824585:android:23340cf9449a0f381be958",
+        "android_client_info": {
+          "package_name": "com.foodvexa.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-doTIDcp8CiuvmkMv-As2iVvrkdhb-fU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:775682824585:android:23795fbfc1dbac9b1be958",
         "android_client_info": {
           "package_name": "com.foodvexa.app"
@@ -58,30 +87,6 @@
           "client_type": 3
         }
       ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC-doTIDcp8CiuvmkMv-As2iVvrkdhb-fU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:775682824585:android:23795fbfc1dbac9b1be958",
-        "android_client_info": {
-          "package_name": "com.foodvexa.admin"
-        }
-      },
-      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyC-doTIDcp8CiuvmkMv-As2iVvrkdhb-fU"
