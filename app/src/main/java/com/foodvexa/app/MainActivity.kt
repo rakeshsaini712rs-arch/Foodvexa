@@ -220,7 +220,7 @@ private fun showCollection(){
  setupBase(4)
  content.addView(label("Collection",28f,true,primaryText),margin(0,10,0,8))
  content.addView(label("Your saved items",15f,false,secondaryText),margin(0,0,0,16))
- content.addView(label("❤️  No saved items yet",18f,false,Color.WHITE),margin(0,0,0,12))
+ content.addView(label("❤️  No saved items yet",18f,false,primaryText),margin(0,0,0,12))
  content.addView(primaryButton("🏠  Browse Food"){showHome()},margin(0,0,0,10))
 }
 private fun showPaymentSettings(){
