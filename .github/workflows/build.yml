@@ -413,6 +413,8 @@ jobs:
 
       - name: Apply approved dark premium compact home UI
         run: python3 dark_premium_home.py
+      - name: Apply premium cart redesign and empty-cart fix
+        run: python3 cart_premium_redesign.py
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
