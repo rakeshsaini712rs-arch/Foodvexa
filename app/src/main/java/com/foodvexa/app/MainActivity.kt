@@ -150,8 +150,54 @@ filtered.forEachIndexed{index,p->
 }
 }
  private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
- private fun locationDialog(){val current=prefs.getString("location","").orEmpty();val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))};val search=EditText(this).apply{hint="Search area, street or landmark";setSingleLine(true);setText(current);setPadding(dp(14),0,dp(14),0);background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)};panel.addView(search,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(12)});val use=primaryButton("⌖  Use current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()};panel.addView(use,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)});val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home")};panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)});val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work")};panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)));AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()}
- private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};val e=prefs.edit().putString("location",v).putString("location_label",label);when(label){"Home"->e.putString("home_address",v);"Work"->e.putString("work_address",v);"Delivery"->e.putString("delivery_address",v)};e.apply();showHome()}
+ private fun locationDialog(){
+   val current=prefs.getString("location","").orEmpty()
+   val dialog=android.app.Dialog(this)
+   val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(18),dp(20),dp(16));background=GradientDrawable().apply{setColor(Color.rgb(27,30,35));cornerRadius=dp(24).toFloat();setStroke(dp(1),Color.rgb(55,60,68))}}
+   val heading=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+   val pin=TextView(this).apply{text="●";textSize=22f;gravity=Gravity.CENTER;setTextColor(orange);background=rounded(Color.rgb(54,39,35),16)}
+   heading.addView(pin,LinearLayout.LayoutParams(dp(44),dp(44)).apply{rightMargin=dp(12)})
+   val titleBlock=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+   titleBlock.addView(label("Choose delivery location",19f,true,Color.WHITE))
+   titleBlock.addView(label("Set where you want your order delivered",12f,false,Color.LTGRAY),margin(0,3,0,0))
+   heading.addView(titleBlock,LinearLayout.LayoutParams(0,-2,1f))
+   val close=TextView(this).apply{text="×";textSize=28f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);setOnClickListener{dialog.dismiss()}}
+   heading.addView(close,LinearLayout.LayoutParams(dp(34),dp(44)))
+   card.addView(heading,margin(0,0,0,18))
+   card.addView(label("DELIVERY ADDRESS",12f,true,Color.LTGRAY),margin(0,0,0,7))
+   val search=EditText(this).apply{hint="Enter street, area or landmark";setSingleLine(false);maxLines=2;minLines=1;setText(current);setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.rgb(245,246,248),14);setTextColor(Color.rgb(28,30,35));setHintTextColor(Color.rgb(125,130,140));textSize=15f}
+   card.addView(search,LinearLayout.LayoutParams(-1,dp(58)).apply{bottomMargin=dp(12)})
+   val use=primaryButton("⌖   Use my current location"){Toast.makeText(this,"Enable precise location permission to use current location",Toast.LENGTH_LONG).show()}
+   card.addView(use,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(18)})
+   card.addView(label("SAVED ADDRESSES",12f,true,Color.LTGRAY),margin(0,0,0,8))
+   fun savedAddressRow(name:String,key:String){
+    val address=prefs.getString(key,"").orEmpty()
+    if(address.isBlank())return
+    val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(12),dp(10));background=rounded(Color.rgb(35,38,44),14);isClickable=true;setOnClickListener{search.setText(address);search.setSelection(search.text.length)}}
+    val symbol=TextView(this).apply{text=if(name=="Home")"⌂" else "▣";textSize=22f;gravity=Gravity.CENTER;setTextColor(orange)}
+    row.addView(symbol,LinearLayout.LayoutParams(dp(34),dp(38)))
+    val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+    texts.addView(label(name,14f,true,Color.WHITE))
+    texts.addView(label(address,11f,false,Color.LTGRAY).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
+    card.addView(row,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+   }
+   savedAddressRow("Home","home_address")
+   savedAddressRow("Work","work_address")
+   val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+   val cancel=TextView(this).apply{text="Cancel";textSize=14f;gravity=Gravity.CENTER;setTextColor(Color.LTGRAY);setOnClickListener{dialog.dismiss()}}
+   actions.addView(cancel,LinearLayout.LayoutParams(0,dp(48),1f))
+   val save=primaryButton("Save address"){saveLocation(search.text.toString(),"Delivery");dialog.dismiss()}
+   actions.addView(save,LinearLayout.LayoutParams(0,dp(48),1.4f).apply{leftMargin=dp(8)})
+   card.addView(actions,margin(0,dp(12),0,0))
+   dialog.setContentView(card)
+   dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+   dialog.show()
+   dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+   dialog.window?.setLayout((resources.displayMetrics.widthPixels*0.90f).toInt(),-2)
+   dialog.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+   dialog.window?.setDimAmount(0.62f)
+  }
+  private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};val e=prefs.edit().putString("location",v).putString("location_label",label);when(label){"Home"->e.putString("home_address",v);"Work"->e.putString("work_address",v);"Delivery"->e.putString("delivery_address",v)};e.apply();showHome()}
  private fun placeOrderAndShowOrders(){
  val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
