@@ -48,42 +48,36 @@ jobs:
           import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          # Keep category artwork and its two-line label inside the visible card.
-          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)}','LinearLayout.LayoutParams(-1,dp(44)).apply{bottomMargin=dp(2)}')
-          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(84)))')
-          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(84)).apply{rightMargin=dp(7)}')
-          # Shorten the banner itself, not just its image child.
+          # Regex-based edits tolerate earlier build transformations changing spacing/heights.
+          s,n1=re.subn(r'box\.addView\(image,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\.apply\{bottomMargin=dp\(\d+\)\}\)', 'box.addView(image,LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)})', s, count=1)
+          s,n2=re.subn(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)\)', 'card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))', s, count=1)
+          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(82)).apply{rightMargin=dp(7)}')
+          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(82)))')
+          # Fit product labels, availability and price/action row into compact cards.
+          s=re.sub(r'card\.addView\(label\(p\.name,\d+(?:\.\d+)?f,true,Color\.WHITE\)\.apply\{maxLines=2;ellipsize=android\.text\.TextUtils\.TruncateAt\.END\},margin\(0,\d+,0,0\)\)', 'card.addView(label(p.name,11.5f,true,Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,1,0,0))', s, count=1)
+          s=re.sub(r'card\.addView\(label\("• Available",\d+(?:\.\d+)?f,true,Color\.rgb\(50,205,120\)\),margin\(0,\d+,0,0\)\)', 'card.addView(label("• Available",9f,true,Color.rgb(50,205,120)),margin(0,1,0,0))', s, count=1)
+          s=s.replace('LinearLayout.LayoutParams(0,dp(30),0.92f)','LinearLayout.LayoutParams(0,dp(25),0.92f)')
+          s=s.replace('LinearLayout.LayoutParams(0,dp(30),1.08f)','LinearLayout.LayoutParams(0,dp(25),1.08f)')
+          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)').replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(3),dp(2),dp(3),dp(2))')
+          # Reduce banner height if the generated carousel exists.
           if 'private fun bannerGrid():LinearLayout' in s:
               a=s.index('private fun bannerGrid():LinearLayout')
               b=s.find('private fun professionalBanner()',a)
               if b<0: b=len(s)
               block=s[a:b]
-              block=block.replace('LinearLayout.LayoutParams(w,dp(76))','LinearLayout.LayoutParams(w,dp(62))')
-              block=block.replace('LinearLayout.LayoutParams(-1,dp(76))','LinearLayout.LayoutParams(-1,dp(62))')
+              block=re.sub(r'LinearLayout\.LayoutParams\(w,dp\(\d+\)\)', 'LinearLayout.LayoutParams(w,dp(62))', block, count=1)
+              block=re.sub(r'LinearLayout\.LayoutParams\(-1,dp\(\d+\)\)', 'LinearLayout.LayoutParams(-1,dp(62))', block, count=1)
               block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(76))')
-              block=block.replace('LinearLayout.LayoutParams(-1,dp(12))','LinearLayout.LayoutParams(-1,dp(8))')
-              block=block.replace('setPadding(dp(16),0,dp(16),0)','setPadding(dp(12),0,dp(12),0)')
               block=block.replace('textSize=18f','textSize=15f')
               s=s[:a]+block+s[b:]
-          # Compact each product card so two rows (four products) fit above bottom navigation.
-          s=s.replace('card.addView(pic,LinearLayout.LayoutParams(-1,dp(64)))','card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))')
-          s=s.replace('card.addView(pic,LinearLayout.LayoutParams(-1,dp(48)))','card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))')
-          s=s.replace('card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))','card.addView(label(p.name,11.5f,true,Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,1,0,0))')
-          s=s.replace('card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))','card.addView(label("• Available",9f,true,Color.rgb(50,205,120)),margin(0,1,0,0))')
-          s=s.replace('LinearLayout.LayoutParams(0,dp(30),0.92f)','LinearLayout.LayoutParams(0,dp(25),0.92f)')
-          s=s.replace('LinearLayout.LayoutParams(0,dp(30),1.08f)','LinearLayout.LayoutParams(0,dp(25),1.08f)')
-          s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)')
-          s=s.replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(3),dp(2),dp(3),dp(2))')
           p.write_text(s,encoding="utf-8")
-          checks={
-            "category image compact":"LinearLayout.LayoutParams(-1,dp(44)).apply{bottomMargin=dp(2)}",
-            "product image compact":'card.addView(pic,LinearLayout.LayoutParams(-1,dp(40)))',
-            "compact banner":'LinearLayout.LayoutParams(-1,dp(76))',
-          }
-          for k,v in checks.items():
-              print(("PASS " if v in s else "FAIL ")+k)
-          if any(v not in s for v in checks.values()):
-              raise SystemExit("Compact home layout verification failed")
+          print("COMPACT LAYOUT: category image replacements =",n1)
+          print("COMPACT LAYOUT: product image replacements =",n2)
+          if n1!=1 or n2!=1:
+              raise SystemExit("Could not identify category/product image layout in transformed source")
+          if not re.search(r'card\.addView\(pic,LinearLayout\.LayoutParams\(-1,dp\(40\)\)\)',s):
+              raise SystemExit("Compact product image verification failed")
+          print("COMPACT LAYOUT VERIFIED")
           PY
 
       - name: Enforce final payment/profile source state
