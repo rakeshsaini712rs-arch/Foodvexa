@@ -15,7 +15,7 @@ def method_bounds(src, signature):
         ch=src[i]
         if in_string:
             if escaped: escaped=False
-            elif ch=="\\\\": escaped=True
+            elif ch=="\\": escaped=True
             elif ch=='"': in_string=False
             continue
         if ch=='"':
