@@ -25,6 +25,9 @@ jobs:
       - name: Apply premium cart redesign and empty-cart fix
         run: python3 cart_premium_redesign.py
 
+      - name: Fix clipped category labels
+        run: python3 category_label_fix.py
+
       - name: Verify cart screen
         run: |
           grep -Fq 'private fun showCart(){' app/src/main/java/com/foodvexa/app/MainActivity.kt
