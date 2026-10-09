@@ -355,6 +355,12 @@ jobs:
           # setupBase records the active page before rebuilding the navigation bar.
           s=re.sub(r'private fun setupBase\(selectedNav:Int=0\)\s*\{\s*setupHomeBase\(selectedNav\)\s*\}',
                    'private fun setupBase(selectedNav:Int=0){selectedNavIndex=selectedNav;setupHomeBase(selectedNav)}',s,count=1)
+          if "private val isLightTheme:Boolean" not in s:
+              marker="private fun bottomNav("
+              pos=s.find(marker)
+              if pos<0: raise SystemExit("bottomNav declaration not found for theme helper")
+              helper='private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false}' + chr(10) + "  "
+              s=s[:pos]+helper+s[pos:]
           a=s.find("private fun bottomNav(")
           b=s.find("private fun showHome(",a)
           if a<0 or b<0: raise SystemExit("Could not locate bottomNav/showHome boundaries")
@@ -395,6 +401,7 @@ jobs:
           checks={
             "46dp bottom bar":any("bottomNav(" in line and "Gravity.BOTTOM" in line and "dp(46)" in line for line in s.splitlines()),
             "selected tab state":"private var selectedNavIndex=0" in s,
+            "light theme helper":"private val isLightTheme:Boolean" in s,
             "orange selected indicator":"if(active)orange else Color.TRANSPARENT" in s,
             "tap handlers on icon and label":"icon.setOnClickListener{selectTab()}" in s and "text.setOnClickListener{selectTab()}" in s,
             "search selection preserved":"setupHomeBase(selectedNavIndex)" in s,
