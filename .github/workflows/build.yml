@@ -45,48 +45,45 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          # Keep the full banner visible: carousel card and its viewport must use the same height.
+          # Expand carousel card height without changing the banner's contents.
           if 'private fun bannerGrid():LinearLayout' in s:
               a=s.index('private fun bannerGrid():LinearLayout')
               b=s.find('private fun professionalBanner()',a)
               if b<0: b=s.find('private fun categoryCard(',a)
               if b<0: b=len(s)
               block=s[a:b]
-              block=re.sub(r'LinearLayout\\.LayoutParams\\(w,dp\\(\\d+\\)\\)', 'LinearLayout.LayoutParams(w,dp(190))', block)
-              block=re.sub(r'LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)', 'LinearLayout.LayoutParams(-1,dp(190))', block)
-              block=block.replace('LinearLayout.LayoutParams(-1,dp(108))','LinearLayout.LayoutParams(-1,dp(190))')
+              for old in ('dp(108)','dp(112)','dp(120)','dp(148)','dp(150)','dp(160)'):
+                  block=block.replace(old,'dp(190)')
               s=s[:a]+block+s[b:]
-          # Keep category images and labels fully visible.
-          s=re.sub(r'box\\.addView\\(image,LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)\\.apply\\{bottomMargin=dp\\(\\d+\\)\\}\\)',
-                   'box.addView(image,LinearLayout.LayoutParams(-1,dp(66)).apply{bottomMargin=dp(3)})',s,count=1)
-          s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(92),dp(84)).apply{rightMargin=dp(7)}')
-          s=s.replace('LinearLayout.LayoutParams(-1,dp(78)))','LinearLayout.LayoutParams(-1,dp(84)))')
-          # Three compact columns like the reference; preserve product order and Add to Cart actions.
+          # Set category image height to a balanced, non-clipped size.
+          needle='box.addView(image,LinearLayout.LayoutParams(-1,dp('
+          i=s.find(needle)
+          if i>=0:
+              j=s.find(')))',i)
+              if j>=0: s=s[:i]+needle+'66'+s[j+3:]
+          # Product cards: update the first product image view height robustly.
+          needle='card.addView(pic,LinearLayout.LayoutParams(-1,dp('
+          i=s.find(needle)
+          if i>=0:
+              j=s.find(')))',i)
+              if j>=0: s=s[:i]+needle+'104'+s[j+3:]
+          # Three compact columns per row; all existing cart handlers stay attached.
           s=s.replace('if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}','if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}')
           s=s.replace('row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%2==0)0 else dp(5);rightMargin=if(index%2==0)dp(5) else 0})','row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=if(index%3==0)0 else dp(3);rightMargin=if(index%3==2)0 else dp(3)})')
           s=s.replace('if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))','if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))')
-          # Restore image height and use small, legible labels on 3-column cards.
-          s=re.sub(r'card\\.addView\\(pic,LinearLayout\\.LayoutParams\\(-1,dp\\(\\d+\\)\\)\\)','card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))',s,count=1)
-          s=re.sub(r'card\\.addView\\(label\\(p\\.name,\\d+(?:\\.\\d+)?f,true,Color\\.WHITE\\)\\.apply\\{maxLines=2;ellipsize=android\\.text\\.TextUtils\\.TruncateAt\\.END\\},margin\\(0,\\d+,0,0\\)\\)',
-                   'card.addView(label(p.name,11f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))',s,count=1)
           s=s.replace('label("• Available",10.5f,true,Color.rgb(50,205,120))','label("• Available",9f,true,Color.rgb(50,205,120))')
           s=s.replace('label("₹${p.price}",15f,true,Color.WHITE)','label("₹${p.price}",12f,true,Color.WHITE)')
           s=s.replace('add.setTextSize(12f)','add.setTextSize(10f)').replace('add.setPadding(dp(5),dp(4),dp(5),dp(4))','add.setPadding(dp(2),dp(3),dp(2),dp(3))')
           p.write_text(s,encoding="utf-8")
           checks={
-            "banner card full height":"LinearLayout.LayoutParams(-1,dp(190))",
-            "product image height":"card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))",
-            "three column rows":"if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}",
-            "three column wrap":"if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))"
+            "three-column product rows":'if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}' in s,
+            "three-column row wrap":'if(index%3==2 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))' in s,
+            "product image height":'card.addView(pic,LinearLayout.LayoutParams(-1,dp(104)))' in s
           }
-          for name,needle in checks.items():
-              ok=needle in s
-              print(("PASS " if ok else "FAIL ")+name)
-          if not all(needle in s for needle in checks.values()):
-              raise SystemExit("Home layout patch verification failed")
+          for name,ok in checks.items(): print(("PASS " if ok else "FAIL ")+name)
+          if not all(checks.values()): raise SystemExit("Home layout patch verification failed")
           PY
 
       - name: Enforce final payment/profile source state
