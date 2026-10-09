@@ -14,7 +14,7 @@ header = s[a:b]
 header = header.replace('setPadding(dp(12),dp(9),dp(10),dp(9))',
                         'setPadding(dp(10),dp(5),dp(8),dp(5))')
 header = header.replace('background=rounded(Color.WHITE,18)',
-                        'background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(27,27,31),Color.rgb(19,19,22))).apply{cornerRadius=dp(16).toFloat();setStroke(dp(1),Color.rgb(57,53,48)}')
+                        'background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(27,27,31),Color.rgb(19,19,22))).apply{cornerRadius=dp(16).toFloat();setStroke(dp(1),Color.rgb(57,53,48))}')
 header = header.replace('label("DELIVER TO",10f,true,muted)',
                         'label("DELIVER TO",9f,true,Color.rgb(190,185,178))')
 header = header.replace('label(if(saved.isBlank())"Choose your delivery address" else saved,14f,true,ink)',
@@ -38,7 +38,7 @@ block = s[a:b]
 block = block.replace('setPadding(dp(14),0,dp(14),0)',
                       'setPadding(dp(14),0,dp(12),0)')
 block = block.replace('background=rounded(Color.WHITE,16)',
-                      'background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(35,35,40),Color.rgb(26,26,30))).apply{cornerRadius=dp(22).toFloat();setStroke(dp(1),Color.rgb(61,57,52)}')
+                      'background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(35,35,40),Color.rgb(26,26,30))).apply{cornerRadius=dp(22).toFloat();setStroke(dp(1),Color.rgb(61,57,52))}')
 block = block.replace('setHintTextColor(Color.rgb(135,135,145));setTextColor(ink);textSize=16f',
                       'setHintTextColor(Color.rgb(165,165,173));setTextColor(Color.WHITE);textSize=15f')
 if 'background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT' not in block:
@@ -54,7 +54,7 @@ s = s.replace('LinearLayout.LayoutParams(-1,dp(82)))',
               'LinearLayout.LayoutParams(-1,dp(74)))')
 
 checks = {
-    "compact dark delivery card": "Dark compact delivery card patch did not apply" not in "",
+    "compact dark delivery card": "background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT" in header,
     "dark search field": "background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT" in block,
     "category row compact": "LinearLayout.LayoutParams(dp(88),dp(70))" in s,
     "location and search still interactive": "setOnClickListener{locationDialog()}" in header and "addTextChangedListener" in block,
