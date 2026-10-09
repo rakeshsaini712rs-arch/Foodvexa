@@ -89,15 +89,19 @@ class AdminActivity : Activity() {
         body.addView(box,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
     }
     private fun dashboard(){
+        renderDashboardCounts()
+        db.collection("orders").addSnapshotListener(this){snap,error->
+            if(error==null&&snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")renderDashboardCounts()}
+        }
+    }
+    private fun renderDashboardCounts(){
+        body.removeAllViews()
         addLine("Store overview",22f,ink,true);addLine("Live operations summary",13f,Color.GRAY);backendNotice()
         card("TOTAL ORDERS",orders.size.toString(),"Orders loaded from shared Firestore")
         card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
         card("PAYMENTS NEEDING REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
         body.addView(button("OPEN ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         body.addView(button("MANAGE MENU",{showPage("Menu")},Color.rgb(55,48,52)),LinearLayout.LayoutParams(-1,-2))
-        db.collection("orders").addSnapshotListener(this){snap,error->
-            if(error==null&&snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")showPage("Dashboard")}
-        }
     }
     private fun listenOrders(onLoaded:()->Unit){
         backendNotice()
@@ -171,7 +175,7 @@ class AdminActivity : Activity() {
             val n=name.text.toString().trim();val c=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val u=image.text.toString().trim()
             if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Name, category aur valid price bharein",Toast.LENGTH_SHORT).show();return@button}
             val data=hashMapOf<String,Any>("name" to n,"category" to c,"price" to p,"imageUrl" to u,"available" to true,"updatedAt" to FieldValue.serverTimestamp())
-            db.collection("menu").add(data).addOnSuccessListener{Toast.makeText(this,"Shared menu me save ho gaya",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
+            db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')).set(data).addOnSuccessListener{Toast.makeText(this,"Shared menu me save ho gaya",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
                 .addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
         }),LinearLayout.LayoutParams(-1,-2))
         body.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
@@ -190,7 +194,7 @@ class AdminActivity : Activity() {
             val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape()}
             c.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
             c.addView(text((p["category"]?.toString()?: "Category")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY))
-            c.addView(button("DELETE PRODUCT",{db.collection("menu").document(id).delete().addOnFailureListener{Toast.makeText(this,"Delete failed",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            c.addView(button(if(p["available"]==false)"RESTORE PRODUCT" else "HIDE FROM CUSTOMER MENU",{db.collection("menu").document(id).update(mapOf("available" to (p["available"]==false),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         }
     }
