@@ -343,8 +343,15 @@ jobs:
               needle='private var selectedCategory="All"'
               if needle not in s: raise SystemExit("selectedCategory field not found")
               s=s.replace(needle, needle+";private var selectedNavIndex=0", 1)
-          s=re.sub(r'frame\.addView\(bottomNav\(selectedNav\),FrameLayout\.LayoutParams\(-1,dp\(\d+\),Gravity\.BOTTOM\)\)',
-                   'frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(46),Gravity.BOTTOM))',s,count=1)
+          lines=s.splitlines()
+          found=False
+          for i,line in enumerate(lines):
+              if "bottomNav(" in line and "Gravity.BOTTOM" in line:
+                  lines[i]=re.sub(r'dp\(\d+\)', 'dp(46)', line)
+                  found=True
+                  break
+          if not found: raise SystemExit("Bottom navigation placement line not found")
+          s="\n".join(lines)+"\n"
           # setupBase records the active page before rebuilding the navigation bar.
           s=re.sub(r'private fun setupBase\(selectedNav:Int=0\)\s*\{\s*setupHomeBase\(selectedNav\)\s*\}',
                    'private fun setupBase(selectedNav:Int=0){selectedNavIndex=selectedNav;setupHomeBase(selectedNav)}',s,count=1)
@@ -386,7 +393,7 @@ jobs:
           block=block.replace("setupHomeBase()", "setupHomeBase(selectedNavIndex)", 1)
           s=s[:a]+block+s[b:]
           checks={
-            "46dp bottom bar":"FrameLayout.LayoutParams(-1,dp(46),Gravity.BOTTOM)" in s,
+            "46dp bottom bar":any("bottomNav(" in line and "Gravity.BOTTOM" in line and "dp(46)" in line for line in s.splitlines()),
             "selected tab state":"private var selectedNavIndex=0" in s,
             "orange selected indicator":"if(active)orange else Color.TRANSPARENT" in s,
             "tap handlers on icon and label":"icon.setOnClickListener{selectTab()}" in s and "text.setOnClickListener{selectTab()}" in s,
