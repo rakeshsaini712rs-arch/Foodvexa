@@ -37,36 +37,45 @@ class MainActivity:AppCompatActivity(){
  override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();showHome()}
  private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}
  private fun setupHomeBase(selectedNav:Int=0){
+  root.setBackgroundColor(pageBackground)
+  window.statusBarColor=pageBackground
+  if(android.os.Build.VERSION.SDK_INT>=android.os.Build.VERSION_CODES.M)window.decorView.systemUiVisibility=if(isLightTheme)View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR else 0
   root.removeAllViews()
   val frame=FrameLayout(this)
   val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
   val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0);setBackgroundColor(Color.TRANSPARENT)}
   val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true}
-  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(108));clipToPadding=false}
+  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(84));clipToPadding=false}
   scroll.addView(content,FrameLayout.LayoutParams(-1,-1))
   shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))
   shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
   frame.addView(shell,FrameLayout.LayoutParams(-1,-1))
-  frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(72),Gravity.BOTTOM))
+  frame.addView(bottomNav(selectedNav),FrameLayout.LayoutParams(-1,dp(58),Gravity.BOTTOM))
   root.addView(frame,FrameLayout.LayoutParams(-1,-1))
  }
 
  private fun bottomNav(selectedNav:Int=0):LinearLayout{
- val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(4),dp(4),dp(4),dp(4));elevation=dp(10).toFloat();background=GradientDrawable().apply{setColor(Color.rgb(25,22,28));cornerRadius=dp(18).toFloat()}}
- listOf("⌂\nHOME","⌕\nSEARCH","▣\nORDERS","🛒\nCART","♙\nPROFILE").forEachIndexed{i,t->
-  val item=TextView(this).apply{
-   text=t;textSize=12f;gravity=Gravity.CENTER;includeFontPadding=true;setTextColor(if(i==selectedNav)orange else Color.LTGRAY);typeface=Typeface.DEFAULT_BOLD
-   setBackgroundColor(Color.TRANSPARENT);isFocusable=false;isClickable=true
-   setOnClickListener{when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}
-  }
-  if(i==3)cartNavLabel=item
-  nav.addView(item,LinearLayout.LayoutParams(0,-1,1f))
+ val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(3),dp(2),dp(3),dp(2));elevation=dp(10).toFloat();background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(25,22,28));cornerRadius=dp(14).toFloat()}}
+ val icons=listOf("⌂","⌕","▣","🛒","♙")
+ val labels=listOf("HOME","SEARCH","ORDERS","CART","PROFILE")
+ labels.forEachIndexed{i,title->
+  val active=i==selectedNav
+  val item=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(1),0,dp(1),0);isClickable=true;isFocusable=true;background=rounded(if(active&&isLightTheme)Color.rgb(255,242,237) else Color.TRANSPARENT,10);setOnClickListener{when(i){0->{hideKeyboard();showHome(0)};1->{showHome(1);searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}}
+  val tint=if(active)orange else if(isLightTheme)Color.rgb(40,40,45) else Color.LTGRAY
+  val icon=TextView(this).apply{text=icons[i];textSize=if(i==3)19f else 21f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint)}
+  val text=TextView(this).apply{text=title;textSize=10f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint);typeface=Typeface.DEFAULT_BOLD;maxLines=1}
+  item.addView(icon,LinearLayout.LayoutParams(-1,dp(25)))
+  item.addView(text,LinearLayout.LayoutParams(-1,dp(15)).apply{topMargin=dp(1)})
+  val indicator=View(this).apply{background=rounded(if(active)orange else Color.TRANSPARENT,4)}
+  item.addView(indicator,LinearLayout.LayoutParams(dp(if(active)24 else 1),dp(3)).apply{topMargin=dp(2)})
+  if(i==3)cartNavLabel=text
+  nav.addView(item,LinearLayout.LayoutParams(0,-1,1f).apply{setMargins(dp(1),0,dp(1),0)})
  }
  updateCartBadge()
  return nav
  }
- private fun showHome(){
-  setupHomeBase()
+ private fun showHome(selectedNav:Int=0){
+  setupHomeBase(selectedNav)
   val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(0),dp(8),dp(0))}
   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
   val name=label("FOODVEXA",26f,true,primaryText)
