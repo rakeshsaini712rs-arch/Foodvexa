@@ -29,7 +29,7 @@ block = block.replace('    scroll.addView(list);root.addView(scroll,LinearLayout
 
 # Premium card styling and spacing.
 block = block.replace('setPadding(dp(14),dp(8),dp(14),dp(8));background=rounded(Color.rgb(22,24,29),22)',
-                      'setPadding(dp(16),dp(14),dp(16),dp(14));background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.rgb(27,29,35),Color.rgb(17,19,24))).apply{cornerRadius=dp(26).toFloat();setStroke(dp(1),Color.rgb(49,52,60)}')
+                      'setPadding(dp(16),dp(14),dp(16),dp(14));background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.rgb(27,29,35),Color.rgb(17,19,24))).apply{cornerRadius=dp(26).toFloat();setStroke(dp(1),Color.rgb(49,52,60))}')
 block = block.replace('text="✕";textSize=24f', 'text="×";textSize=27f')
 block = block.replace('background=rounded(Color.rgb(38,42,48),24)', 'background=rounded(Color.rgb(48,51,60),24)')
 block = block.replace('text="🛒  Your Order";textSize=21f', 'text="🛒  Your Order";textSize=23f')
