@@ -9,13 +9,13 @@
         android:label="Foodvexa"
         android:allowBackup="true"
         android:supportsRtl="true">
-        <activity android:name=".LocationGateActivity" android:exported="true">
+        <activity android:name=".LocationGateActivity" android:icon="@drawable/foodvexa_exact_logo" android:roundIcon="@drawable/foodvexa_exact_logo" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".LoginActivity" android:exported="false" />
-        <activity android:name=".MainActivity" android:exported="false" />
+        <activity android:name=".LoginActivity" android:icon="@drawable/foodvexa_exact_logo" android:roundIcon="@drawable/foodvexa_exact_logo" android:exported="false" />
+        <activity android:name=".MainActivity" android:icon="@drawable/foodvexa_exact_logo" android:roundIcon="@drawable/foodvexa_exact_logo" android:exported="false" />
     </application>
 </manifest>
