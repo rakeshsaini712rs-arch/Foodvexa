@@ -42,17 +42,35 @@ if 'val accountEmail=prefs.getString("profile_email"' not in ms:
         print("NOTE profile intro differs; auto-fill name/email and profile gate still applied")
 
 # Save and validate the customer profile before marking setup complete.
-old='''   if(n.isBlank()){Toast.makeText(this,"Please enter your name",Toast.LENGTH_SHORT).show();return@primaryButton}
-   if(m.isBlank()){Toast.makeText(this,"Please enter mobile number",Toast.LENGTH_SHORT).show();return@primaryButton}
-   if(a.isBlank()){Toast.makeText(this,"Please enter delivery address",Toast.LENGTH_SHORT).show();return@primaryButton}
-   prefs.edit().putString("profile_name",n).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").apply()'''
-new='''   if(n.length<2){name.error="Please enter your full name";name.requestFocus();return@primaryButton}
+import re
+profile_start=ms.find("private fun showProfileEditor()")
+profile_end=ms.find("\\nprivate fun ",profile_start+10)
+if profile_start<0: raise SystemExit("Profile editor method missing")
+if profile_end<0: profile_end=len(ms)
+profile=ms[profile_start:profile_end]
+save_start=profile.find('content.addView(primaryButton("💾  Save Profile")')
+if save_start<0: raise SystemExit("Save Profile button missing")
+save_end=profile.find('},margin(0,0,0,12))',save_start)
+if save_end<0: raise SystemExit("Save Profile button end missing")
+save=profile[save_start:save_end]
+save= re.sub(r'   if\\(n\\.isBlank\\(\\)\\).*?   prefs\\.edit\\(\\)\\.putString\\("profile_name",n\\).*?\\.apply\\(\\)',
+'''   if(n.length<2){name.error="Please enter your full name";name.requestFocus();return@primaryButton}
    if(!m.matches(Regex("[6-9][0-9]{9}"))){mobile.error="Enter a valid 10-digit Indian mobile number";mobile.requestFocus();return@primaryButton}
    if(a.length<8){address.error="Please enter your complete delivery address";address.requestFocus();return@primaryButton}
-   prefs.edit().putString("google_uid",FirebaseAuth.getInstance().currentUser?.uid.orEmpty()).putString("profile_name",n).putString("profile_email",FirebaseAuth.getInstance().currentUser?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").putBoolean("profile_created",true).apply()'''
-if 'putBoolean("profile_created",true)' not in ms:
-    if old not in ms: raise SystemExit("Profile save validation anchor missing")
-    ms=ms.replace(old,new,1)
+   prefs.edit().putString("google_uid",FirebaseAuth.getInstance().currentUser?.uid.orEmpty()).putString("profile_name",n).putString("profile_email",FirebaseAuth.getInstance().currentUser?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").putBoolean("profile_created",true).apply()''',save,flags=re.S)
+if 'putBoolean("profile_created",true)' not in save:
+    # robust fallback: replace the save body from val n=... up to its Toast
+    npos=save.find('   val n=name.text.toString().trim()')
+    toast=save.find('   Toast.makeText(this,"Profile saved successfully"')
+    if npos<0 or toast<0: raise SystemExit("Could not locate profile save validation block")
+    save=save[:npos]+'''   val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
+   if(n.length<2){name.error="Please enter your full name";name.requestFocus();return@primaryButton}
+   if(!m.matches(Regex("[6-9][0-9]{9}"))){mobile.error="Enter a valid 10-digit Indian mobile number";mobile.requestFocus();return@primaryButton}
+   if(a.length<8){address.error="Please enter your complete delivery address";address.requestFocus();return@primaryButton}
+   prefs.edit().putString("google_uid",FirebaseAuth.getInstance().currentUser?.uid.orEmpty()).putString("profile_name",n).putString("profile_email",FirebaseAuth.getInstance().currentUser?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").putBoolean("profile_created",true).apply()
+'''+save[toast:]
+profile=profile[:save_start]+save+profile[save_end:]
+ms=ms[:profile_start]+profile+ms[profile_end:]
 
 checks={
  "Google identity persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
