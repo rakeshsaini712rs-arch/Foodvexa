@@ -67,20 +67,18 @@ class MainActivity:AppCompatActivity(){
  }
  private fun showHome(){
   setupHomeBase()
-  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(6),dp(2),dp(6),dp(2))}
-  val logo=ImageView(this).apply{setImageResource(R.drawable.foodvexa_logo);scaleType=ImageView.ScaleType.FIT_CENTER}
-  header.addView(logo,LinearLayout.LayoutParams(dp(58),dp(58)))
+  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(0),dp(8),dp(0))}
   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  val name=label("FOODVEXA",25f,true,Color.WHITE)
+  val name=label("FOODVEXA",26f,true,Color.WHITE)
   val styled=android.text.SpannableString("FOODVEXA")
-  styled.setSpan(android.text.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-  styled.setSpan(android.text.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  styled.setSpan(android.text.style.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
   name.text=styled
   brand.addView(name)
-  brand.addView(label("Taste the Happiness",10f,false,Color.LTGRAY))
-  header.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
-  val bell=label("♧",28f,false,Color.WHITE).apply{gravity=Gravity.CENTER}
-  header.addView(bell,LinearLayout.LayoutParams(dp(40),dp(52)))
+  brand.addView(label("Taste the Happiness",11f,false,Color.LTGRAY))
+  header.addView(brand,LinearLayout.LayoutParams(0,dp(54),1f))
+  val bell=label("♧",26f,false,Color.WHITE).apply{gravity=Gravity.CENTER}
+  header.addView(bell,LinearLayout.LayoutParams(dp(40),dp(50)))
   val shell=(content.parent as ScrollView).parent as LinearLayout
   val fixed=shell.getChildAt(0) as LinearLayout
   fixed.addView(header)
@@ -88,11 +86,11 @@ class MainActivity:AppCompatActivity(){
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
   fixed.addView(search,margin(0,0,0,7))
-  fixed.addView(professionalBanner(),margin(0,0,0,7))
+  fixed.addView(bannerGrid(),margin(0,0,0,4))
   fixed.addView(label("Categories",21f,true,Color.WHITE),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(108),dp(104)).apply{rightMargin=dp(9)})}
-  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(104)))
+  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)})}
+  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(78)))
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,Color.WHITE),margin(0,2,0,5))
   renderProducts()
  }
@@ -120,7 +118,7 @@ filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
     val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-    card.addView(pic,LinearLayout.LayoutParams(-1,dp(102)))
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(64)))
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
