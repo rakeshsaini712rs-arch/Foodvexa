@@ -95,24 +95,24 @@ s=s[:a]+block+s[b:]
 oa,ob=method_bounds(s,"private fun showOrders(){")
 orders='''private fun showOrders(){
  setupBase(2)
- content.addView(label("My Orders",24f,true,primaryText),margin(0,8,0,18))
+ content.addView(label("My Orders",24f,true,if(isLightTheme)ink else Color.WHITE),margin(0,8,0,18))
  val raw=prefs.getString("orders","[]").orEmpty()
  val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()}
  if(arr.length()==0){
   val legacy=prefs.getString("last_order","").orEmpty()
   if(legacy.isBlank()){
-   content.addView(label("📦",38f,false,secondaryText).apply{gravity=Gravity.CENTER},margin(0,28,0,8))
-   content.addView(label("No orders yet",18f,true,primaryText).apply{gravity=Gravity.CENTER},margin(0,0,0,6))
-   content.addView(label("Your placed orders will appear here.",14f,false,secondaryText).apply{gravity=Gravity.CENTER},margin(0,0,0,16))
+   content.addView(label("📦",38f,false,if(isLightTheme)muted else Color.LTGRAY).apply{gravity=Gravity.CENTER},margin(0,28,0,8))
+   content.addView(label("No orders yet",18f,true,if(isLightTheme)ink else Color.WHITE).apply{gravity=Gravity.CENTER},margin(0,0,0,6))
+   content.addView(label("Your placed orders will appear here.",14f,false,if(isLightTheme)muted else Color.LTGRAY).apply{gravity=Gravity.CENTER},margin(0,0,0,16))
   }else{
-   content.addView(label("Order #1",18f,true,primaryText),margin(0,0,0,8))
-   content.addView(label(legacy,16f,false,primaryText),margin(0,0,0,16))
+   content.addView(label("Order #1",18f,true,if(isLightTheme)ink else Color.WHITE),margin(0,0,0,8))
+   content.addView(label(legacy,16f,false,if(isLightTheme)ink else Color.WHITE),margin(0,0,0,16))
   }
  }else{
   for(i in arr.length()-1 downTo 0){
    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(if(isLightTheme)Color.rgb(247,247,249) else Color.rgb(31,33,39),16)}
-   card.addView(label("Order #"+(arr.length()-i),17f,true,primaryText),margin(0,0,0,7))
-   card.addView(label(arr.optString(i),15f,false,primaryText),margin(0,0,0,4))
+   card.addView(label("Order #"+(arr.length()-i),17f,true,if(isLightTheme)ink else Color.WHITE),margin(0,0,0,7))
+   card.addView(label(arr.optString(i),15f,false,if(isLightTheme)ink else Color.WHITE),margin(0,0,0,4))
    content.addView(card,margin(0,0,0,12))
   }
  }
@@ -124,7 +124,7 @@ checks={
  "required name validation":"customer.length<2" in block,
  "10 digit Indian mobile validation":'Regex("[6-9][0-9]{9}")' in block,
  "delivery address required":"address.length<8" in block,
- "customer details saved":"putString("profile_mobile",phone)" in block,
+ "customer details saved":'putString("profile_mobile",phone)' in block,
  "validation occurs before payment":"placeOrderAndShowOrders()" in block and "customerPhone.error=" in block,
  "cart method remains bounded":"private fun showCart(){" in s,
  "order history remains implemented":"Your placed orders will appear here." in s and 'arr.optString(i)' in s,
