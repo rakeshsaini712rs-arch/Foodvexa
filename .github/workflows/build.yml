@@ -123,6 +123,23 @@ jobs:
           if not all(checks.values()): raise SystemExit("Sticky category layout verification failed")
           PY
 
+      - name: Ensure Android View import for sticky scrolling
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+          if "import android.view.View" not in s:
+              anchor="import android.view.Gravity"
+              if anchor in s:
+                  s=s.replace(anchor, anchor+"\\nimport android.view.View", 1)
+              else:
+                  s=s.replace("package com.foodvexa.app", "package com.foodvexa.app\\n\\nimport android.view.View", 1)
+          p.write_text(s)
+          assert "import android.view.View" in s, "android.view.View import still missing"
+          print("PASS android.view.View import present")
+          PY
+
       - name: Skip unsafe inline home layout rewrite
         run: echo "Keeping the verified MainActivity home layout; avoiding source rewrite that breaks Kotlin scope"
 
