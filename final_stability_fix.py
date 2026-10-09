@@ -132,11 +132,11 @@ if 'private fun bannerGrid():LinearLayout' not in s:
    card.addView(image,FrameLayout.LayoutParams(-1,-1))
    val title=TextView(this).apply{text=b.second;textSize=18f;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),0,dp(16),0);background=ColorDrawable(Color.argb(150,0,0,0))}
    card.addView(title,FrameLayout.LayoutParams(-1,dp(48),Gravity.BOTTOM))
-   track.addView(card,LinearLayout.LayoutParams(w,dp(190)).apply{rightMargin=dp(10)})
+   track.addView(card,LinearLayout.LayoutParams(w,dp(108)).apply{rightMargin=dp(8)})
   }
-  scroller.addView(track,LinearLayout.LayoutParams(-1,dp(190)))
-  root.addView(scroller,LinearLayout.LayoutParams(-1,dp(190)))
-  root.addView(label("●  •  •",12f,true,orange),LinearLayout.LayoutParams(-1,dp(24)))
+  scroller.addView(track,LinearLayout.LayoutParams(-1,dp(108)))
+  root.addView(scroller,LinearLayout.LayoutParams(-1,dp(108)))
+  root.addView(label("●  •  •",10f,true,orange),LinearLayout.LayoutParams(-1,dp(16)))
   return root
  }
 '''
