@@ -36,6 +36,9 @@ jobs:
           grep -Eq 'Choose your current location|Choose delivery location' app/src/main/java/com/foodvexa/app/MainActivity.kt
           grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
 
+      - name: Apply Google sign-in profile creation flow
+        run: python3 google_profile_fix.py
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 
