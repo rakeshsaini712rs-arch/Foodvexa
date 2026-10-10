@@ -457,8 +457,8 @@ jobs:
 
       - name: Apply Google profile creation flow
         run: python3 google_profile_fix.py
-      - name: Build debug APK
-        run: gradle :app:assembleDebug --no-daemon
+      - name: Build customer and admin debug APKs
+        run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
         run: |
           set -e
@@ -492,8 +492,10 @@ jobs:
           print("GOOGLE SIGN-IN VERIFIED: built APK SHA-1 is registered")
           PY
 
-      - name: Upload APK
+      - name: Upload customer and admin APKs
         uses: actions/upload-artifact@v4
         with:
-          name: Foodvexa-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Foodvexa-APKs
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            admin/build/outputs/apk/debug/admin-debug.apk
