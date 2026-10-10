@@ -84,7 +84,6 @@ private fun completeOrder(payment:String,total:Int){
         "createdAt" to FieldValue.serverTimestamp(),
         "updatedAt" to FieldValue.serverTimestamp()
     )
-    Toast.makeText(this,"Order Firebase mein save ho raha hai…",Toast.LENGTH_SHORT).show()
     FirebaseFirestore.getInstance().collection("orders").add(data)
         .addOnSuccessListener{
             val orders=try{org.json.JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){org.json.JSONArray()}
