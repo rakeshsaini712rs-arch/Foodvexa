@@ -1,0 +1,53 @@
+name: Diagnose Foodvexa Firebase Orders
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firestore-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Firebase service account secret
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing repository secret FIREBASE_SERVICE_ACCOUNT. Add the Firebase service-account JSON as a GitHub Actions secret; do not commit or share the key."
+            exit 1
+          fi
+          echo "Firebase service-account secret is configured."
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Read Firestore orders collection safely
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          npm init -y >/dev/null
+          npm install firebase-admin
+          cat > diagnose.cjs <<'EOF'
+          const admin = require('firebase-admin');
+          async function main() {
+            const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+            const serviceAccount = JSON.parse(raw);
+            if (serviceAccount.project_id !== 'foodvexa-2daca') {
+              throw new Error('Service account project_id is not foodvexa-2daca; refusing to query another project.');
+            }
+            admin.initializeApp({ credential: admin.credential.cert(serviceAccount), projectId: 'foodvexa-2daca' });
+            const db = admin.firestore();
+            const snapshot = await db.collection('orders').get();
+            console.log('Firebase project: foodvexa-2daca');
+            console.log('Firestore orders document count: ' + snapshot.size);
+            console.log('No customer names, phone numbers, addresses, payment details, or document contents are printed.');
+            await admin.app().delete();
+          }
+          main().catch(err => {
+            console.error('Firestore diagnostic failed: ' + (err.code || err.name || 'Error') + ': ' + err.message);
+            process.exit(1);
+          });
+          EOF
+          node diagnose.cjs
