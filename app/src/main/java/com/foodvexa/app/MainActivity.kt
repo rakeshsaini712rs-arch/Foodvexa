@@ -227,7 +227,12 @@ private fun placeOrderAndShowOrders(){
    cart.clear();saveCart();updateCartBadge()
    Toast.makeText(this,"Order successfully placed",Toast.LENGTH_LONG).show();showOrders()
   }
-  .addOnFailureListener{e->Toast.makeText(this,"Order place nahi hua: "+(e.localizedMessage?: "Internet/Firebase check karein"),Toast.LENGTH_LONG).show()}
+  .addOnFailureListener{e->
+   val details="Order Firestore mein save nahi hua.\n\nError: "+(e.message?:e.javaClass.simpleName)+"\n\nCustomer UID: "+(FirebaseAuth.getInstance().currentUser?.uid?: "not signed in")+"\n\nFirebase Console mein project foodvexa-2daca aur Firestore Rules check karein."
+   android.util.Log.e("FoodvexaOrder","Firestore order write failed; uid="+(FirebaseAuth.getInstance().currentUser?.uid?: "null"),e)
+   android.app.AlertDialog.Builder(this).setTitle("Order save failed").setMessage(details).setPositiveButton("OK",null).show()
+   Toast.makeText(this,"Order save nahi hua. Error screen par dekhein.",Toast.LENGTH_LONG).show()
+  }
 }
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"🛒\nCART $count" else "🛒\nCART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
