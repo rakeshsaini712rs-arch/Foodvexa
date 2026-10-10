@@ -457,6 +457,43 @@ jobs:
 
       - name: Apply Google profile creation flow
         run: python3 google_profile_fix.py
+
+      - name: Fix customer logout to return to login screen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          pattern=r'item\("🚪\s+Logout","Sign out"\)\s*\{.*?\n\s*\}'
+          m=re.search(pattern,s,re.S)
+          if not m:
+              raise SystemExit("Could not locate customer Logout action; refusing to build")
+          replacement='''item("🚪  Logout","Sign out"){
+              // Clear session first, then replace the complete task with the login screen.
+              getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
+                  .putBoolean("force_login", true)
+                  .commit()
+              FirebaseAuth.getInstance().signOut()
+              val loginIntent=Intent(this@MainActivity,LoginActivity::class.java).apply {
+                  putExtra("force_login", true)
+                  addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+              }
+              startActivity(loginIntent)
+              finishAffinity()
+          }'''
+          s=s[:m.start()]+replacement+s[m.end():]
+          # LoginActivity must keep the login screen visible when logout explicitly requested.
+          lp=Path("app/src/main/java/com/foodvexa/app/LoginActivity.kt")
+          login=lp.read_text(encoding="utf-8")
+          if 'if (intent.getBooleanExtra("force_login", false))' not in login or 'showLogin()' not in login:
+              raise SystemExit("LoginActivity force-login routing missing; refusing to build")
+          if 'FirebaseAuth.getInstance().signOut()' not in s and 'FirebaseAuth.getInstance().signOut()' not in login:
+              raise SystemExit("Firebase sign-out missing; refusing to build")
+          p.write_text(s,encoding="utf-8")
+          print("PASS customer logout clears session and opens LoginActivity")
+          print("PASS LoginActivity handles force_login")
+          PY
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
