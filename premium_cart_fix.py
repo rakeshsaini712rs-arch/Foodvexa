@@ -4,6 +4,18 @@ import re
 p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 s=p.read_text()
 
+# Imports required by the Firestore-backed checkout inserted below.
+required_imports = [
+    "import com.google.firebase.auth.FirebaseAuth",
+    "import com.google.firebase.firestore.FieldValue",
+    "import com.google.firebase.firestore.FirebaseFirestore",
+]
+for imp in required_imports:
+    if imp not in s:
+        package_end = s.find("\n", s.find("package "))
+        if package_end >= 0:
+            s = s[:package_end + 1] + imp + "\n" + s[package_end + 1:]
+
 if "private var cartNavLabel:TextView?=null" not in s:
     s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;",1)
 if "private var cartDialog:android.app.Dialog?=null" not in s:
