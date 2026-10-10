@@ -27,6 +27,7 @@ class AdminActivity : Activity() {
     private var menuListener:ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
     private val orders=mutableListOf<Pair<String,Map<String,Any>>>()
+    private var ordersLoadError:String?=null
 
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun shape(color:Int=Color.WHITE,radius:Int=16)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
@@ -95,16 +96,29 @@ class AdminActivity : Activity() {
         renderDashboardCounts()
         dashboardOrdersListener=db.collection("orders").addSnapshotListener(this){snap,error->
             if(error!=null){
-                if(page=="Dashboard")Toast.makeText(this,"Orders read error: "+(error.localizedMessage?:error.javaClass.simpleName),Toast.LENGTH_LONG).show()
+                ordersLoadError=error.localizedMessage?:error.javaClass.simpleName
+                if(page=="Dashboard")renderDashboardCounts()
+                Toast.makeText(this,"Orders read error: "+ordersLoadError,Toast.LENGTH_LONG).show()
                 return@addSnapshotListener
             }
-            if(snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")renderDashboardCounts()}
+            if(snap!=null){
+                ordersLoadError=null
+                orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))}
+                if(page=="Dashboard")renderDashboardCounts()
+            }
         }
     }
     private fun renderDashboardCounts(){
         body.removeAllViews()
         addLine("Store overview",22f,ink,true);addLine("Live operations summary",13f,Color.GRAY);backendNotice()
-        card("TOTAL ORDERS",orders.size.toString(),"Orders loaded from shared Firestore")
+        if(ordersLoadError!=null){
+            addLine("FIRESTORE ORDERS READ FAILED",15f,red,true)
+            addLine(ordersLoadError!!,13f,ink)
+            addLine("Admin UID: "+(auth.currentUser?.uid?: "NOT_SIGNED_IN"),12f,Color.GRAY)
+            addLine("Firebase project: "+(com.google.firebase.FirebaseApp.getInstance().options.projectId?: "unknown"),12f,Color.GRAY)
+            body.addView(button("RETRY ORDERS CONNECTION",{showPage("Dashboard")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+        }
+        card("TOTAL ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),if(ordersLoadError!=null)"Firestore connection error — count unavailable" else "Orders loaded from shared Firestore")
         card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
         card("PAYMENTS NEEDING REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
         body.addView(button("OPEN ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
