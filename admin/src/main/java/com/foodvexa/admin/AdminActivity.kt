@@ -111,6 +111,10 @@ class AdminActivity : Activity() {
     private fun renderDashboardCounts(){
         body.removeAllViews()
         addLine("Store overview",22f,ink,true);addLine("Live operations summary",13f,Color.GRAY);backendNotice()
+        addLine("Firebase project: "+(com.google.firebase.FirebaseApp.getInstance().options.projectId?: "unknown"),12f,Color.GRAY)
+        addLine("Signed-in Admin UID: "+(auth.currentUser?.uid?: "NOT_SIGNED_IN"),11f,Color.GRAY)
+        addLine(if(ordersLoadError==null) "Firestore orders status: "+orders.size+" order(s) loaded" else "Firestore orders status: READ ERROR",12f,if(ordersLoadError==null)green else red,true)
+        body.addView(button("REFRESH FIRESTORE ORDERS",{showPage("Dashboard")},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         if(ordersLoadError!=null){
             addLine("FIRESTORE ORDERS READ FAILED",15f,red,true)
             addLine(ordersLoadError!!,13f,ink)
