@@ -23,6 +23,7 @@ class AdminActivity : Activity() {
     private lateinit var body:LinearLayout
     private var page="Dashboard"
     private var ordersListener:ListenerRegistration?=null
+    private var dashboardOrdersListener:ListenerRegistration?=null
     private var menuListener:ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
     private val orders=mutableListOf<Pair<String,Map<String,Any>>>()
@@ -50,7 +51,7 @@ class AdminActivity : Activity() {
     override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState)
         if(auth.currentUser==null){goLogin();return};showPage("Dashboard")
     }
-    override fun onDestroy(){ordersListener?.remove();menuListener?.remove();super.onDestroy()}
+    override fun onDestroy(){dashboardOrdersListener?.remove();ordersListener?.remove();menuListener?.remove();super.onDestroy()}
     private fun goLogin(){getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();auth.signOut();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()}
     private fun showPage(target:String){
         page=target
@@ -73,7 +74,9 @@ class AdminActivity : Activity() {
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(28))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
-        ordersListener?.remove();menuListener?.remove()
+        dashboardOrdersListener?.remove();dashboardOrdersListener=null
+        ordersListener?.remove();ordersListener=null
+        menuListener?.remove();menuListener=null
         when(target){
             "Dashboard"->dashboard()
             "Orders"->ordersPage()
@@ -90,8 +93,12 @@ class AdminActivity : Activity() {
     }
     private fun dashboard(){
         renderDashboardCounts()
-        db.collection("orders").addSnapshotListener(this){snap,error->
-            if(error==null&&snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")renderDashboardCounts()}
+        dashboardOrdersListener=db.collection("orders").addSnapshotListener(this){snap,error->
+            if(error!=null){
+                if(page=="Dashboard")Toast.makeText(this,"Orders read error: "+(error.localizedMessage?:error.javaClass.simpleName),Toast.LENGTH_LONG).show()
+                return@addSnapshotListener
+            }
+            if(snap!=null){orders.clear();snap.documents.forEach{orders.add(it.id to (it.data?:emptyMap()))};if(page=="Dashboard")renderDashboardCounts()}
         }
     }
     private fun renderDashboardCounts(){
@@ -106,7 +113,7 @@ class AdminActivity : Activity() {
     private fun listenOrders(onLoaded:()->Unit){
         backendNotice()
         ordersListener=db.collection("orders").addSnapshotListener(this){snap,error->
-            if(error!=null){if(page=="Orders"||page=="Payments")Toast.makeText(this,"Orders load nahi hue: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
+            if(error!=null){Toast.makeText(this,"Orders load nahi hue: "+(error.localizedMessage?:error.javaClass.simpleName),Toast.LENGTH_LONG).show();return@addSnapshotListener}
             orders.clear();snap?.documents?.forEach{orders.add(it.id to (it.data?:emptyMap()))}
             if(page=="Orders")renderOrders()
             if(page=="Payments")renderPayments()
