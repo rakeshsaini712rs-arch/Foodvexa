@@ -213,7 +213,7 @@ private fun placeOrderAndShowOrders(){
   "subtotal" to subtotal,
   "deliveryFee" to 30,
   "total" to total,
-  "paymentMethod" to paymentMethod,
+  "paymentMethod" to (if(paymentMethod.contains("UPI", ignoreCase=true)) "UPI" else "COD"),
   "paymentStatus" to paymentStatus,
   "status" to "New",
   "createdAt" to FieldValue.serverTimestamp(),
