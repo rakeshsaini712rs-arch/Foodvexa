@@ -44,15 +44,52 @@ private fun showUpiApps(total:Int){
     }.setNegativeButton("CANCEL",null).show()
 }
 private fun completeOrder(payment:String,total:Int){
-    val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
-    val orderRecord=summary+"\n\nPayment: "+payment+"\nTotal: ₹"+total
-    val orders=try{org.json.JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){org.json.JSONArray()}
-    orders.put(orderRecord)
-    prefs.edit().putString("orders",orders.toString()).putString("last_order",orderRecord).apply()
-    cart.clear();saveCart();updateCartBadge()
-    cartDialog?.dismiss();cartDialog=null
-    Toast.makeText(this,"Order placed successfully",Toast.LENGTH_SHORT).show()
-    showOrders()
+    if(cart.isEmpty()){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
+    val user=FirebaseAuth.getInstance().currentUser
+    if(user==null){Toast.makeText(this,"Please login again before ordering",Toast.LENGTH_LONG).show();return}
+    val address=prefs.getString("delivery_address","").orEmpty()
+        .ifBlank{prefs.getString("profile_address","").orEmpty()}
+        .ifBlank{prefs.getString("location","").orEmpty()}
+        .ifBlank{SHOP_LOCATION}
+    val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
+    val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\\n")
+    val method=if(payment.contains("Cash",true)||payment.contains("COD",true))"COD" else "UPI"
+    val orderRecord=summary+"\\n\\nPayment: "+(if(method=="COD")"Cash on Delivery" else "UPI")+"\\nTotal: ₹"+total
+    val items=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to (p.price*qty))}}
+    val data=hashMapOf<String,Any>(
+        "customerUid" to user.uid,
+        "customerName" to prefs.getString("profile_name","").orEmpty().ifBlank{user.displayName.orEmpty().ifBlank{"Customer"}},
+        "phone" to prefs.getString("profile_mobile","").orEmpty(),
+        "address" to address,
+        "items" to items,
+        "itemsText" to summary,
+        "subtotal" to subtotal,
+        "deliveryFee" to 30,
+        "total" to total,
+        "paymentMethod" to method,
+        "paymentStatus" to (if(method=="COD")"Pending" else "Initiated"),
+        "status" to "New",
+        "createdAt" to FieldValue.serverTimestamp(),
+        "updatedAt" to FieldValue.serverTimestamp()
+    )
+    Toast.makeText(this,"Order Firebase mein save ho raha hai…",Toast.LENGTH_SHORT).show()
+    FirebaseFirestore.getInstance().collection("orders").add(data)
+        .addOnSuccessListener{
+            val orders=try{org.json.JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){org.json.JSONArray()}
+            orders.put(orderRecord)
+            prefs.edit().putString("orders",orders.toString()).putString("last_order",orderRecord).apply()
+            cart.clear();saveCart();updateCartBadge()
+            cartDialog?.dismiss();cartDialog=null
+            Toast.makeText(this,"Order successfully placed",Toast.LENGTH_LONG).show()
+            showOrders()
+        }
+        .addOnFailureListener{e->
+            android.util.Log.e("FoodvexaOrder","Firestore order write failed; project=foodvexa-2daca; uid="+user.uid,e)
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Order save failed")
+                .setMessage("Order Firebase mein save nahi hua. Aapka cart safe hai.\\n\\nError: "+(e.localizedMessage?:e.javaClass.simpleName))
+                .setPositiveButton("OK",null).show()
+        }
 }
 private fun showCart(){
     setupBase()
