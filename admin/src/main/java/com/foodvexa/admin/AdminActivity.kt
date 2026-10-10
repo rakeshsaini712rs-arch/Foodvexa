@@ -113,7 +113,22 @@ class AdminActivity : Activity() {
     private fun listenOrders(onLoaded:()->Unit){
         backendNotice()
         ordersListener=db.collection("orders").addSnapshotListener(this){snap,error->
-            if(error!=null){Toast.makeText(this,"Orders load nahi hue: "+(error.localizedMessage?:error.javaClass.simpleName),Toast.LENGTH_LONG).show();return@addSnapshotListener}
+            if(error!=null){
+                val uid=auth.currentUser?.uid ?: "NOT_SIGNED_IN"
+                val detail="Orders read denied. UID=$uid · "+(error.localizedMessage?:error.javaClass.simpleName)
+                if(page=="Orders"){
+                    body.removeAllViews()
+                    addLine("Customer orders · permission error",20f,red,true)
+                    addLine(detail,13f,ink)
+                    addLine("Firebase Console → Firestore → admins/$uid : active Boolean true hona chahiye. Phir Firestore Rules deploy karein.",13f,Color.GRAY)
+                }
+                Toast.makeText(this,detail,Toast.LENGTH_LONG).show()
+                db.collection("admins").document(uid).get().addOnSuccessListener{doc->
+                    val state=if(!doc.exists()) "admin document missing" else "active="+doc.get("active")+" ("+(doc.get("active")?.javaClass?.simpleName?: "null")+")"
+                    Toast.makeText(this,"Admin check: $state",Toast.LENGTH_LONG).show()
+                }.addOnFailureListener{e->Toast.makeText(this,"Admin check failed: "+(e.localizedMessage?:e.javaClass.simpleName),Toast.LENGTH_LONG).show()}
+                return@addSnapshotListener
+            }
             orders.clear();snap?.documents?.forEach{orders.add(it.id to (it.data?:emptyMap()))}
             if(page=="Orders")renderOrders()
             if(page=="Payments")renderPayments()
