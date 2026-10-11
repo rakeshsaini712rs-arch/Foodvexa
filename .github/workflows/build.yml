@@ -509,44 +509,6 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
-      - name: Repair profile click without brittle text matching
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
-          s=p.read_text(encoding="utf-8")
-          # Keep the original showProfile/editor implementation. Make each profile card
-          # dispatch its action even when the tap lands on a child view.
-          a=s.find("private fun showProfile()")
-          b=s.find("private fun savedFavoriteNames",a)
-          if a<0 or b<0: raise SystemExit("Profile screen boundaries unavailable")
-          chunk=s[a:b]
-          # Kotlin helper defines box with its action listener. Use descendant focus/click
-          # routing via a single click listener on the parent row and its children.
-          chunk=chunk.replace('val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}',
-                              'val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}')
-          chunk=chunk.replace('texts.addView(label(title,16f,true,Color.WHITE))',
-                              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})')
-          chunk=chunk.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
-                              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))')
-          chunk=chunk.replace('box.addView(label("›",24f,true,Color.LTGRAY))',
-                              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})')
-          # Verify row still directly invokes editor. If earlier transforms changed the
-          # exact spelling, replace only the line that contains My Profile in this function.
-          lines=chunk.splitlines(keepends=True)
-          hit=[i for i,line in enumerate(lines) if "My Profile" in line and "item(" in line]
-          if len(hit)!=1: raise SystemExit(f"Expected one profile row, found {len(hit)}")
-          lines[hit[0]]=re.sub(r'\{\s*showProfileEditor\(\)\s*\}', '{ showProfileEditor() }', lines[hit[0]])
-          chunk=''.join(lines)
-          if "showProfileEditor()" not in chunk: raise SystemExit("Profile row does not call editor")
-          s=s[:a]+chunk+s[b:]
-          if "private fun showProfileEditor()" not in s:
-              raise SystemExit("Profile editor method missing")
-          p.write_text(s,encoding="utf-8")
-          print("PASS: Profile row action and editor verified")
-          PY
-
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
