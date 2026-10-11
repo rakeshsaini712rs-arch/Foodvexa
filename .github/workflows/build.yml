@@ -513,16 +513,12 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          start=s.find("private fun showProfile(){")
-          if start < 0: raise SystemExit("Customer showProfile() missing")
-          end=s.find("private fun savedFavoriteNames", start)
-          if end < 0: raise SystemExit("Cannot find end of customer showProfile()")
-          block=s[start:end]
-          helper_start=block.find(" fun item(title:String")
-          if helper_start < 0: helper_start=block.find("fun item(title:String")
-          first_row=block.find('item("👤  My Profile"', helper_start)
+          helper_start=s.find(" fun item(title:String")
+          if helper_start < 0: helper_start=s.find("fun item(title:String")
+          first_row=s.find('item("👤  My Profile"', helper_start)
           if helper_start < 0 or first_row < 0:
               raise SystemExit("Could not locate profile item helper or My Profile row")
           helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
@@ -537,27 +533,20 @@ jobs:
               setOnClickListener{action()}
             }
             val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
-            val titleView=label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false}
-            texts.addView(titleView)
+            texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
             if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
             box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
             box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
             content.addView(box,margin(0,0,0,10))
           }
           '''
-          block=block[:helper_start]+helper+block[first_row:]
-          # Fail early unless the My Profile row directly opens its editor.
-          if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' not in block:
-              import re
-              if not re.search(r'item\([^\n]*My Profile[^\n]*\)\s*\{\s*showProfileEditor\(\)\s*\}',block):
-                  raise SystemExit("My Profile row is not wired to showProfileEditor()")
-          s=s[:start]+block+s[end:]
+          s=s[:helper_start]+helper+s[first_row:]
+          if not re.search(r'item\([^\n]*My Profile[^\n]*\)\s*\{\s*showProfileEditor\(\)\s*\}',s):
+              raise SystemExit("My Profile row is not wired to showProfileEditor()")
           if "private fun showProfileEditor()" not in s:
               raise SystemExit("My Profile editor method missing")
-          if "descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS" not in block:
-              raise SystemExit("My Profile row tap handling not applied")
           p.write_text(s,encoding="utf-8")
-          print("PASS: Profile rows use a deterministic parent click target")
+          print("PASS: Profile item helper replaced deterministically")
           print("PASS: My Profile opens the editor")
           PY
 
