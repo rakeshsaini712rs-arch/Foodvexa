@@ -427,10 +427,11 @@ jobs:
             "profile tab":"setupBase(4)",
             "keyboard helper":"private fun hideKeyboard()",
             "Foodvexa branding":"Food ordering app by Foodvexa.",
-            "order UI":"Your Order",
-            "delivery details":"Delivery details",
-            "location button":"Choose your current location",
-            "buy button":"BUY NOW",
+            "profile row click handler":"setOnClickListener(clickAction)",
+            "profile collection action":'item("❤️  Collection","Your saved items"){showCollection()}',
+            "profile address action":'item("📍  Address Book","Saved delivery locations"){showAddressBook()}',
+            "profile payment action":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}',
+            "profile feedback action":'item("⭐  Feedback","Share your feedback"){showFeedback()}',
             "image cache":"imageCache",
           }
           missing=[k for k,v in checks.items() if v not in s]
