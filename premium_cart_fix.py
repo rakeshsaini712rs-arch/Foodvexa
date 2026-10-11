@@ -22,45 +22,67 @@ if "private var cartDialog:android.app.Dialog?=null" not in s:
     s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartDialog:android.app.Dialog?=null;",1)
 
 def remove_method(src,name):
-    # Kotlin bodies contain braces inside interpolated strings such as "${p.name}".
-    # Counting every brace blindly can delete later methods, including Profile actions.
+    # Parse Kotlin braces safely. A quote inside \${...} must not terminate the
+    # surrounding string; otherwise this can eat Profile click lambdas.
     pat=re.compile(r"private fun "+re.escape(name)+r"\s*\([^)]*\)\s*\{")
     while True:
         m=pat.search(src)
         if not m: return src
         i=m.start()
         pos=m.end()
-        depth=1
-        state="code"
-        escaped=False
-        while pos<len(src) and depth:
+        method_depth=1
+        stack=[{"state":"code","depth":0,"escaped":False}]
+        while pos<len(src) and method_depth:
+            frame=stack[-1]
+            state=frame["state"]
             ch=src[pos]
             nxt=src[pos+1] if pos+1<len(src) else ""
-            if state=="line_comment":
-                if ch=="\n": state="code"
-            elif state=="block_comment":
-                if ch=="*" and nxt=="/": state="code"; pos+=1
-            elif state=="string":
-                if escaped: escaped=False
-                elif ch=="\\": escaped=True
-                elif ch=='"': state="code"
-            elif state=="char":
-                if escaped: escaped=False
-                elif ch=="\\": escaped=True
-                elif ch=="'": state="code"
-            elif state=="code":
-                if ch=="/" and nxt=="/": state="line_comment"; pos+=1
-                elif ch=="/" and nxt=="*": state="block_comment"; pos+=1
-                elif ch=='"': state="string"
-                elif ch=="'": state="char"
-                elif ch=="{": depth+=1
+            if state=="code":
+                if ch=="/" and nxt=="/":
+                    stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
+                elif ch=="/" and nxt=="*":
+                    stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
+                elif ch=='"':
+                    stack.append({"state":"string","depth":0,"escaped":False})
+                elif ch=="'":
+                    stack.append({"state":"char","depth":0,"escaped":False})
+                elif ch=="{":
+                    method_depth+=1
                 elif ch=="}":
-                    depth-=1
-                    if depth==0:
+                    method_depth-=1
+                    if method_depth==0:
                         pos+=1
                         break
+            elif state=="string":
+                if frame["escaped"]: frame["escaped"]=False
+                elif ch=="\\": frame["escaped"]=True
+                elif ch=='"': stack.pop()
+                elif ch=="$" and nxt=="{":
+                    stack.append({"state":"interpolation","depth":1,"escaped":False}); pos+=1
+            elif state=="interpolation":
+                if ch=="/" and nxt=="/":
+                    stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
+                elif ch=="/" and nxt=="*":
+                    stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
+                elif ch=='"':
+                    stack.append({"state":"string","depth":0,"escaped":False})
+                elif ch=="'":
+                    stack.append({"state":"char","depth":0,"escaped":False})
+                elif ch=="{":
+                    frame["depth"]+=1
+                elif ch=="}":
+                    frame["depth"]-=1
+                    if frame["depth"]==0: stack.pop()
+            elif state=="char":
+                if frame["escaped"]: frame["escaped"]=False
+                elif ch=="\\": frame["escaped"]=True
+                elif ch=="'": stack.pop()
+            elif state=="line_comment":
+                if ch=="\n": stack.pop()
+            elif state=="block_comment":
+                if ch=="*" and nxt=="/": stack.pop(); pos+=1
             pos+=1
-        if depth:
+        if method_depth:
             raise SystemExit("Unclosed Kotlin method while removing "+name)
         src=src[:i]+src[pos:]
 
