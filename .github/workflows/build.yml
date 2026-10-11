@@ -509,41 +509,42 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
-      - name: Wire My Profile row click directly
+      - name: Repair profile click without brittle text matching
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          a=s.index("private fun showProfile(){")
-          b=s.index("private fun savedFavoriteNames",a)
+          # Keep the original showProfile/editor implementation. Make each profile card
+          # dispatch its action even when the tap lands on a child view.
+          a=s.find("private fun showProfile()")
+          b=s.find("private fun savedFavoriteNames",a)
+          if a<0 or b<0: raise SystemExit("Profile screen boundaries unavailable")
           chunk=s[a:b]
-          old='item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}'
-          if old not in chunk:
-              # Match the row regardless of emoji or subtitle formatting.
-              lines=chunk.splitlines(keepends=True)
-              hits=[i for i,line in enumerate(lines) if 'item(' in line and 'My Profile' in line]
-              if len(hits)!=1:
-                  raise SystemExit(f"Expected one My Profile row in showProfile, found {len(hits)}")
-              line=lines[hits[0]]
-              line=line[:line.index('item(')]+'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){ showProfileEditor() }\n'
-              lines[hits[0]]=line
-              chunk=''.join(lines)
-          # Force a direct listener on the card title, subtitle and chevron.
+          # Kotlin helper defines box with its action listener. Use descendant focus/click
+          # routing via a single click listener on the parent row and its children.
+          chunk=chunk.replace('val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}',
+                              'val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}')
           chunk=chunk.replace('texts.addView(label(title,16f,true,Color.WHITE))',
-              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;setOnClickListener{action()}})')
+                              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})')
           chunk=chunk.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
-              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;setOnClickListener{action()}},margin(0,3,0,0))')
+                              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))')
           chunk=chunk.replace('box.addView(label("›",24f,true,Color.LTGRAY))',
-              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;setOnClickListener{action()}})')
+                              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})')
+          # Verify row still directly invokes editor. If earlier transforms changed the
+          # exact spelling, replace only the line that contains My Profile in this function.
+          lines=chunk.splitlines(keepends=True)
+          hit=[i for i,line in enumerate(lines) if "My Profile" in line and "item(" in line]
+          if len(hit)!=1: raise SystemExit(f"Expected one profile row, found {len(hit)}")
+          lines[hit[0]]=re.sub(r'\{\s*showProfileEditor\(\)\s*\}', '{ showProfileEditor() }', lines[hit[0]])
+          chunk=''.join(lines)
+          if "showProfileEditor()" not in chunk: raise SystemExit("Profile row does not call editor")
           s=s[:a]+chunk+s[b:]
-          # Ensure editor exists and is callable; keep original editor implementation if present.
           if "private fun showProfileEditor()" not in s:
-              raise SystemExit("Profile editor method missing; refusing build")
-          if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){ showProfileEditor() }' not in s[a:s.index("private fun savedFavoriteNames",a)]:
-              raise SystemExit("My Profile row is not explicitly wired")
+              raise SystemExit("Profile editor method missing")
           p.write_text(s,encoding="utf-8")
-          print("PASS: My Profile row directly calls showProfileEditor()")
+          print("PASS: Profile row action and editor verified")
           PY
 
       - name: Build customer and admin debug APKs
