@@ -212,14 +212,15 @@ if profile_pos >= 0 and profile_end > profile_pos:
                 rows[idx]=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
             break
     profile_block="".join(rows)
-    # Explicitly forward clicks from every visible child to the same action.
-    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE))','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
-    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
-    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
-    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
-    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
-    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY))','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
-    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
+    # Route taps from each row's text column, title, subtitle, and chevron to its action.
+    # Apply to every profile menu item, not just My Profile.
+    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE))','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})')
+    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})')
+    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))')
+    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))')
+    profile_block=profile_block.replace('  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))','  texts.setOnClickListener{action()}\n  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))')
+    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY))','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})')
+    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})')
     ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 else:
     print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
