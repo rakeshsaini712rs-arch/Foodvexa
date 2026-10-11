@@ -142,12 +142,9 @@ if not all(profile_checks.values()): raise SystemExit("Profile action verificati
 # Restore Profile action lambdas if an earlier transformation stripped their trailing closures.
 profile_action_repairs = {
     'item("👤  My Profile","Name and mobile number")':'item("👤  My Profile","Name and mobile number"){showProfileEditor()}',
-    'item("📦  My Orders","Order history")':'item("📦  My Orders","Order history"){showOrders()}',
-    'item("📍  Address Book","Saved delivery locations")':'item("📍  Address Book","Saved delivery locations"){showAddressBook()}',
     'item("❤️  Collection","Your saved items")':'item("❤️  Collection","Your saved items"){showCollection()}',
     'item("💳  Payment Settings","COD and online payment")':'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}',
     'item("⭐  Feedback","Share your feedback")':'item("⭐  Feedback","Share your feedback"){showFeedback()}',
-    'item("🎨  Appearance","Dark • Light • Use device theme")':'item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}',
 }
 for old_call, fixed_call in profile_action_repairs.items():
     if old_call in ms and fixed_call not in ms:
