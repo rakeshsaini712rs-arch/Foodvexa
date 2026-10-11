@@ -189,13 +189,21 @@ if profile_pos >= 0 and profile_end > profile_pos:
     profile_block=ms[profile_pos:profile_end]
     old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
     new_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
-    if old_box in profile_block:
-        profile_block=profile_block.replace(old_box,new_box,1)
-    # Ensure row text/chevron cannot become independent touch targets.
-    profile_block=profile_block.replace('''  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}''','''  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}''',1)
-    profile_block=profile_block.replace('''  texts.addView(label(title,16f,true,Color.WHITE))''','''  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})''',1)
-    profile_block=profile_block.replace('''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))''','''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))''',1)
-    profile_block=profile_block.replace('''  box.addView(label("›",24f,true,Color.LTGRAY))''','''  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})''',1)
+    # Patch the first row container structurally rather than requiring one exact line.
+    box_match=__import__("re").search(r'val box=LinearLayout\\(this\\)\\.apply\\{[^\\n]*\\}',profile_block)
+    if box_match:
+        box_line=box_match.group(0)
+        if "setOnClickListener{action()}" in box_line and "descendantFocusability" not in box_line:
+            box_line=box_line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
+            profile_block=profile_block[:box_match.start()]+box_line+profile_block[box_match.end():]
+    # Explicitly forward clicks from every visible child to the same action.
+    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE))','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
+    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
+    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
+    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
+    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
+    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY))','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
+    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
     ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 else:
     print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
