@@ -280,35 +280,43 @@ private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.
 private fun bannerGrid():LinearLayout{
  val container=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
  val banners=listOf(
-  Triple("HOT & FRESH FOOD","Freshly prepared • Fast delivery",foodImages[0]),
-  Triple("SWEET MOMENTS","Fresh sweets for every occasion",foodImages.getOrElse(1){foodImages[0]}),
-  Triple("SNACKS & CHAAT","Your favourite bites, made fresh",foodImages.getOrElse(2){foodImages[0]}),
-  Triple("ORDER WITH FOODVEXA","Taste the Happiness",foodImages.getOrElse(3){foodImages[0]})
+  Triple("PIZZA SPECIAL","Freshly prepared pizza",foodImages[0]),
+  Triple("BURGER SPECIAL","Burgers, fries & more",foodImages.getOrElse(1){foodImages[0]}),
+  Triple("DESI RASOI","Your favourite Indian food",foodImages.getOrElse(2){foodImages[0]}),
+  Triple("BIRTHDAY SPECIAL","Cakes for your celebrations",foodImages.getOrElse(3){foodImages[0]})
  )
  val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+ val logoId=resources.getIdentifier("foodvexa_exact_logo","drawable",packageName)
+ val cardWidth=resources.displayMetrics.widthPixels
  banners.forEachIndexed{index,b->
-  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true}
+  val bg=when(index){0->Color.rgb(135,18,18);1->Color.rgb(5,54,30);2->Color.rgb(110,54,20);else->Color.rgb(190,66,100)}
+  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(bg,18);clipChildren=true}
+  if(logoId!=0){
+   val logo=ImageView(this).apply{setImageResource(logoId);scaleType=ImageView.ScaleType.FIT_CENTER}
+   card.addView(logo,LinearLayout.LayoutParams(dp(108),dp(108)).apply{rightMargin=dp(8)})
+  } else {
+   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+   brand.addView(label("FOODVEXA",16f,true,Color.WHITE))
+   card.addView(brand,LinearLayout.LayoutParams(dp(108),-2).apply{rightMargin=dp(8)})
+  }
   val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  text.addView(label("FOODVEXA",12f,true,Color.WHITE))
-  text.addView(label(b.first,20f,true,Color.WHITE))
-  text.addView(label(b.second,12f,false,Color.LTGRAY),margin(0,2,0,7))
-  text.addView(primaryButton("ORDER NOW  ›"){selectedCategory="All";renderProducts()},LinearLayout.LayoutParams(dp(145),dp(40)))
+  text.addView(label(b.first,18f,true,Color.WHITE))
+  text.addView(label(b.second,11f,false,Color.LTGRAY),margin(0,3,0,0))
   card.addView(text,LinearLayout.LayoutParams(0,-1,1f))
   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  card.addView(pic,LinearLayout.LayoutParams(dp(172),dp(232)).apply{leftMargin=dp(8)})
+  card.addView(pic,LinearLayout.LayoutParams(dp(132),dp(210)).apply{leftMargin=dp(6)})
   loadImage(pic,b.third)
-  strip.addView(card,LinearLayout.LayoutParams(-1,dp(250)))
+  strip.addView(card,LinearLayout.LayoutParams(cardWidth,dp(250)).apply{setMargins(dp(4),0,dp(4),0)})
  }
- val carousel=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(250)))}
+ val carousel=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=false;addView(strip,LinearLayout.LayoutParams(-2,dp(250)))}
  container.addView(carousel,LinearLayout.LayoutParams(-1,dp(254)))
- // Automatically advance one full-width banner every 4 seconds.
  val slideHandler=android.os.Handler(android.os.Looper.getMainLooper())
  var slideIndex=0
  val slideTask=object:Runnable{
   override fun run(){
    if(!carousel.isAttachedToWindow)return
    slideIndex=(slideIndex+1)%banners.size
-   carousel.smoothScrollTo(slideIndex*carousel.width,0)
+   carousel.smoothScrollTo(slideIndex*cardWidth,0)
    slideHandler.postDelayed(this,4000)
   }
  }
