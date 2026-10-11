@@ -523,31 +523,26 @@ jobs:
           old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
           new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;setOnClickListener{action()}}'''
           if old in block: block=block.replace(old,new,1)
-          # Make the row itself the single click target. Child views must not
-          # intercept the tap; the click bubbles to the row's action.
-          block=block.replace('isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}',
-                              'isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS;setOnClickListener{action()}')
-          block=block.replace('isClickable=true;isFocusable=true;setOnClickListener{action()}',
-                              'isClickable=false;isFocusable=false')
-          block=block.replace('texts.setOnClickListener{action()}','texts.isClickable=false')
-          # Explicitly ensure the row's click listener survives all earlier transforms.
-          row_start=block.find('val box=LinearLayout(this).apply{')
-          if row_start >= 0:
-              row_end=block.find('\n  val texts=',row_start)
-              if row_end > row_start:
-                  row_decl=block[row_start:row_end]
-                  if 'setOnClickListener{action()}' not in row_decl:
-                      row_decl=row_decl[:-1]+';isClickable=true;setOnClickListener{action()}}'
-                      block=block[:row_start]+row_decl+block[row_end:]
-          old_title='''  texts.addView(label(title,16f,true,Color.WHITE))'''
-          new_title='''  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})'''
-          if old_title in block: block=block.replace(old_title,new_title,1)
-          old_sub='''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))'''
-          new_sub='''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}},margin(0,3,0,0))'''
-          if old_sub in block: block=block.replace(old_sub,new_sub,1)
-          old_arrow='''  box.addView(label("›",24f,true,Color.LTGRAY))'''
-          new_arrow='''  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})'''
-          if old_arrow in block: block=block.replace(old_arrow,new_arrow,1)
+          # Explicitly attach the same action to the row and each visible child.
+          # Android child views do not reliably bubble taps to a clickable parent.
+          box_start=block.find('val box=LinearLayout(this).apply{')
+          box_end=block.find('\\n  val texts=',box_start)
+          if box_start < 0 or box_end < 0:
+              raise SystemExit("Cannot locate My Profile row container")
+          row_decl=block[box_start:box_end]
+          row_decl=row_decl.replace('isClickable=false;isFocusable=false','isClickable=true;isFocusable=true')
+          if 'setOnClickListener{action()}' not in row_decl:
+              row_decl=row_decl[:-1]+';setOnClickListener{action()}}'
+          block=block[:box_start]+row_decl+block[box_end:]
+          block=block.replace(
+              'texts.addView(label(title,16f,true,Color.WHITE))',
+              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})',1)
+          block=block.replace(
+              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
+              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}},margin(0,3,0,0))',1)
+          block=block.replace(
+              'box.addView(label("›",24f,true,Color.LTGRAY))',
+              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})',1)
           # Source transforms may normalize emoji spacing or row labels. Verify the
           # actual row action semantically, not by requiring one exact emoji string.
           import re
