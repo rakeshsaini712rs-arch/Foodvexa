@@ -554,10 +554,10 @@ jobs:
           if "private fun showProfileEditor()" not in s:
               # Some earlier transforms replace the editor method. Restore a
               # safe, working dialog entry point in the customer activity.
-              anchor = "private fun savedFavoriteNames()"
-              pos = s.find(anchor)
+              # Insert before the final class brace; helper names vary across source transforms.
+              pos = s.rfind("\n}")
               if pos < 0:
-                  raise SystemExit("Cannot locate insertion point for My Profile editor")
+                  raise SystemExit("Cannot locate MainActivity class closing brace")
               fallback = '''private fun showProfileEditor(){
             val user=FirebaseAuth.getInstance().currentUser
             val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
