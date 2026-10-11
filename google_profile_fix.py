@@ -199,7 +199,7 @@ ms=ms[:editor_start]+editor+ms[editor_end:]
 # Final, idempotent My Profile row tap fix, applied after all earlier profile edits.
 # Make the entire row consume touches before child TextViews can intercept them.
 profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("\nprivate fun savedFavoriteNames",profile_pos)
+profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
 if profile_pos >= 0 and profile_end > profile_pos:
     profile_block=ms[profile_pos:profile_end]
     old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
@@ -223,6 +223,20 @@ if profile_pos >= 0 and profile_end > profile_pos:
     ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 else:
     print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
+
+# Fail the build if the final transformed profile row does not retain a working editor action.
+profile_check_start=ms.find("private fun showProfile(){")
+profile_check_end=ms.find("private fun savedFavoriteNames",profile_check_start+len("private fun showProfile(){"))
+if profile_check_start < 0 or profile_check_end <= profile_check_start:
+    raise SystemExit("FAIL My Profile source boundaries not found after patch")
+profile_check=ms[profile_check_start:profile_check_end]
+if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' not in profile_check:
+    raise SystemExit("FAIL My Profile row does not call showProfileEditor")
+if "setOnClickListener{action()}" not in profile_check:
+    raise SystemExit("FAIL My Profile row action listener missing")
+if "descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS" not in profile_check:
+    raise SystemExit("FAIL My Profile row focus handling missing")
+print("PASS My Profile editor action and tap handling verified in final transformed source")
 
 checks={
  "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
