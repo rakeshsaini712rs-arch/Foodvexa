@@ -509,51 +509,41 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
-      - name: Finalize Customer My Profile safely
+      - name: Wire My Profile row click directly
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          # Preserve the checked-in profile row action; do not depend on fragile
-          # parsing of the earlier transforms' formatting.
+          a=s.index("private fun showProfile(){")
+          b=s.index("private fun savedFavoriteNames",a)
+          chunk=s[a:b]
+          old='item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}'
+          if old not in chunk:
+              # Match the row regardless of emoji or subtitle formatting.
+              lines=chunk.splitlines(keepends=True)
+              hits=[i for i,line in enumerate(lines) if 'item(' in line and 'My Profile' in line]
+              if len(hits)!=1:
+                  raise SystemExit(f"Expected one My Profile row in showProfile, found {len(hits)}")
+              line=lines[hits[0]]
+              line=line[:line.index('item(')]+'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){ showProfileEditor() }\n'
+              lines[hits[0]]=line
+              chunk=''.join(lines)
+          # Force a direct listener on the card title, subtitle and chevron.
+          chunk=chunk.replace('texts.addView(label(title,16f,true,Color.WHITE))',
+              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;setOnClickListener{action()}})')
+          chunk=chunk.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
+              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;setOnClickListener{action()}},margin(0,3,0,0))')
+          chunk=chunk.replace('box.addView(label("›",24f,true,Color.LTGRAY))',
+              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;setOnClickListener{action()}})')
+          s=s[:a]+chunk+s[b:]
+          # Ensure editor exists and is callable; keep original editor implementation if present.
           if "private fun showProfileEditor()" not in s:
-              pos=s.rfind("}")
-              if pos < 0:
-                  raise SystemExit("MainActivity closing brace not found")
-              fallback="""
-          private fun showProfileEditor(){
-            setupBase(4)
-            val user=FirebaseAuth.getInstance().currentUser
-            val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
-            val mobile=EditText(this).apply{hint="Mobile number";inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setText(prefs.getString("profile_mobile","").orEmpty())}
-            val address=EditText(this).apply{hint="Delivery address";minLines=3;setText(prefs.getString("profile_address",prefs.getString("location","").orEmpty()).orEmpty())}
-            val fields=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0);addView(name);addView(mobile);addView(address)}
-            AlertDialog.Builder(this).setTitle("My Profile").setView(fields)
-              .setNegativeButton("CANCEL",null)
-              .setPositiveButton("SAVE"){_,_->
-                val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
-                if(n.isBlank()||m.isBlank()||a.isBlank()){Toast.makeText(this,"Please complete all profile fields",Toast.LENGTH_SHORT).show();return@setPositiveButton}
-                prefs.edit().putString("profile_name",n).putString("profile_email",user?.email.orEmpty()).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).apply()
-                Toast.makeText(this,"Profile saved",Toast.LENGTH_SHORT).show();showProfile()
-              }.show()
-          }
-          """
-              s=s[:pos]+fallback+s[pos:]
-          if "showProfileEditor()" not in s:
-              raise SystemExit("Profile editor call not present")
-          # If the profile row helper still has its normal title/chevron expressions,
-          # make those visible children dispatch to the same row action.
-          s=s.replace('texts.addView(label(title,16f,true,Color.WHITE))',
-                      'texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
-          s=s.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
-                      'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
-          s=s.replace('box.addView(label("›",24f,true,Color.LTGRAY))',
-                      'box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
+              raise SystemExit("Profile editor method missing; refusing build")
+          if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){ showProfileEditor() }' not in s[a:s.index("private fun savedFavoriteNames",a)]:
+              raise SystemExit("My Profile row is not explicitly wired")
           p.write_text(s,encoding="utf-8")
-          print("PASS: Customer profile editor is present")
-          print("PASS: Profile child tap handlers applied where available")
+          print("PASS: My Profile row directly calls showProfileEditor()")
           PY
 
       - name: Build customer and admin debug APKs
