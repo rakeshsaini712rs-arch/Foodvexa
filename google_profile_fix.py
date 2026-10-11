@@ -181,6 +181,25 @@ editor = '''private fun showProfileEditor(){
 '''
 ms=ms[:editor_start]+editor+ms[editor_end:]
 
+# Final, idempotent My Profile row tap fix, applied after all earlier profile edits.
+# Make the entire row consume touches before child TextViews can intercept them.
+profile_pos=ms.find("private fun showProfile(){")
+profile_end=ms.find("\\nprivate fun savedFavoriteNames",profile_pos)
+if profile_pos >= 0 and profile_end > profile_pos:
+    profile_block=ms[profile_pos:profile_end]
+    old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
+    new_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
+    if old_box in profile_block:
+        profile_block=profile_block.replace(old_box,new_box,1)
+    # Ensure row text/chevron cannot become independent touch targets.
+    profile_block=profile_block.replace('''  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}''','''  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}''',1)
+    profile_block=profile_block.replace('''  texts.addView(label(title,16f,true,Color.WHITE))''','''  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})''',1)
+    profile_block=profile_block.replace('''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))''','''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))''',1)
+    profile_block=profile_block.replace('''  box.addView(label("›",24f,true,Color.LTGRAY))''','''  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})''',1)
+    ms=ms[:profile_pos]+profile_block+ms[profile_end:]
+else:
+    print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
+
 checks={
  "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
  "Google email persisted":'putString("google_email", account.email.orEmpty())' in ls,
