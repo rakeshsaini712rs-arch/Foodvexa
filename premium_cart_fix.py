@@ -37,19 +37,10 @@ def remove_method(src,name):
         raise SystemExit("Could not safely isolate method " + name + " before " + next_method)
     raise SystemExit("No safe removal boundary configured for " + name)
 
-for method in ("showCart","placeOrderAndShowOrders"):
+for method in ("showCart",):
     s=remove_method(s,method)
 
-body=r'''private fun placeOrderAndShowOrders(){
-    if(cart.isEmpty()){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
-    val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
-    val total=subtotal+30
-    val methods=arrayOf("💵  Cash on Delivery","💳  UPI Payments")
-    android.app.AlertDialog.Builder(this).setTitle("Choose Payment Method").setItems(methods){_,which->
-        if(which==0) completeOrder("Cash on Delivery",total) else showUpiApps(total)
-    }.setNegativeButton("CANCEL",null).show()
-}
-private fun showUpiApps(total:Int){
+body=r'''private fun showUpiApps(total:Int){
     val apps=arrayOf("📱  PhonePe","💬  WhatsApp","🔵  Google Pay")
     android.app.AlertDialog.Builder(this).setTitle("UPI Payments").setMessage("Choose UPI app").setItems(apps){_,which->
         completeOrder(apps[which].substringAfter("  "),total)
