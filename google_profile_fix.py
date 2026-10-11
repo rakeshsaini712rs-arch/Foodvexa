@@ -27,7 +27,6 @@ if 'putString("google_uid", auth.currentUser?.uid.orEmpty())' not in ls:
     ls=ls.replace(old,new,1)
 
 startup='setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();showHome()}'
-# Some earlier transformation scripts may have removed the editor. Only add the gate when its target exists.
 if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in ms and 'private fun showProfileEditor(' in ms:
     if startup in ms:
         ms=ms.replace(startup,'setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}else{showHome()}}',1)
@@ -40,7 +39,6 @@ if 'private fun showProfileEditor(' not in ms:
     print("GOOGLE IDENTITY PERSISTENCE APPLIED")
     raise SystemExit(0)
 
-# Add the account email to the profile screen without depending on exact spacing or theme text tokens.
 if 'val accountEmail=prefs.getString("profile_email"' not in ms:
     line=' content.addView(label("Create and manage your customer profile",15f,false,secondaryText),margin(0,0,0,16))'
     if line in ms:
@@ -50,7 +48,6 @@ if 'val accountEmail=prefs.getString("profile_email"' not in ms:
     else:
         print("NOTE profile intro differs; auto-fill name/email and profile gate still applied")
 
-# Save and validate the customer profile before marking setup complete.
 import re
 profile_match=re.search(r"fun\s+showProfileEditor\s*\(",ms)
 profile_start=ms.rfind("fun ",0,profile_match.start()) if profile_match else -1
@@ -69,13 +66,12 @@ if save_start<0:
 save_end=profile.find('},margin(0,0,0,12))',save_start)
 if save_end<0: raise SystemExit("Save Profile button end missing")
 save=profile[save_start:save_end]
-save= re.sub(r'   if\\(n\\.isBlank\\(\\)\\).*?   prefs\\.edit\\(\\)\\.putString\\("profile_name",n\\).*?\\.apply\\(\\)',
+save= re.sub(r'   if\(n\.isBlank\(\)\).*?   prefs\.edit\(\)\.putString\("profile_name",n\).*?\.apply\(\)',
 '''   if(n.length<2){name.error="Please enter your full name";name.requestFocus();return@primaryButton}
    if(!m.matches(Regex("[6-9][0-9]{9}"))){mobile.error="Enter a valid 10-digit Indian mobile number";mobile.requestFocus();return@primaryButton}
    if(a.length<8){address.error="Please enter your complete delivery address";address.requestFocus();return@primaryButton}
    prefs.edit().putString("google_uid",FirebaseAuth.getInstance().currentUser?.uid.orEmpty()).putString("profile_name",n).putString("profile_email",FirebaseAuth.getInstance().currentUser?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").putBoolean("profile_created",true).apply()''',save,flags=re.S)
 if 'putBoolean("profile_created",true)' not in save:
-    # robust fallback: replace the save body from val n=... up to its Toast
     npos=save.find('   val n=name.text.toString().trim()')
     toast=save.find('   Toast.makeText(this,"Profile saved successfully"')
     if npos<0 or toast<0: raise SystemExit("Could not locate profile save validation block")
@@ -88,16 +84,52 @@ if 'putBoolean("profile_created",true)' not in save:
 profile=profile[:save_start]+save+profile[save_end:]
 ms=ms[:profile_start]+profile+ms[profile_end:]
 
+# Always refresh profile name/email from Firebase and display the Google avatar.
+start=ms.find("private fun showProfile(){")
+if start<0: raise SystemExit("Customer showProfile() not found")
+end=ms.find("\nprivate fun savedFavoriteNames",start)
+if end<0: raise SystemExit("Could not locate end of showProfile()")
+block=ms[start:end]
+needle=''' val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{user?.displayName.orEmpty()}
+ val savedEmail=prefs.getString("profile_email","").orEmpty().ifBlank{user?.email.orEmpty()}'''
+replacement=''' val savedName=user?.displayName.orEmpty().ifBlank{prefs.getString("profile_name","").orEmpty()}
+ val savedEmail=user?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}
+ prefs.edit().putString("profile_name",savedName).putString("profile_email",savedEmail).putString("google_name",savedName).putString("google_email",savedEmail).putString("google_uid",user?.uid.orEmpty()).apply()'''
+if needle not in block: raise SystemExit("Profile name/email source block missing")
+block=block.replace(needle,replacement,1)
+oldcard=''' if(savedName.isNotBlank()||savedEmail.isNotBlank()){
+  val accountCard=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(14),dp(16),dp(14));background=rounded(Color.rgb(38,38,44),16)}
+  accountCard.addView(label(savedName.ifBlank{"Google account"},18f,true,Color.WHITE))
+  if(savedEmail.isNotBlank())accountCard.addView(label(savedEmail,13f,false,Color.LTGRAY),margin(0,5,0,0))
+  content.addView(accountCard,margin(0,0,0,16))
+ }'''
+newcard=''' if(savedName.isNotBlank()||savedEmail.isNotBlank()){
+  val accountCard=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(14),dp(16),dp(14));background=rounded(Color.rgb(38,38,44),16)}
+  val avatar=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=rounded(Color.rgb(70,70,78),dp(28))}
+  accountCard.addView(avatar,LinearLayout.LayoutParams(dp(54),dp(54)).apply{rightMargin=dp(14)})
+  val photo=user?.photoUrl?.toString().orEmpty()
+  if(photo.isNotBlank())loadImage(avatar,photo) else avatar.setImageDrawable(android.graphics.drawable.ColorDrawable(Color.rgb(70,70,78)))
+  val accountDetails=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+  accountDetails.addView(label("GOOGLE ACCOUNT",10f,true,Color.rgb(255,196,0)),LinearLayout.LayoutParams(-1,-2))
+  accountDetails.addView(label(savedName.ifBlank{"Google account"},17f,true,Color.WHITE),margin(0,3,0,0))
+  if(savedEmail.isNotBlank())accountDetails.addView(label(savedEmail,13f,false,Color.LTGRAY),margin(0,4,0,0))
+  accountCard.addView(accountDetails,LinearLayout.LayoutParams(0,-2,1f))
+  content.addView(accountCard,margin(0,0,0,16))
+ }'''
+if oldcard not in block: raise SystemExit("Profile Google account card not found")
+block=block.replace(oldcard,newcard,1)
+ms=ms[:start]+block+ms[end:]
+
 checks={
- "Google identity persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
+ "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
  "Google email persisted":'putString("google_email", account.email.orEmpty())' in ls,
- "profile gate after login":'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}else{showHome()}' in ms,
- "valid mobile validation":'Regex("[6-9][0-9]{9}")' in ms,
- "profile completion persisted":'putBoolean("profile_created",true)' in ms,
- "profile name auto-filled":'FirebaseAuth.getInstance().currentUser?.displayName.orEmpty()' in ms,
+ "profile reads live Firebase name":'val savedName=user?.displayName.orEmpty().ifBlank{prefs.getString("profile_name","").orEmpty()}' in ms,
+ "profile reads live Firebase email":'val savedEmail=user?.email.orEmpty().ifBlank{prefs.getString("profile_email","").orEmpty()}' in ms,
+ "Google account label shown":'label("GOOGLE ACCOUNT",10f,true,Color.rgb(255,196,0))' in ms,
+ "Google avatar loaded":'user?.photoUrl?.toString().orEmpty()' in ms and 'loadImage(avatar,photo)' in ms,
 }
 for k,v in checks.items(): print(("PASS " if v else "FAIL ")+k)
-if not all(checks.values()): raise SystemExit("Google profile flow verification failed")
+if not all(checks.values()): raise SystemExit("Google profile display verification failed")
 login.write_text(ls,encoding="utf-8")
 main.write_text(ms,encoding="utf-8")
-print("GOOGLE PROFILE FLOW APPLIED")
+print("GOOGLE PROFILE DETAILS DISPLAY PATCH APPLIED")
