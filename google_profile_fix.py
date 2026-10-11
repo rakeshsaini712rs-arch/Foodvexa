@@ -12,7 +12,7 @@ if 'import android.view.ViewGroup' not in ms:
 # Make every Profile row reliably tappable, including its text and chevron children.
 # This is a customer-app-only transformation; no admin sources are touched.
 profile_row_old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
-profile_row_new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
+profile_row_new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
 if profile_row_old in ms:
     ms=ms.replace(profile_row_old,profile_row_new,1)
 elif 'descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS' not in ms:
