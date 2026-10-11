@@ -263,12 +263,6 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
    isFocusable=true
    importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_YES
    setOnClickListener(clickAction)
-   setOnTouchListener { view,event ->
-    if(event.action==android.view.MotionEvent.ACTION_UP){
-     view.performClick()
-    }
-    false
-   }
   }
   val texts=LinearLayout(this).apply{
    orientation=LinearLayout.VERTICAL
