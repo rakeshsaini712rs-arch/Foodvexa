@@ -84,27 +84,8 @@ if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in 
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
 profile_pos=ms.rfind("\n",0,profile_fn)+1
-profile_open=ms.find("{",profile_fn)
-if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
-depth=1
-in_string=False
-escaped=False
-profile_end=-1
-for idx in range(profile_open+1,len(ms)):
-    ch=ms[idx]
-    if in_string:
-        if escaped: escaped=False
-        elif ch=="\\\\": escaped=True
-        elif ch=='"': in_string=False
-    else:
-        if ch=='"': in_string=True
-        elif ch=="{": depth+=1
-        elif ch=="}":
-            depth-=1
-            if depth==0:
-                profile_end=idx+1
-                break
-if profile_end < 0: raise SystemExit("FAIL showProfile closing brace not found")
+# Keep the remainder intact and replace only the local row helper within it.
+profile_end=len(ms)
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL Profile row boundaries not found before editor branch")
 profile_block=ms[profile_pos:profile_end]
@@ -136,27 +117,8 @@ ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
 profile_pos=ms.rfind("\n",0,profile_fn)+1
-profile_open=ms.find("{",profile_fn)
-if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
-depth=1
-in_string=False
-escaped=False
-profile_end=-1
-for idx in range(profile_open+1,len(ms)):
-    ch=ms[idx]
-    if in_string:
-        if escaped: escaped=False
-        elif ch=="\\\\": escaped=True
-        elif ch=='"': in_string=False
-    else:
-        if ch=='"': in_string=True
-        elif ch=="{": depth+=1
-        elif ch=="}":
-            depth-=1
-            if depth==0:
-                profile_end=idx+1
-                break
-if profile_end < 0: raise SystemExit("FAIL showProfile closing brace not found")
+# Keep the remainder intact and replace only the local row helper within it.
+profile_end=len(ms)
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
  "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in ms,
@@ -298,27 +260,8 @@ ms=ms[:editor_start]+editor+ms[editor_end:]
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
 profile_pos=ms.rfind("\n",0,profile_fn)+1
-profile_open=ms.find("{",profile_fn)
-if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
-depth=1
-in_string=False
-escaped=False
-profile_end=-1
-for idx in range(profile_open+1,len(ms)):
-    ch=ms[idx]
-    if in_string:
-        if escaped: escaped=False
-        elif ch=="\\\\": escaped=True
-        elif ch=='"': in_string=False
-    else:
-        if ch=='"': in_string=True
-        elif ch=="{": depth+=1
-        elif ch=="}":
-            depth-=1
-            if depth==0:
-                profile_end=idx+1
-                break
-if profile_end < 0: raise SystemExit("FAIL showProfile closing brace not found")
+# Keep the remainder intact and replace only the local row helper within it.
+profile_end=len(ms)
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL Profile row boundaries not found")
 profile_block=ms[profile_pos:profile_end]
@@ -352,27 +295,8 @@ ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
 profile_pos=ms.rfind("\n",0,profile_fn)+1
-profile_open=ms.find("{",profile_fn)
-if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
-depth=1
-in_string=False
-escaped=False
-profile_end=-1
-for idx in range(profile_open+1,len(ms)):
-    ch=ms[idx]
-    if in_string:
-        if escaped: escaped=False
-        elif ch=="\\\\": escaped=True
-        elif ch=='"': in_string=False
-    else:
-        if ch=='"': in_string=True
-        elif ch=="{": depth+=1
-        elif ch=="}":
-            depth-=1
-            if depth==0:
-                profile_end=idx+1
-                break
-if profile_end < 0: raise SystemExit("FAIL showProfile closing brace not found")
+# Keep the remainder intact and replace only the local row helper within it.
+profile_end=len(ms)
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL final Profile source boundaries missing")
 profile_block=ms[profile_pos:profile_end]
