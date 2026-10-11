@@ -184,7 +184,7 @@ ms=ms[:editor_start]+editor+ms[editor_end:]
 # Final, idempotent My Profile row tap fix, applied after all earlier profile edits.
 # Make the entire row consume touches before child TextViews can intercept them.
 profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("\\nprivate fun savedFavoriteNames",profile_pos)
+profile_end=ms.find("\nprivate fun savedFavoriteNames",profile_pos)
 if profile_pos >= 0 and profile_end > profile_pos:
     profile_block=ms[profile_pos:profile_end]
     old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
