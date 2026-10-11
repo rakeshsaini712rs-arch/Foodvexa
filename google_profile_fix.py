@@ -165,9 +165,9 @@ if 'private fun showProfileEditor(' not in ms:
  content.addView(primaryButton("📍  Manage Address Book"){showAddressBook()},margin(0,0,0,10))
 }
 '''
-    idx=ms.rfind("\\n}")
+    idx=ms.rfind("\n}")
     if idx<0: raise SystemExit("Cannot restore Profile editor: MainActivity class end missing")
-    ms=ms[:idx]+"\\n"+editor_method+"\\n"+ms[idx:]
+    ms=ms[:idx]+"\n"+editor_method+"\n"+ms[idx:]
     print("RESTORED missing showProfileEditor method")
 
 if 'private fun showProfileEditor(' not in ms:
