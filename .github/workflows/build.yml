@@ -509,6 +509,42 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
+      - name: Force My Profile row action after all source transforms
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          start=s.find("private fun showProfile(){")
+          if start < 0: raise SystemExit("Customer showProfile() missing")
+          end=s.find("\\nprivate fun ", start+1)
+          if end < 0: raise SystemExit("Cannot find end of customer showProfile()")
+          block=s[start:end]
+          old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
+          new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;setOnClickListener{action()}}'''
+          if old in block: block=block.replace(old,new,1)
+          # The text and arrow explicitly route taps to the row action too.
+          old_title='''  texts.addView(label(title,16f,true,Color.WHITE))'''
+          new_title='''  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})'''
+          if old_title in block: block=block.replace(old_title,new_title,1)
+          old_sub='''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))'''
+          new_sub='''  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}},margin(0,3,0,0))'''
+          if old_sub in block: block=block.replace(old_sub,new_sub,1)
+          old_arrow='''  box.addView(label("›",24f,true,Color.LTGRAY))'''
+          new_arrow='''  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})'''
+          if old_arrow in block: block=block.replace(old_arrow,new_arrow,1)
+          if 'item("👤  My Profile"' not in block or '{showProfileEditor()}' not in block:
+              raise SystemExit("My Profile row action missing; refusing to claim fix")
+          if old_title not in s and new_title not in block:
+              raise SystemExit("My Profile title click hook could not be applied")
+          s=s[:start]+block+s[end:]
+          if "private fun showProfileEditor()" not in s:
+              raise SystemExit("My Profile editor method missing after transformations")
+          p.write_text(s,encoding="utf-8")
+          print("PASS: My Profile title, subtitle, arrow and row invoke showProfileEditor()")
+          print("PASS: My Profile editor exists in final customer source")
+          PY
+
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
