@@ -242,7 +242,38 @@ private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){ showHome() }
 }
-private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,primaryText),margin(0,8,0,18))};private fun showOrders(){setupBase(2);content.addView(label("My Orders",24f,true,primaryText),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,secondaryText),margin(0,8,0,8))else{content.addView(label("Order",20f,true,primaryText),margin(0,0,0,10));content.addView(label(legacy,16f,false,primaryText),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
+private fun showCart(){
+ setupBase(3)
+ content.addView(label("Your Cart",24f,true,primaryText),margin(0,8,0,12))
+ val entries=cart.entries.filter{it.value>0}
+ if(entries.isEmpty()){
+  content.addView(label("Your cart is empty",18f,true,secondaryText),margin(0,8,0,8))
+  content.addView(primaryButton("Browse Food"){showHome(0)},margin(0,8,0,8))
+  return
+ }
+ var subtotal=0
+ entries.forEach{(name,qty)->
+  val p=products.firstOrNull{it.name==name}
+  if(p!=null){
+   subtotal+=p.price*qty
+   val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(Color.rgb(38,29,22),14)}
+   val details=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+   details.addView(label(p.name,16f,true,primaryText))
+   details.addView(label("₹${p.price} each  •  ₹${p.price*qty}",13f,false,secondaryText),margin(0,4,0,0))
+   card.addView(details,LinearLayout.LayoutParams(0,-2,1f))
+   val minus=primaryButton("−"){if((cart[name]?:0)>1)cart[name]=(cart[name]?:0)-1 else cart.remove(name);saveCart();updateCartBadge();showCart()}
+   card.addView(minus,LinearLayout.LayoutParams(dp(38),dp(38)))
+   card.addView(label(qty.toString(),16f,true,primaryText).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(32),dp(38)))
+   val plus=primaryButton("+"){cart[name]=(cart[name]?:0)+1;saveCart();updateCartBadge();showCart()}
+   card.addView(plus,LinearLayout.LayoutParams(dp(38),dp(38)))
+   content.addView(card,margin(0,0,0,10))
+  }
+ }
+ content.addView(label("Subtotal: ₹$subtotal",20f,true,primaryText),margin(0,10,0,6))
+ content.addView(label("Delivery fee: ₹30",14f,false,secondaryText),margin(0,0,0,6))
+ content.addView(label("Total: ₹${subtotal+30}",22f,true,primaryText),margin(0,0,0,14))
+ content.addView(primaryButton("PLACE ORDER  •  ₹${subtotal+30}"){placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
+}private fun showOrders(){setupBase(2);content.addView(label("My Orders",24f,true,primaryText),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,secondaryText),margin(0,8,0,8))else{content.addView(label("Order",20f,true,primaryText),margin(0,0,0,10));content.addView(label(legacy,16f,false,primaryText),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
  setupBase(4)
  val user=FirebaseAuth.getInstance().currentUser
  val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{user?.displayName.orEmpty()}
@@ -305,7 +336,7 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
  item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
  item("⭐  Feedback","Share your feedback"){showFeedback()}
  item("ℹ️  About","About Foodvexa"){
-  AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Food ordering app for Samosa King.").setPositiveButton("OK",null).show()
+  AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Foodvexa — Taste the Happiness. Food ordering and delivery app.").setPositiveButton("OK",null).show()
  }
  item("🚪  Logout","Sign out"){
     val saved=prefs.edit().putBoolean("force_login",true).commit()
