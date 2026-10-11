@@ -31,8 +31,23 @@ profile_row_old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.H
 profile_row_new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
 if profile_row_old in ms:
     ms=ms.replace(profile_row_old,profile_row_new,1)
-elif 'descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS' not in ms:
-    print("NOTE Profile row anchor differs; tap reliability patch skipped safely")
+else:
+    # The earlier transforms alter whitespace and properties, so patch the actual
+    # helper declaration by line instead of silently skipping the tap fix.
+    import re
+    rows=ms.splitlines(keepends=True)
+    patched=False
+    for idx,line in enumerate(rows):
+        if "val box=LinearLayout(this).apply{" in line and "setOnClickListener{action()}" in line:
+            if "descendantFocusability=" not in line:
+                line=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
+            rows[idx]=line
+            patched=True
+            break
+    if not patched:
+        raise SystemExit("Could not patch My Profile row container click listener")
+    ms="".join(rows)
+    print("PASS My Profile row container patched by line match")
 
 # Persist the Google identity. Accept either the original or a previously patched login block.
 if 'putString("google_uid", auth.currentUser?.uid.orEmpty())' not in ls:
