@@ -258,19 +258,14 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
    background=rounded(Color.rgb(38,38,44),16)
    isClickable=true
    isFocusable=true
+   descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
    setOnClickListener { action() }
-   setOnTouchListener { view, event ->
-    if(event.action==android.view.MotionEvent.ACTION_UP){
-     view.performClick()
-    }
-    false
-   }
   }
-  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=true;isFocusable=false;setOnClickListener{action()}}
-  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=false;setOnClickListener{action()}})
-  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=false;setOnClickListener{action()}},margin(0,3,0,0))
+  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
+  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
+  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
   box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
-  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=false;setOnClickListener{action()}})
+  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
   content.addView(box,margin(0,0,0,10))
  }
  item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}
