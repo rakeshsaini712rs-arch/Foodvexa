@@ -38,12 +38,15 @@ else:
     rows=ms.splitlines(keepends=True)
     patched=False
     for idx,line in enumerate(rows):
-        if "val box=LinearLayout(this).apply{" in line and "setOnClickListener{action()}" in line:
-            if "descendantFocusability=" not in line:
-                line=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
-            rows[idx]=line
-            patched=True
-            break
+        if "val box=LinearLayout(this).apply{" in line:
+            nearby="".join(rows[idx:min(idx+16,len(rows))])
+            # Already patched multiline profile row: keep explicit tap handling and don't
+            # demand the old one-line setOnClickListener anchor.
+            if "setOnClickListener" in nearby and ("isClickable=true" in nearby):
+                if "descendantFocusability=" not in nearby and "setOnTouchListener" not in nearby:
+                    rows[idx]=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
+                patched=True
+                break
     if not patched:
         raise SystemExit("Could not patch My Profile row container click listener")
     ms="".join(rows)
