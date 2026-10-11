@@ -251,6 +251,9 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
   content.addView(accountCard,margin(0,0,0,16))
  }
  fun item(title:String, subtitle:String="", action:()->Unit={}){
+  // Use one shared click action on the row and every visible child. This avoids
+  // taps being swallowed by TextViews/LinearLayouts on different Android versions.
+  val clickAction=View.OnClickListener { action() }
   val box=LinearLayout(this).apply{
    orientation=LinearLayout.HORIZONTAL
    gravity=Gravity.CENTER_VERTICAL
@@ -258,14 +261,36 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
    background=rounded(Color.rgb(38,38,44),16)
    isClickable=true
    isFocusable=true
-   descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
-   setOnClickListener { action() }
+   importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_YES
+   setOnClickListener(clickAction)
+   setOnTouchListener { view,event ->
+    if(event.action==android.view.MotionEvent.ACTION_UP){
+     view.performClick()
+    }
+    false
+   }
   }
-  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
-  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
-  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
+  val texts=LinearLayout(this).apply{
+   orientation=LinearLayout.VERTICAL
+   isClickable=true
+   isFocusable=true
+   setOnClickListener(clickAction)
+  }
+  val titleView=label(title,16f,true,Color.WHITE).apply{
+   isClickable=true;isFocusable=false;setOnClickListener(clickAction)
+  }
+  texts.addView(titleView)
+  if(subtitle.isNotBlank()){
+   val subtitleView=label(subtitle,12f,false,Color.LTGRAY).apply{
+    isClickable=true;isFocusable=false;setOnClickListener(clickAction)
+   }
+   texts.addView(subtitleView,margin(0,3,0,0))
+  }
   box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
-  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
+  val arrow=label("›",24f,true,Color.LTGRAY).apply{
+   isClickable=true;isFocusable=false;setOnClickListener(clickAction)
+  }
+  box.addView(arrow)
   content.addView(box,margin(0,0,0,10))
  }
  item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}
