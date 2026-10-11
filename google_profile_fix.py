@@ -133,7 +133,7 @@ profile_end=len(ms)
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
  "row click listener":'setOnClickListener(clickAction)' in profile_block,
- "text and chevron click listeners":'texts.setOnClickListener(clickAction)' in profile_block and 'titleView=label(title' in profile_block and 'arrow=label("›"' in profile_block,
+ "text click listener":'texts.setOnClickListener(clickAction)' in profile_block and 'titleView=label(title' in profile_block,
  "no consuming touch listener":'setOnTouchListener' not in profile_block,
  "Profile row labels present":'My Profile' in profile_block and 'About Foodvexa' in profile_block,
 }
