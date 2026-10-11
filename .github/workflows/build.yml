@@ -526,7 +526,7 @@ jobs:
           # Explicitly attach the same action to the row and each visible child.
           # Android child views do not reliably bubble taps to a clickable parent.
           box_start=block.find('val box=LinearLayout(this).apply{')
-          box_end=block.find('\\n  val texts=',box_start)
+          box_end=block.find('\n  val texts=',box_start)
           if box_start < 0 or box_end < 0:
               raise SystemExit("Cannot locate My Profile row container")
           row_decl=block[box_start:box_end]
