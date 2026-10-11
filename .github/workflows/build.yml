@@ -416,8 +416,6 @@ jobs:
         run: python3 dark_premium_home.py
       - name: Fix clipped category labels
         run: python3 category_label_fix.py
-      - name: Apply premium cart redesign and empty-cart fix
-        run: python3 cart_premium_redesign.py
       - name: VERIFY exact final patch
         run: |
           python3 - <<'PY'
@@ -506,9 +504,6 @@ jobs:
           print("PASS customer logout action replaced as a balanced Kotlin block")
           print("PASS LoginActivity force-login route verified")
           PY
-
-      - name: Repair Kotlin class scope after source transforms
-        run: python3 repair_kotlin_scope.py
 
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
