@@ -5,6 +5,10 @@ main=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
 ls=login.read_text(encoding="utf-8")
 ms=main.read_text(encoding="utf-8")
 
+# Ensure ViewGroup is imported before the customer profile tap patch references it.
+if 'import android.view.ViewGroup' not in ms:
+    ms=ms.replace('import android.view.View\\n','import android.view.View\\nimport android.view.ViewGroup\\n',1)
+
 # Make every Profile row reliably tappable, including its text and chevron children.
 # This is a customer-app-only transformation; no admin sources are touched.
 profile_row_old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
