@@ -47,7 +47,7 @@ class MainActivity:AppCompatActivity(){
   val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
   val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0);setBackgroundColor(Color.TRANSPARENT)}
   val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true}
-  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(10),dp(16),dp(84));clipToPadding=false}
+  content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(4),dp(8),dp(4),dp(84));clipToPadding=false}
   scroll.addView(content,FrameLayout.LayoutParams(-1,-1))
   shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))
   shell.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
@@ -155,9 +155,9 @@ val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCate
 var row:LinearLayout?=null
 filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
-    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
+    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=rounded(Color.rgb(38,29,22),16);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-    card.addView(pic,LinearLayout.LayoutParams(-1,dp(155)))
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(175)))
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
