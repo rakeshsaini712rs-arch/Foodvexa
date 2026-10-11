@@ -221,10 +221,6 @@ helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
    isFocusable=true
    descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
    setOnClickListener{action()}
-   setOnTouchListener{v,event->
-    if(event.action==android.view.MotionEvent.ACTION_UP)v.performClick()
-    true
-   }
   }
   val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
   texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
@@ -237,19 +233,25 @@ helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
 profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
 ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 
-# Verify the final helper itself, not merely some unrelated click listener.
+# Fail the build unless all six requested Profile rows retain working actions.
 profile_pos=ms.find("private fun showProfile(){")
 profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+if profile_pos < 0 or profile_end <= profile_pos:
+    raise SystemExit("FAIL final Profile source boundaries missing")
 profile_block=ms[profile_pos:profile_end]
-checks_profile={
+profile_checks={
  "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in profile_block,
- "row uses performClick on touch-up":'if(event.action==android.view.MotionEvent.ACTION_UP)v.performClick()' in profile_block,
- "row has click listener":'setOnClickListener{action()}' in profile_block,
- "children do not intercept taps":'isClickable=false;isFocusable=false' in profile_block,
- "focus descendants blocked":'descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS' in profile_block,
+ "Collection routes to collection screen":'item("❤️  Collection","Your saved items"){showCollection()}' in profile_block,
+ "Payment Settings routes to settings":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}' in profile_block,
+ "Call Support has call/WhatsApp dialog":'item("📞  Call Support","Call or WhatsApp support"){' in profile_block and 'setTitle("Contact Support")' in profile_block,
+ "Feedback routes to feedback screen":'item("⭐  Feedback","Share your feedback"){showFeedback()}' in profile_block,
+ "About opens information dialog":'item("ℹ️  About","About Foodvexa"){' in profile_block and 'setTitle("About Foodvexa")' in profile_block,
+ "each row has standard click listener":'setOnClickListener{action()}' in profile_block,
+ "row children are not clickable":'isClickable=false;isFocusable=false' in profile_block,
+ "no touch listener consumes row events":'setOnTouchListener' not in profile_block,
 }
-for k,v in checks_profile.items(): print(("PASS " if v else "FAIL ")+k)
-if not all(checks_profile.values()): raise SystemExit("Profile tap-routing verification failed")
+for name,ok in profile_checks.items(): print(("PASS " if ok else "FAIL ")+name)
+if not all(profile_checks.values()): raise SystemExit("Profile action verification failed")
 
 checks={
  "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
