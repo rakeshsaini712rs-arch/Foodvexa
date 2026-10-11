@@ -517,78 +517,48 @@ jobs:
           s=p.read_text(encoding="utf-8")
           start=s.find("private fun showProfile(){")
           if start < 0: raise SystemExit("Customer showProfile() missing")
-          end=s.find("private fun ", start+1)
+          end=s.find("private fun savedFavoriteNames", start)
           if end < 0: raise SystemExit("Cannot find end of customer showProfile()")
           block=s[start:end]
-          old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
-          new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;setOnClickListener{action()}}'''
-          if old in block: block=block.replace(old,new,1)
-          # Explicitly attach the same action to the row and each visible child.
-          # Android child views do not reliably bubble taps to a clickable parent.
-          box_start=block.find('val box=LinearLayout(this).apply{')
-          box_end=block.find('\n  val texts=',box_start)
-          if box_start < 0 or box_end < 0:
-              raise SystemExit("Cannot locate My Profile row container")
-          row_decl=block[box_start:box_end]
-          row_decl=row_decl.replace('isClickable=false;isFocusable=false','isClickable=true;isFocusable=true')
-          if 'setOnClickListener{action()}' not in row_decl:
-              row_decl=row_decl[:-1]+';setOnClickListener{action()}}'
-          block=block[:box_start]+row_decl+block[box_end:]
-          block=block.replace(
-              'texts.addView(label(title,16f,true,Color.WHITE))',
-              'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})',1)
-          block=block.replace(
-              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
-              'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}},margin(0,3,0,0))',1)
-          block=block.replace(
-              'box.addView(label("›",24f,true,Color.LTGRAY))',
-              'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=true;setOnClickListener{action()}})',1)
-          # Source transforms may normalize emoji spacing or row labels. Verify the
-          # actual row action semantically, not by requiring one exact emoji string.
-          import re
-          row_match = re.search(r'item\([^\n]*My Profile[^\n]*\)', block)
-          if row_match is None:
-              raise SystemExit("Customer My Profile row missing from showProfile()")
-          # Kotlin row expressions contain nested lambdas, so do not parse the
-          # action using a flat regular expression. Preserve the declared action.
-          # The checked-in customer source already wires this row to
-          # showProfileEditor(); earlier transforms can relocate that call.
-          # Confirm the editor exists globally instead of requiring it in this slice.
-          # The editor may be restored immediately below if a transform removed it.
-          if old_title in block:
-              block=block.replace(old_title,new_title,1)
-          elif new_title not in block:
-              # Entire row is clickable, so avoid failing on harmless formatting changes.
-              pass
-          s=s[:start]+block+s[end:]
-          if "private fun showProfileEditor()" not in s:
-              # Some earlier transforms replace the editor method. Restore a
-              # safe, working dialog entry point in the customer activity.
-              # Insert before the final class brace; helper names vary across source transforms.
-              pos = s.rfind("\n}")
-              if pos < 0:
-                  raise SystemExit("Cannot locate MainActivity class closing brace")
-              fallback = '''private fun showProfileEditor(){
-            val user=FirebaseAuth.getInstance().currentUser
-            val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
-            val mobile=EditText(this).apply{hint="Mobile number";inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setText(prefs.getString("profile_mobile","").orEmpty())}
-            val fields=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0);addView(name);addView(mobile)}
-            AlertDialog.Builder(this).setTitle("My Profile").setView(fields)
-              .setNegativeButton("CANCEL",null)
-              .setPositiveButton("SAVE"){_,_->
-                prefs.edit().putString("profile_name",name.text.toString().trim())
-                  .putString("profile_mobile",mobile.text.toString().trim()).apply()
-                Toast.makeText(this,"Profile saved",Toast.LENGTH_SHORT).show()
-                showProfile()
-              }.show()
+          helper_start=block.find(" fun item(title:String")
+          if helper_start < 0: helper_start=block.find("fun item(title:String")
+          first_row=block.find('item("👤  My Profile"', helper_start)
+          if helper_start < 0 or first_row < 0:
+              raise SystemExit("Could not locate profile item helper or My Profile row")
+          helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
+            val box=LinearLayout(this).apply{
+              orientation=LinearLayout.HORIZONTAL
+              gravity=Gravity.CENTER_VERTICAL
+              setPadding(dp(16),dp(12),dp(12),dp(12))
+              background=rounded(Color.rgb(38,38,44),16)
+              isClickable=true
+              isFocusable=true
+              descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS
+              setOnClickListener{action()}
+            }
+            val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
+            val titleView=label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false}
+            texts.addView(titleView)
+            if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
+            box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+            box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
+            content.addView(box,margin(0,0,0,10))
           }
           '''
-              s=s[:pos]+fallback+s[pos:]
+          block=block[:helper_start]+helper+block[first_row:]
+          # Fail early unless the My Profile row directly opens its editor.
+          if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' not in block:
+              import re
+              if not re.search(r'item\([^\n]*My Profile[^\n]*\)\s*\{\s*showProfileEditor\(\)\s*\}',block):
+                  raise SystemExit("My Profile row is not wired to showProfileEditor()")
+          s=s[:start]+block+s[end:]
           if "private fun showProfileEditor()" not in s:
-              raise SystemExit("Could not restore My Profile editor")
+              raise SystemExit("My Profile editor method missing")
+          if "descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS" not in block:
+              raise SystemExit("My Profile row tap handling not applied")
           p.write_text(s,encoding="utf-8")
-          print("PASS: My Profile title, subtitle, arrow and row invoke showProfileEditor()")
-          print("PASS: My Profile editor exists in final customer source")
+          print("PASS: Profile rows use a deterministic parent click target")
+          print("PASS: My Profile opens the editor")
           PY
 
       - name: Build customer and admin debug APKs
