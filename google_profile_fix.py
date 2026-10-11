@@ -94,21 +94,32 @@ helper_end=profile_block.find(' item("👤  My Profile"', helper_start)
 if helper_start < 0 or helper_end <= helper_start:
     raise SystemExit("FAIL Profile item helper boundaries not found before editor branch")
 helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
+  val clickAction=View.OnClickListener{
+   try{action()}catch(e:Exception){
+    android.util.Log.e("FoodvexaProfile","Action failed: "+title,e)
+    Toast.makeText(this,"Unable to open "+title,Toast.LENGTH_SHORT).show()
+   }
+  }
   val box=LinearLayout(this).apply{
    orientation=LinearLayout.HORIZONTAL
    gravity=Gravity.CENTER_VERTICAL
    setPadding(dp(16),dp(12),dp(12),dp(12))
+   minimumHeight=dp(60)
    background=rounded(Color.rgb(38,38,44),16)
    isClickable=true
    isFocusable=true
-   descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
-   setOnClickListener{action()}
+   setOnClickListener(clickAction)
   }
-  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
-  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
-  if(subtitle.isNotBlank())texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
+  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=true;isFocusable=true;setOnClickListener(clickAction)}
+  val titleView=label(title,16f,true,Color.WHITE).apply{isClickable=true;isFocusable=false;setOnClickListener(clickAction)}
+  texts.addView(titleView)
+  if(subtitle.isNotBlank()){
+   val subtitleView=label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=true;isFocusable=false;setOnClickListener(clickAction)}
+   texts.addView(subtitleView,margin(0,3,0,0))
+  }
   box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
-  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
+  val arrow=label("›",24f,true,Color.LTGRAY).apply{isClickable=true;isFocusable=false;setOnClickListener(clickAction)}
+  box.addView(arrow)
   content.addView(box,margin(0,0,0,10))
  }
 '''
@@ -121,8 +132,8 @@ profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_end=len(ms)
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
- "standard row click listener":'setOnClickListener{action()}' in profile_block,
- "child views passive":'isClickable=false;isFocusable=false' in profile_block,
+ "row click listener":'setOnClickListener(clickAction)' in profile_block,
+ "text and chevron click listeners":'texts.setOnClickListener(clickAction)' in profile_block and 'titleView=label(title' in profile_block and 'arrow=label("›"' in profile_block,
  "no consuming touch listener":'setOnTouchListener' not in profile_block,
  "Profile row labels present":'My Profile' in profile_block and 'About Foodvexa' in profile_block,
 }
