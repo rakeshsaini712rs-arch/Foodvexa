@@ -79,6 +79,55 @@ if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in 
         ms=ms.replace(startup,'setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}else{showHome()}}',1)
     else:
         print("NOTE startup anchor differs; profile gate not inserted")
+# Apply and verify Profile row routing BEFORE the optional editor enhancement.
+# The old early-exit path skipped the click fix entirely when the editor modifier differed.
+profile_pos=ms.find("private fun showProfile(){")
+profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+if profile_pos < 0 or profile_end <= profile_pos:
+    raise SystemExit("FAIL Profile row boundaries not found before editor branch")
+profile_block=ms[profile_pos:profile_end]
+helper_start=profile_block.find(" fun item(title:String, subtitle:String=\"\"")
+helper_end=profile_block.find(' item("👤  My Profile"', helper_start)
+if helper_start < 0 or helper_end <= helper_start:
+    raise SystemExit("FAIL Profile item helper boundaries not found before editor branch")
+helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
+  val box=LinearLayout(this).apply{
+   orientation=LinearLayout.HORIZONTAL
+   gravity=Gravity.CENTER_VERTICAL
+   setPadding(dp(16),dp(12),dp(12),dp(12))
+   background=rounded(Color.rgb(38,38,44),16)
+   isClickable=true
+   isFocusable=true
+   descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
+   setOnClickListener{action()}
+  }
+  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
+  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
+  if(subtitle.isNotBlank())texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
+  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
+  content.addView(box,margin(0,0,0,10))
+ }
+'''
+profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
+ms=ms[:profile_pos]+profile_block+ms[profile_end:]
+profile_pos=ms.find("private fun showProfile(){")
+profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_block=ms[profile_pos:profile_end]
+profile_checks={
+ "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in profile_block,
+ "Collection routes to collection screen":'item("❤️  Collection","Your saved items"){showCollection()}' in profile_block,
+ "Payment Settings routes to settings":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}' in profile_block,
+ "Call Support has call/WhatsApp dialog":'item("📞  Call Support","Call or WhatsApp support"){' in profile_block and 'setTitle("Contact Support")' in profile_block,
+ "Feedback routes to feedback screen":'item("⭐  Feedback","Share your feedback"){showFeedback()}' in profile_block,
+ "About opens information dialog":'item("ℹ️  About","About Foodvexa"){' in profile_block and 'setTitle("About Foodvexa")' in profile_block,
+ "standard row click listener":'setOnClickListener{action()}' in profile_block,
+ "child views passive":'isClickable=false;isFocusable=false' in profile_block,
+ "no consuming touch listener":'setOnTouchListener' not in profile_block,
+}
+for name,ok in profile_checks.items(): print(("PASS " if ok else "FAIL ")+name)
+if not all(profile_checks.values()): raise SystemExit("Profile action verification failed")
+
 if 'private fun showProfileEditor(' not in ms:
     print("NOTE profile editor absent after transformations; skipping editor patch safely")
     login.write_text(ls,encoding="utf-8")
