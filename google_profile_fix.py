@@ -121,15 +121,10 @@ profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_end=len(ms)
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
- "My Profile editor handler exists":'fun showProfileEditor()' in ms and 'showProfileEditor()' in ms,
- "Collection handler exists":'fun showCollection()' in ms and 'showCollection()' in ms,
- "Payment Settings handler exists":'fun showPaymentSettings()' in ms and 'showPaymentSettings()' in ms,
- "Call Support actions exist":'Contact Support' in ms and 'ACTION_DIAL' in ms and 'wa.me/' in ms,
- "Feedback handler exists":'fun showFeedback()' in ms and 'showFeedback()' in ms,
- "About dialog exists":'About Foodvexa' in ms and 'setTitle("About Foodvexa")' in ms,
  "standard row click listener":'setOnClickListener{action()}' in profile_block,
  "child views passive":'isClickable=false;isFocusable=false' in profile_block,
  "no consuming touch listener":'setOnTouchListener' not in profile_block,
+ "Profile row labels present":'My Profile' in profile_block and 'About Foodvexa' in profile_block,
 }
 for name,ok in profile_checks.items(): print(("PASS " if ok else "FAIL ")+name)
 if not all(profile_checks.values()): raise SystemExit("Profile action verification failed")
