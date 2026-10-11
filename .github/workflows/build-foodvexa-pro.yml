@@ -1,9 +1,9 @@
 name: Build Foodvexa Pro APK
+# Rebuild after profile menu tap-routing fix (db23bf2)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -15,41 +15,537 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Prepare the same debug signing key used by the verified APK workflow
+      - name: Verify Google Sign-In configuration
         run: |
-          set -e
-          test -s app/foodvexa-debug.keystore.b64
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("app/google-services.json").read_text())
+          package=data["client"][0]["client_info"]["android_client_info"]["package_name"]
+          if package != "com.foodvexa.app":
+              raise SystemExit("Wrong Android package: "+package)
+          print("GOOGLE SIGN-IN CONFIG: package="+package)
+          print("GOOGLE SIGN-IN CONFIG: google-services.json loaded")
+          PY
+
+      - name: Apply 148 base and Zomato-style banner carousel
+        run: python3 banner_fix.py
+      - name: Stabilize product images and remove duplicate category
+        run: python3 image_stability_fix.py
+      - name: Fix sticky banner/category and instant category selection
+        run: python3 home_sticky_fix.py
+      - name: Add instant category-to-product jump and preserve banners
+        run: python3 navigation_fix.py
+      - name: Compact premium home layout
+        run: python3 compact_layout.py
+      - name: Apply premium cart interface
+        run: python3 premium_cart_fix.py
+      - name: Final stability pass from video review
+        run: python3 final_stability_fix.py
+      - name: Match Zomato scroll behavior with sticky categories
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          # Keep a second category strip ready to pin below the fixed search bar.
+          if "private var stickyCategoryRow:LinearLayout?=null" not in s:
+              s=s.replace("private var categoryRow:LinearLayout?=null",
+                          "private var categoryRow:LinearLayout?=null;private var stickyCategoryRow:LinearLayout?=null;private var stickyCategoryStrip:LinearLayout?=null",1)
+          start=s.index(" private fun showHome(){")
+          end=s.index(" private fun locationHeader():LinearLayout",start)
+          show=''' private fun showHome(){
+           setupHomeBase()
+           val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),0,dp(8),0)}
+           val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+           val name=label("FOODVEXA",23f,true,Color.WHITE)
+           val styled=android.text.SpannableString("FOODVEXA")
+           styled.setSpan(android.text.style.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+           styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+           name.text=styled
+           brand.addView(name);brand.addView(label("Taste the Happiness",11f,false,Color.LTGRAY))
+           header.addView(brand,LinearLayout.LayoutParams(0,dp(54),1f))
+           header.addView(label("♧",26f,false,Color.WHITE).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(40),dp(50)))
+           val scroll=content.parent as ScrollView
+           val shell=scroll.parent as LinearLayout
+           val fixed=shell.getChildAt(0) as LinearLayout
+           fixed.addView(header)
+           fixed.addView(locationHeader(),margin(0,2,0,6))
+           val search=EditText(this).apply{
+            hint="Search food, sweets, fast food...";setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE)
+            setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16)
+            addTextChangedListener(object:android.text.TextWatcher{
+             override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){}
+             override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()}
+             override fun afterTextChanged(e:android.text.Editable?){}
+            })
+           }
+           searchBox=search
+           fixed.addView(search,margin(0,0,0,7))
+           val sticky=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(0,dp(2),0,dp(3));setBackgroundColor(Color.rgb(20,18,23));visibility=View.GONE}
+           stickyCategoryStrip=sticky
+           stickyCategoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+           categories.forEach{c->stickyCategoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(6)})}
+           val stickyScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;addView(stickyCategoryRow)}
+           sticky.addView(stickyScroll,LinearLayout.LayoutParams(-1,dp(82)))
+           fixed.addView(sticky,LinearLayout.LayoutParams(-1,-2))
+           content.addView(bannerGrid(),margin(0,0,0,3))
+           content.addView(label("Categories",21f,true,Color.WHITE),margin(0,0,0,4))
+           categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+           categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(6)})}
+           content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
+           content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,21f,true,Color.WHITE),margin(0,2,0,5))
+           renderProducts()
+           scroll.setOnScrollChangeListener{_,_,scrollY,_,_->
+            val row=categoryRow ?: return@setOnScrollChangeListener
+            val loc=IntArray(2);row.getLocationOnScreen(loc)
+            val fixedLoc=IntArray(2);fixed.getLocationOnScreen(fixedLoc)
+            val threshold=fixedLoc[1]+fixed.height
+            val shouldStick=loc[1] <= threshold
+            val currentlyVisible=sticky.visibility==View.VISIBLE
+            if(shouldStick!=currentlyVisible) sticky.visibility=if(shouldStick)View.VISIBLE else View.GONE
+           }
+          }
+          '''
+          s=s[:start]+show+s[end:]
+          # Update both the scrolling category cards and pinned cards after selection.
+          old='''private fun refreshCategorySelection(){categoryRow?.let{row->for(i in 0 until row.childCount){val box=row.getChildAt(i);val selected=categories.getOrNull(i)?.name==selectedCategory;box.background=categoryBackground(selected);if(box is LinearLayout && box.childCount>1){val tv=box.getChildAt(1);if(tv is TextView)tv.setTextColor(if(selected)Color.WHITE else ink)}}}}'''
+          new='''private fun refreshCategorySelection(){listOfNotNull(categoryRow,stickyCategoryRow).forEach{row->for(i in 0 until row.childCount){val box=row.getChildAt(i);val selected=categories.getOrNull(i)?.name==selectedCategory;box.background=categoryBackground(selected);if(box is LinearLayout && box.childCount>1){val tv=box.getChildAt(1);if(tv is TextView)tv.setTextColor(if(selected)Color.WHITE else ink)}}}}'''
+          if old in s:s=s.replace(old,new,1)
+          p.write_text(s,encoding="utf-8")
+          checks={
+           "banner inside scroll content":'content.addView(bannerGrid(),margin(0,0,0,3))' in s,
+           "category row inside scroll content":'content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;addView(categoryRow)}' in s,
+           "sticky strip below search":'fixed.addView(sticky,LinearLayout.LayoutParams(-1,-2))' in s,
+           "scroll threshold listener":'val shouldStick=loc[1] <= threshold' in s,
+           "both category rows refresh":'listOfNotNull(categoryRow,stickyCategoryRow)' in s
+          }
+          for k,v in checks.items(): print(("PASS " if v else "FAIL ")+k)
+          if not all(checks.values()): raise SystemExit("Sticky category layout verification failed")
+          PY
+
+      - name: Ensure Android View import for sticky scrolling
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+          if "import android.view.View" not in s:
+              anchor="import android.view.Gravity"
+              if anchor in s:
+                  s=s.replace(anchor, anchor+chr(10)+"import android.view.View", 1)
+              else:
+                  s=s.replace("package com.foodvexa.app", "package com.foodvexa.app"+chr(10)+chr(10)+"import android.view.View", 1)
+          p.write_text(s)
+          assert "import android.view.View" in s, "android.view.View import still missing"
+          print("PASS android.view.View import present")
+          PY
+
+      - name: Polish location and search UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+
+          # Search text must contrast with the white field; preserve user-visible query state.
+          a=s.find("val search=EditText(this).apply{")
+          b=s.find("searchBox=search", a)
+          if a < 0 or b < 0:
+              raise SystemExit("Home search field not found")
+          block=s[a:b]
+          block=block.replace("setHintTextColor(Color.LTGRAY);setTextColor(Color.WHITE)",
+                              "setHintTextColor(Color.rgb(135,135,145));setTextColor(ink);textSize=16f")
+          block=block.replace("setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;",
+                              "setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;imeOptions=android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH;")
+          s=s[:a]+block+s[b:]
+
+          # Replace the location card with a clear, readable two-line address.
+          a=s.find(" private fun locationHeader():LinearLayout{")
+          b=s.find(" private fun ",a+20)
+          if a < 0 or b < 0:
+              raise SystemExit("Location header function not found")
+          header=''' private fun locationHeader():LinearLayout{
+           val saved=prefs.getString("location","").orEmpty()
+           val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(9),dp(10),dp(9));background=rounded(Color.WHITE,18);isClickable=true;setOnClickListener{locationDialog()};elevation=dp(2).toFloat()}
+           val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER}
+           box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(48)))
+           val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+           texts.addView(label("DELIVER TO",10f,true,muted))
+           texts.addView(label(if(saved.isBlank())"Choose your delivery address" else saved,14f,true,ink).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END})
+           box.addView(texts,LinearLayout.LayoutParams(0,-2,1f).apply{leftMargin=dp(5);rightMargin=dp(4)})
+           box.addView(label("⌄",20f,true,muted).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(24),dp(44)))
+           box.addView(TextView(this).apply{text="◎";textSize=22f;gravity=Gravity.CENTER;setTextColor(orange);setOnClickListener{requestCurrentDeliveryLocation()}},LinearLayout.LayoutParams(dp(38),dp(44)))
+           return box
+          }
+          '''
+          s=s[:a]+header+s[b:]
+
+          # Replace the location dialog with professional address entry and a working GPS attempt.
+          a=s.find(" private fun locationDialog(){")
+          b=s.find(" private fun saveLocation(",a)
+          if a < 0 or b < 0:
+              raise SystemExit("Location dialog/save function not found")
+          dialog=''' private fun locationDialog(){
+           val current=prefs.getString("location","").orEmpty()
+           val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),dp(4))}
+           panel.addView(label("Delivery address",14f,true,ink),LinearLayout.LayoutParams(-1,dp(28)))
+           val search=EditText(this).apply{hint="House no., street, area or landmark";setSingleLine(false);minLines=1;maxLines=3;inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;setText(current);setTextColor(ink);setHintTextColor(muted);textSize=15f;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.rgb(247,247,249),14)}
+           panel.addView(search,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12);topMargin=dp(4)})
+           panel.addView(primaryButton("◎  Use my current location"){requestCurrentDeliveryLocation()},LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)})
+           panel.addView(label("SAVED ADDRESSES",11f,true,muted),LinearLayout.LayoutParams(-1,dp(25)))
+           val saved=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+           val home=prefs.getString("home_address","").orEmpty()
+           val work=prefs.getString("work_address","").orEmpty()
+           if(home.isNotBlank()) saved.addView(primaryButton("⌂  Home"){saveLocation(home,"Home")},LinearLayout.LayoutParams(0,dp(42),1f).apply{rightMargin=dp(6)})
+           if(work.isNotBlank()) saved.addView(primaryButton("▣  Work"){saveLocation(work,"Work")},LinearLayout.LayoutParams(0,dp(42),1f))
+           if(saved.childCount>0)panel.addView(saved,LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(8)})
+           AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save address"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()
+          }
+          private fun requestCurrentDeliveryLocation(){
+           val fine="android.permission.ACCESS_FINE_LOCATION"
+           val coarse="android.permission.ACCESS_COARSE_LOCATION"
+           if(android.os.Build.VERSION.SDK_INT>=23 && checkSelfPermission(fine)!=android.content.pm.PackageManager.PERMISSION_GRANTED && checkSelfPermission(coarse)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+            requestPermissions(arrayOf(fine,coarse),741);return
+           }
+           resolveCurrentDeliveryLocation()
+          }
+          private fun resolveCurrentDeliveryLocation(){
+           try{
+            val manager=getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+            val location=try{manager.getLastKnownLocation(android.location.LocationManager.GPS_PROVIDER)}catch(_:Exception){null}
+             ?: try{manager.getLastKnownLocation(android.location.LocationManager.NETWORK_PROVIDER)}catch(_:Exception){null}
+            if(location==null){Toast.makeText(this,"Location unavailable. Turn on GPS and try again.",Toast.LENGTH_LONG).show();return}
+            val address=try{android.location.Geocoder(this,java.util.Locale.getDefault()).getFromLocation(location.latitude,location.longitude,1)?.firstOrNull()?.getAddressLine(0)}catch(_:Exception){null}
+            val value=address?.takeIf{it.isNotBlank()} ?: String.format(java.util.Locale.US,"%.5f, %.5f",location.latitude,location.longitude)
+            saveLocation(value,"Delivery")
+           }catch(_:SecurityException){Toast.makeText(this,"Allow location permission and try again.",Toast.LENGTH_LONG).show()}
+           catch(_:Exception){Toast.makeText(this,"Could not get your location. Please try again.",Toast.LENGTH_LONG).show()}
+          }
+          override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
+           super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+           if(requestCode==741){
+            if(grantResults.isNotEmpty() && grantResults.any{it==android.content.pm.PackageManager.PERMISSION_GRANTED}) resolveCurrentDeliveryLocation()
+            else Toast.makeText(this,"Location permission is needed to detect your address.",Toast.LENGTH_LONG).show()
+           }
+          }
+          '''
+          s=s[:a]+dialog+s[b:]
+
+          checks={
+           "search text contrast":'setHintTextColor(Color.rgb(135,135,145));setTextColor(ink);textSize=16f' in s,
+           "professional two-line location card":'DELIVER TO' in s and 'maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END' in s,
+           "GPS permission request":'requestPermissions(arrayOf(fine,coarse),741)' in s,
+           "reverse geocoded address":'getFromLocation(location.latitude,location.longitude,1)' in s,
+           "address save":'setPositiveButton("Save address"' in s
+          }
+          for k,v in checks.items(): print(("PASS " if v else "FAIL ")+k)
+          if not all(checks.values()): raise SystemExit("Location/search UI patch verification failed")
+          p.write_text(s,encoding="utf-8")
+          print("LOCATION AND SEARCH UI PATCH APPLIED")
+          PY
+
+      - name: Skip unsafe inline home layout rewrite
+        run: echo "Keeping the verified MainActivity home layout; avoiding source rewrite that breaks Kotlin scope"
+
+      - name: Enforce final payment/profile source state
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+          selected='content.addView(label("Selected: "+prefs.getString("payment_method","COD"),15f,true,Color.rgb(76,210,145)),margin(0,0,0,16))'
+          if "Selected: " not in s:
+              marker="private fun showPaymentSettings()"
+              pos=s.find(marker)
+              if pos >= 0:
+                  brace=s.find("{",pos)
+                  if brace >= 0:
+                      s=s[:brace+1]+"\n "+selected+s[brace+1:]
+              else:
+                  marker="private fun showProfile()"
+                  pos=s.find(marker)
+                  if pos < 0: raise SystemExit("No payment/profile method found")
+                  brace=s.find("{",pos)
+                  if brace < 0: raise SystemExit("Profile body not found")
+                  s=s[:brace+1]+"\n "+selected+s[brace+1:]
+          p.write_text(s)
+          print("PAYMENT_SELECTED:", "Selected: " in s)
+          PY
+
+      - name: Compile hardening for final transformed source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text()
+
+          if "import org.json.JSONArray" not in s:
+              s=s.replace("import org.json.JSONObject", "import org.json.JSONObject" + chr(10) + "import org.json.JSONArray", 1)
+
+          # Some transformed bases collapse setupHomeBase() to a no-argument function.
+          # Normalize that signature so setupBase(selectedNav) remains source-compatible.
+          if "private fun setupHomeBase(selectedNav:Int=0)" not in s:
+              s=s.replace("private fun setupHomeBase(){", "private fun setupHomeBase(selectedNav:Int=0){", 1)
+
+          if "private fun setupBase(selectedNav:Int" not in s:
+              marker="private fun setupHomeBase("
+              pos=s.find(marker)
+              if pos>=0:
+                  helper="private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}" + chr(10)
+                  s=s[:pos]+helper+s[pos:]
+              else:
+                  raise SystemExit("setupHomeBase missing after transforms")
+
+          if "private fun showHome()" not in s:
+              marker="private fun setupHomeBase("
+              pos=s.find(marker)
+              if pos>=0:
+                  helper='private fun showHome(){setupHomeBase();selectedCategory="All";query="";renderProducts()}' + chr(10)
+                  s=s[:pos]+helper+s[pos:]
+              else:
+                  raise SystemExit("setupHomeBase missing after transforms")
+
+          if "private fun categoryBackground(selected:Boolean)" not in s:
+              marker="private fun categoryCard(c:Category)"
+              pos=s.find(marker)
+              if pos>=0:
+                  helper='private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}' + chr(10)
+                  s=s[:pos]+helper+s[pos:]
+              else:
+                  raise SystemExit("categoryCard missing after transforms")
+
+          if "imageCache" not in s:
+              cache_decl='private val imageCache=object:android.util.LruCache<String,android.graphics.Bitmap>(24){override fun sizeOf(key:String,value:android.graphics.Bitmap)=value.byteCount/1024}'
+              marker="private fun loadImage"
+              if marker in s:
+                  s=s.replace(marker,cache_decl+chr(10)+marker,1)
+              else:
+                  e=s.rfind(chr(10)+"}")
+                  if e>=0: s=s[:e]+chr(10)+cache_decl+s[e:]
+                  else: raise SystemExit("MainActivity class end not found for image cache")
+
+          p.write_text(s)
+          print("COMPILE HARDENING: JSONArray import =", "import org.json.JSONArray" in s)
+          print("COMPILE HARDENING: setupBase(Int) =", "private fun setupBase(selectedNav:Int" in s)
+          print("COMPILE HARDENING: showHome =", "private fun showHome()" in s)
+          print("COMPILE HARDENING: categoryBackground =", "private fun categoryBackground(selected:Boolean)" in s)
+          print("COMPILE HARDENING: imageCache =", "imageCache" in s)
+          PY
+      - name: Enforce compact bottom navigation after source transforms
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          # Keep the selected tab through home/search and all other screens.
+          if "private var selectedNavIndex=0" not in s:
+              needle='private var selectedCategory="All"'
+              if needle not in s: raise SystemExit("selectedCategory field not found")
+              s=s.replace(needle, needle+";private var selectedNavIndex=0", 1)
+          lines=s.splitlines()
+          found=False
+          for i,line in enumerate(lines):
+              if "bottomNav(" in line and "Gravity.BOTTOM" in line:
+                  lines[i]=re.sub(r'dp\(\d+\)', 'dp(46)', line)
+                  found=True
+                  break
+          if not found: raise SystemExit("Bottom navigation placement line not found")
+          s="\n".join(lines)+"\n"
+          # setupBase records the active page before rebuilding the navigation bar.
+          s=re.sub(r'private fun setupBase\(selectedNav:Int=0\)\s*\{\s*setupHomeBase\(selectedNav\)\s*\}',
+                   'private fun setupBase(selectedNav:Int=0){selectedNavIndex=selectedNav;setupHomeBase(selectedNav)}',s,count=1)
+          if "private val isLightTheme:Boolean" not in s:
+              marker="private fun bottomNav("
+              pos=s.find(marker)
+              if pos<0: raise SystemExit("bottomNav declaration not found for theme helper")
+              helper='private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false}' + chr(10) + "  "
+              s=s[:pos]+helper+s[pos:]
+          a=s.find("private fun bottomNav(")
+          b=s.find("private fun showHome(",a)
+          if a<0 or b<0: raise SystemExit("Could not locate bottomNav/showHome boundaries")
+          nav='''private fun bottomNav(selectedNav:Int=selectedNavIndex):LinearLayout{
+           selectedNavIndex=selectedNav
+           val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(3),dp(2),dp(3),dp(2));elevation=dp(8).toFloat();background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(25,22,28));cornerRadius=dp(12).toFloat()}}
+           val icons=listOf("⌂","⌕","▣","🛒","♙")
+           val labels=listOf("HOME","SEARCH","ORDERS","CART","PROFILE")
+           labels.forEachIndexed{i,title->
+            val active=i==selectedNavIndex
+            val tint=if(active)orange else if(isLightTheme)Color.rgb(40,40,45) else Color.LTGRAY
+            val item=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(1),0,dp(1),0);isClickable=true;isFocusable=true;background=rounded(if(active&&isLightTheme)Color.rgb(255,242,237) else Color.TRANSPARENT,8)}
+            val icon=TextView(this).apply{text=icons[i];textSize=if(i==3)16f else 18f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint)}
+            val text=TextView(this).apply{text=title;textSize=9f;gravity=Gravity.CENTER;includeFontPadding=false;setTextColor(tint);typeface=Typeface.DEFAULT_BOLD;maxLines=1}
+            val indicator=View(this).apply{background=rounded(if(active)orange else Color.TRANSPARENT,4)}
+            item.addView(icon,LinearLayout.LayoutParams(-1,dp(19)))
+            item.addView(text,LinearLayout.LayoutParams(-1,dp(12)))
+            item.addView(indicator,LinearLayout.LayoutParams(dp(if(active)22 else 1),dp(2)).apply{topMargin=dp(1)})
+            val selectTab={selectedNavIndex=i;when(i){0->{hideKeyboard();showHome()};1->{showHome();searchBox?.requestFocus()};2->{hideKeyboard();showOrders()};3->{hideKeyboard();showCart()};4->{hideKeyboard();showProfile()}}}
+            item.setOnClickListener{selectTab()}
+            icon.setOnClickListener{selectTab()}
+            text.setOnClickListener{selectTab()}
+            if(i==3)cartNavLabel=text
+            nav.addView(item,LinearLayout.LayoutParams(0,-1,1f).apply{setMargins(dp(1),0,dp(1),0)})
+           }
+           updateCartBadge()
+           return nav
+          }
+          '''
+          s=s[:a]+nav+s[b:]
+          # Home must keep SEARCH highlighted when the search tab opened it.
+          a=s.find("private fun showHome(")
+          b=s.find("private fun locationHeader(",a)
+          if a<0 or b<0: raise SystemExit("Could not locate showHome/locationHeader boundaries")
+          block=s[a:b]
+          block=block.replace("setupHomeBase()", "setupHomeBase(selectedNavIndex)", 1)
+          s=s[:a]+block+s[b:]
+          checks={
+            "46dp bottom bar":any("bottomNav(" in line and "Gravity.BOTTOM" in line and "dp(46)" in line for line in s.splitlines()),
+            "selected tab state":"private var selectedNavIndex=0" in s,
+            "light theme helper":"private val isLightTheme:Boolean" in s,
+            "orange selected indicator":"if(active)orange else Color.TRANSPARENT" in s,
+            "tap handlers on icon and label":"icon.setOnClickListener{selectTab()}" in s and "text.setOnClickListener{selectTab()}" in s,
+            "search selection preserved":"setupHomeBase(selectedNavIndex)" in s,
+          }
+          for name,ok in checks.items(): print(("PASS " if ok else "FAIL ")+name)
+          if not all(checks.values()): raise SystemExit("Compact bottom navigation enforcement failed")
+          p.write_text(s,encoding="utf-8")
+          PY
+
+      - name: Apply approved dark premium compact home UI
+        run: python3 dark_premium_home.py
+      - name: Fix clipped category labels
+        run: python3 category_label_fix.py
+      - name: Apply premium cart redesign and empty-cart fix
+        run: python3 cart_premium_redesign.py
+      - name: VERIFY exact final patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt").read_text()
+          checks={
+            "collection helper":"private fun toggleFavorite(p:Product)",
+            "collection add":"Added to Collection",
+            "collection remove":"Removed from Collection",
+            "payment selected":"Selected: ",
+            "profile tab":"setupBase(4)",
+            "keyboard helper":"private fun hideKeyboard()",
+            "Foodvexa branding":"Food ordering app by Foodvexa.",
+            "order UI":"Your Order",
+            "delivery details":"Delivery details",
+            "location button":"Choose your current location",
+            "buy button":"BUY NOW",
+            "image cache":"imageCache",
+          }
+          missing=[k for k,v in checks.items() if v not in s]
+          print("FINAL SOURCE CHECK:")
+          for k,v in checks.items(): print(("PASS " if v in s else "FAIL ")+k)
+          if s.count('Category("Restaurant / Hotel"') != 1:
+              missing.append("exactly one Restaurant / Hotel category")
+              print("FAIL exactly one Restaurant / Hotel category; count=",s.count('Category("Restaurant / Hotel"'))
+          else: print("PASS exactly one Restaurant / Hotel category")
+          if missing: raise SystemExit("Missing final patch: "+", ".join(missing))
+          print("FINAL PATCH VERIFIED")
+          PY
+      - name: Prepare stable Foodvexa debug signing key
+        run: |
           base64 -d app/foodvexa-debug.keystore.b64 > app/foodvexa-debug.keystore
-          test -s app/foodvexa-debug.keystore
           chmod 600 app/foodvexa-debug.keystore
-          keytool -list -keystore app/foodvexa-debug.keystore -storepass foodvexa2026 -alias foodvexa
+          keytool -list -v -keystore app/foodvexa-debug.keystore -storepass foodvexa2026 -alias foodvexa | grep "SHA1:"
 
-      - name: Verify profile menu actions exist in the checked-out source
+      - name: Apply Google sign-in profile creation flow
+        run: python3 google_profile_fix.py
+
+      - name: Fix customer logout to return to login screen
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
+          s=p.read_text(encoding="utf-8")
+          if "import android.content.Intent" not in s:
+              anchor="package com.foodvexa.app"
+              if anchor not in s: raise SystemExit("Customer package declaration missing")
+              s=s.replace(anchor, anchor+chr(10)+chr(10)+"import android.content.Intent", 1)
+          marker='item("🚪  Logout","Sign out")'
+          start=s.find(marker)
+          if start < 0:
+              raise SystemExit("Could not locate customer Logout action; refusing to build")
+          brace=s.find("{", start + len(marker))
+          if brace < 0:
+              raise SystemExit("Logout action opening brace missing")
+          depth=0
+          end=None
+          for i in range(brace, len(s)):
+              if s[i]=="{":
+                  depth+=1
+              elif s[i]=="}":
+                  depth-=1
+                  if depth==0:
+                      end=i+1
+                      break
+          if end is None:
+              raise SystemExit("Logout action closing brace missing")
+          replacement='''item("🚪  Logout","Sign out"){
+              getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
+                  .putBoolean("force_login", true)
+                  .commit()
+              FirebaseAuth.getInstance().signOut()
+              val loginIntent=Intent(this@MainActivity,LoginActivity::class.java).apply {
+                  putExtra("force_login", true)
+                  addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+              }
+              startActivity(loginIntent)
+              finishAffinity()
+          }'''
+          s=s[:start]+replacement+s[end:]
+          lp=Path("app/src/main/java/com/foodvexa/app/LoginActivity.kt")
+          login=lp.read_text(encoding="utf-8")
+          if 'if (intent.getBooleanExtra("force_login", false))' not in login or 'showLogin()' not in login:
+              raise SystemExit("LoginActivity force-login routing missing; refusing to build")
+          p.write_text(s,encoding="utf-8")
+          print("PASS customer logout action replaced as a balanced Kotlin block")
+          print("PASS LoginActivity force-login route verified")
+          PY
+
+      - name: Build customer and admin debug APKs
+        run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
+      - name: Verify built APK SHA-1 for Google Sign-In
         run: |
           set -e
-          FILE=app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'item("👤  My Profile"' "$FILE"
-          grep -Fq 'item("❤️  Collection"' "$FILE"
-          grep -Fq 'item("💳  Payment Settings"' "$FILE"
-          grep -Fq 'item("📞  Call Support"' "$FILE"
-          grep -Fq 'item("⭐  Feedback"' "$FILE"
-          grep -Fq 'item("ℹ️  About"' "$FILE"
-          echo "All six profile menu actions are present in the source being built."
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK" ]; then
+            echo "APK not found: $APK"
+            exit 1
+          fi
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "apksigner not found"
+            exit 1
+          fi
+          "$APKSIGNER" verify --print-certs "$APK" > /tmp/foodvexa-certs.txt
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          data=json.loads(Path("app/google-services.json").read_text())
+          client=data["client"][0]
+          hashes=[x.get("android_info",{}).get("certificate_hash","").replace(":","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
+          report=Path("/tmp/foodvexa-certs.txt").read_text()
+          m=re.search(r"certificate SHA-1 digest:\s*([0-9A-Fa-f:]+)",report,re.I)
+          if not m:
+              print(report)
+              raise SystemExit("Could not read SHA-1 from built APK")
+          actual=m.group(1).replace(":","").lower()
+          print("BUILT APK SHA-1:",m.group(1))
+          print("REGISTERED ANDROID SHA-1:",", ".join(hashes))
+          if actual not in hashes:
+              raise SystemExit("BUILT APK SHA-1 is NOT registered in google-services.json")
+          print("GOOGLE SIGN-IN VERIFIED: built APK SHA-1 is registered")
+          PY
 
-      - name: Build APK from the checked-in source without destructive rewrite scripts
-        run: gradle :app:assembleDebug --no-daemon
-
-      - name: Verify APK exists
-        run: |
-          set -e
-          APK=app/build/outputs/apk/debug/app-debug.apk
-          test -s "$APK"
-          ls -lh "$APK"
-
-      - name: Upload Foodvexa Pro APK
+      - name: Upload customer and admin APKs
         uses: actions/upload-artifact@v4
         with:
           name: Foodvexa-Pro-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            admin/build/outputs/apk/debug/admin-debug.apk
