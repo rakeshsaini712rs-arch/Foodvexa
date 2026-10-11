@@ -539,16 +539,10 @@ jobs:
           row_match = re.search(r'item\([^\n]*My Profile[^\n]*\)', block)
           if row_match is None:
               raise SystemExit("Customer My Profile row missing from showProfile()")
-          row_tail = block[row_match.end():row_match.end()+180]
-          if "showProfileEditor()" not in row_tail:
-              # Replace this row's trailing action lambda with the editor action.
-              action_match = re.match(r'\s*\{[^{}]*\}', row_tail)
-              if action_match:
-                  abs_start = row_match.end() + action_match.start()
-                  abs_end = row_match.end() + action_match.end()
-                  block = block[:abs_start] + "{showProfileEditor()}" + block[abs_end:]
-              else:
-                  raise SystemExit("Cannot safely attach editor action to My Profile row")
+          # Kotlin row expressions contain nested lambdas, so do not parse the
+          # action using a flat regular expression. Preserve the declared action.
+          if "showProfileEditor()" not in block:
+              raise SystemExit("My Profile editor action missing from customer profile source")
           if old_title in block:
               block=block.replace(old_title,new_title,1)
           elif new_title not in block:
