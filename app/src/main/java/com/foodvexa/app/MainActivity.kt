@@ -101,11 +101,24 @@ class MainActivity:AppCompatActivity(){
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(muted);setTextColor(ink);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
   fixed.addView(search,margin(0,0,0,7))
+  val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground)}
+  stickyCategories.addView(label("Categories",18f,true,primaryText),margin(0,0,0,3))
+  val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(68)).apply{rightMargin=dp(7)})}
+  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
+  fixed.addView(stickyCategories)
   content.addView(bannerGrid(),margin(0,0,0,8))
-  fixed.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
+  content.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
-  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
+  content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
+  val scrollView=content.parent as ScrollView
+  val categoryTitleIndex=content.childCount-2
+  scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
+   val titleView=content.getChildAt(categoryTitleIndex)
+   val sticky=titleView.top-scrollY<=0
+   stickyCategories.visibility=if(sticky)View.VISIBLE else View.GONE
+  }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(0,2,0,5))
   renderProducts()
  }
