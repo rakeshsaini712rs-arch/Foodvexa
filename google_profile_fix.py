@@ -190,12 +190,13 @@ if profile_pos >= 0 and profile_end > profile_pos:
     old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
     new_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
     # Patch the first row container structurally rather than requiring one exact line.
-    box_match=__import__("re").search(r'val box=LinearLayout\\(this\\)\\.apply\\{[^\\n]*\\}',profile_block)
-    if box_match:
-        box_line=box_match.group(0)
-        if "setOnClickListener{action()}" in box_line and "descendantFocusability" not in box_line:
-            box_line=box_line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
-            profile_block=profile_block[:box_match.start()]+box_line+profile_block[box_match.end():]
+    rows=profile_block.splitlines(keepends=True)
+    for idx,line in enumerate(rows):
+        if "val box=LinearLayout(this).apply{" in line and "setOnClickListener{action()}" in line:
+            if "descendantFocusability" not in line:
+                rows[idx]=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
+            break
+    profile_block="".join(rows)
     # Explicitly forward clicks from every visible child to the same action.
     profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE))','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
     profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
