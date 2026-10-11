@@ -129,10 +129,49 @@ profile_checks={
 for name,ok in profile_checks.items(): print(("PASS " if ok else "FAIL ")+name)
 if not all(profile_checks.values()): raise SystemExit("Profile action verification failed")
 
+# Restore Profile action lambdas if an earlier transformation stripped their trailing closures.
+profile_action_repairs = {
+    'item("👤  My Profile","Name and mobile number")':'item("👤  My Profile","Name and mobile number"){showProfileEditor()}',
+    'item("📦  My Orders","Order history")':'item("📦  My Orders","Order history"){showOrders()}',
+    'item("📍  Address Book","Saved delivery locations")':'item("📍  Address Book","Saved delivery locations"){showAddressBook()}',
+    'item("❤️  Collection","Your saved items")':'item("❤️  Collection","Your saved items"){showCollection()}',
+    'item("💳  Payment Settings","COD and online payment")':'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}',
+    'item("⭐  Feedback","Share your feedback")':'item("⭐  Feedback","Share your feedback"){showFeedback()}',
+    'item("🎨  Appearance","Dark • Light • Use device theme")':'item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}',
+}
+for old_call, fixed_call in profile_action_repairs.items():
+    if old_call in ms and fixed_call not in ms:
+        ms=ms.replace(old_call,fixed_call,1)
+        print("RESTORED PROFILE ACTION:", fixed_call.split(")")[0]+")")
+
+# The cart source transformer can remove this method when parsing nested Kotlin expressions.
 if 'private fun showProfileEditor(' not in ms:
-    print("DEBUG PROFILE METHODS:", [line.strip()[:180] for line in ms.splitlines() if "private fun show" in line and any(k in line for k in ("Profile","Collection","Payment","Feedback","Address","Orders"))])
-    print("DEBUG PROFILE ITEMS:", [line.strip()[:220] for line in ms.splitlines() if 'item("👤' in line or 'item("❤️' in line or 'item("💳' in line or 'item("📞' in line or 'item("⭐' in line or 'item("ℹ️' in line])
-    raise SystemExit("FAIL showProfileEditor was removed by an earlier source transformation; refusing to ship an APK with a broken Profile action")
+    editor_method = r'''private fun showProfileEditor(){
+ setupBase(4)
+ content.addView(label("My Profile",28f,true,primaryText),margin(0,10,0,8))
+ content.addView(label("Create and manage your customer profile",15f,false,secondaryText),margin(0,0,0,16))
+ val name=EditText(this).apply{hint="Full name";setText(prefs.getString("profile_name","").orEmpty().ifBlank{FirebaseAuth.getInstance().currentUser?.displayName.orEmpty()});setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,14)}
+ val mobile=EditText(this).apply{hint="Mobile number";setText(prefs.getString("profile_mobile","").orEmpty());inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,14)}
+ val address=EditText(this).apply{hint="Delivery address";setText(prefs.getString("profile_address",prefs.getString("location","").orEmpty()).orEmpty());setTextColor(ink);setHintTextColor(muted);minLines=3;gravity=Gravity.TOP;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.WHITE,14)}
+ content.addView(name,margin(0,0,0,10));content.addView(mobile,margin(0,0,0,10));content.addView(address,margin(0,0,0,14))
+ content.addView(primaryButton("💾  Save Profile"){
+   val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
+   if(n.isBlank()){Toast.makeText(this,"Please enter your name",Toast.LENGTH_SHORT).show();return@primaryButton}
+   if(m.isBlank()){Toast.makeText(this,"Please enter mobile number",Toast.LENGTH_SHORT).show();return@primaryButton}
+   if(a.isBlank()){Toast.makeText(this,"Please enter delivery address",Toast.LENGTH_SHORT).show();return@primaryButton}
+   prefs.edit().putString("profile_name",n).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").apply()
+   Toast.makeText(this,"Profile saved successfully",Toast.LENGTH_SHORT).show();showProfile()
+ },margin(0,0,0,12))
+ content.addView(primaryButton("📍  Manage Address Book"){showAddressBook()},margin(0,0,0,10))
+}
+'''
+    idx=ms.rfind("\\n}")
+    if idx<0: raise SystemExit("Cannot restore Profile editor: MainActivity class end missing")
+    ms=ms[:idx]+"\\n"+editor_method+"\\n"+ms[idx:]
+    print("RESTORED missing showProfileEditor method")
+
+if 'private fun showProfileEditor(' not in ms:
+    raise SystemExit("FAIL Profile editor restoration failed")
 
 if 'val accountEmail=prefs.getString("profile_email"' not in ms:
     line=' content.addView(label("Create and manage your customer profile",15f,false,secondaryText),margin(0,0,0,16))'
