@@ -427,8 +427,8 @@ jobs:
             "profile tab":"setupBase(4)",
             "keyboard helper":"private fun hideKeyboard()",
             "Foodvexa branding":"Food ordering app by Foodvexa.",
-            "Profile screen exists":"private fun showProfile()" in s,
-            "Profile editor exists":"private fun showProfileEditor()" in s,
+            "Profile screen exists":"private fun showProfile()",
+            "Profile editor exists":"private fun showProfileEditor()",
             "image cache":"imageCache",
           }
           missing=[k for k,v in checks.items() if v not in s]
