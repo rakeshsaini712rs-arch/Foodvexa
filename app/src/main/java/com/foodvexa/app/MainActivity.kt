@@ -101,18 +101,42 @@ class MainActivity:AppCompatActivity(){
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(muted);setTextColor(ink);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
   fixed.addView(search,margin(0,0,0,7))
-  fixed.addView(bannerGrid(),margin(0,0,0,4))
+  content.addView(bannerGrid(),margin(0,0,0,8))
   fixed.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)})}
-  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(78)))
+  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
+  fixed.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;scrollTo(0,0);addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(0,2,0,5))
   renderProducts()
  }
 
  private fun locationHeader():LinearLayout{val saved=prefs.getString("location","").orEmpty();val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(Color.WHITE,18);isClickable=true;setOnClickListener{locationDialog()}};val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER};box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(42)));val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};texts.addView(label("Deliver to",11f,true,muted));texts.addView(label(if(saved.isBlank())"Select delivery location" else saved,15f,true,ink).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END});box.addView(texts,LinearLayout.LayoutParams(0,-2,1f));box.addView(label("⌄",18f,true,muted),LinearLayout.LayoutParams(dp(28),dp(42)).apply{gravity=Gravity.CENTER});return box}
  private fun professionalBanner():LinearLayout{val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true};val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL};text.addView(label("FOODVEXA",12f,true,Color.WHITE));text.addView(label("HOT & FRESH FOOD",20f,true,Color.WHITE));text.addView(label("Freshly prepared • Fast delivery",12f,false,Color.LTGRAY),margin(0,2,0,7));text.addView(primaryButton("ORDER NOW  ›"){},LinearLayout.LayoutParams(dp(145),dp(40)));box.addView(text,LinearLayout.LayoutParams(0,-1,1f));val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)});loadImage(pic,foodImages[0]);return box}
- private fun categoryCard(c:Category):LinearLayout{val selected=c.name==selectedCategory;val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=categoryBackground(selected);setOnClickListener{if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(c.name=="Restaurant / Hotel"){restaurantHotelDialog()}else if(selectedCategory!=c.name){if(c.name=="Restaurant/Hotel"){showRestaurantHotelFlow(prefs){showHome()}}else{selectedCategory=c.name;renderProducts()}}}};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(image,LinearLayout.LayoutParams(-1,dp(78)).apply{bottomMargin=dp(5)});box.addView(label(c.name,11.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false});if(c.name=="Restaurant / Hotel") image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl);return box}
+ private fun categoryCard(c:Category):LinearLayout{
+  val selected=c.name==selectedCategory
+  val box=LinearLayout(this).apply{
+   orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(3),dp(3),dp(3),dp(3));background=categoryBackground(selected);isClickable=true;isFocusable=true
+   setOnClickListener{
+    if(c.name=="Restaurant / Hotel"){restaurantHotelDialog();return@setOnClickListener}
+    selectedCategory=c.name
+    for(i in 0 until (categoryRow?.childCount?:0)){
+     val card=categoryRow?.getChildAt(i) as? LinearLayout ?: continue
+     val cat=categories.getOrNull(i) ?: continue
+     card.background=categoryBackground(cat.name==selectedCategory)
+     if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
+    }
+    renderProducts()
+    val scroll=(content.parent as? ScrollView)
+    val target=content.getChildAt(0)
+    if(target!=null)scroll?.post{scroll.smoothScrollTo(0,target.top)}
+   }
+  }
+  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+  box.addView(image,LinearLayout.LayoutParams(-1,dp(43)).apply{bottomMargin=dp(2)})
+  box.addView(label(c.name,10f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false})
+  if(c.name=="Restaurant / Hotel")image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)
+  return box
+ }
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
  private fun correctedImageUrl(p:Product):String = p.imageUrl
@@ -133,7 +157,7 @@ filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
     val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-    card.addView(pic,LinearLayout.LayoutParams(-1,dp(64)))
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(112)))
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
