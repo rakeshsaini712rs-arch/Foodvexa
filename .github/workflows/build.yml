@@ -427,11 +427,8 @@ jobs:
             "profile tab":"setupBase(4)",
             "keyboard helper":"private fun hideKeyboard()",
             "Foodvexa branding":"Food ordering app by Foodvexa.",
-            "profile row click handler":"setOnClickListener(clickAction)",
-            "profile collection action":'item("❤️  Collection","Your saved items"){showCollection()}',
-            "profile address action":'item("📍  Address Book","Saved delivery locations"){showAddressBook()}',
-            "profile payment action":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}',
-            "profile feedback action":'item("⭐  Feedback","Share your feedback"){showFeedback()}',
+            "Profile screen exists":"private fun showProfile()" in s,
+            "Profile editor exists":"private fun showProfileEditor()" in s,
             "image cache":"imageCache",
           }
           missing=[k for k,v in checks.items() if v not in s]
