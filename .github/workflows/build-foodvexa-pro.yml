@@ -16,40 +16,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply premium cart screen directly to current MainActivity
-        run: python3 premium_cart_fix.py
-
-      - name: Apply final stability pass
-        run: python3 final_stability_fix.py
-
-      - name: Apply premium cart redesign and empty-cart fix
-        run: python3 cart_premium_redesign.py
-
-      - name: Fix clipped category labels
-        run: python3 category_label_fix.py
-
-      - name: Verify cart screen
+      - name: Prepare the same debug signing key used by the verified APK workflow
         run: |
-          grep -Fq 'private fun showCart(){' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'Your Order' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'Delivery details' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Eq 'Choose your current location|Choose delivery location' app/src/main/java/com/foodvexa/app/MainActivity.kt
-          grep -Fq 'BUY NOW' app/src/main/java/com/foodvexa/app/MainActivity.kt
+          set -e
+          test -s app/foodvexa-debug.keystore.b64
+          base64 -d app/foodvexa-debug.keystore.b64 > app/foodvexa-debug.keystore
+          test -s app/foodvexa-debug.keystore
+          chmod 600 app/foodvexa-debug.keystore
+          keytool -list -keystore app/foodvexa-debug.keystore -storepass foodvexa2026 -alias foodvexa
 
-      - name: Apply Google sign-in profile creation flow
-        run: python3 google_profile_fix.py
+      - name: Verify profile menu actions exist in the checked-out source
+        run: |
+          set -e
+          FILE=app/src/main/java/com/foodvexa/app/MainActivity.kt
+          grep -Fq 'item("👤  My Profile"' "$FILE"
+          grep -Fq 'item("❤️  Collection"' "$FILE"
+          grep -Fq 'item("💳  Payment Settings"' "$FILE"
+          grep -Fq 'item("📞  Call Support"' "$FILE"
+          grep -Fq 'item("⭐  Feedback"' "$FILE"
+          grep -Fq 'item("ℹ️  About"' "$FILE"
+          echo "All six profile menu actions are present in the source being built."
 
-      - name: Build debug APK
+      - name: Build APK from the checked-in source without destructive rewrite scripts
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: Print debug signing SHA-1 for Firebase
+      - name: Verify APK exists
         run: |
-          echo "=== FOODVEXA DEBUG SHA-1 ==="
-          gradle :app:signingReport --no-daemon
-          echo "============================"
+          set -e
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          ls -lh "$APK"
 
-      - name: Upload APK
+      - name: Upload Foodvexa Pro APK
         uses: actions/upload-artifact@v4
         with:
           name: Foodvexa-Pro-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
