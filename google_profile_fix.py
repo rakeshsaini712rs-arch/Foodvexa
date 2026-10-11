@@ -130,11 +130,7 @@ for name,ok in profile_checks.items(): print(("PASS " if ok else "FAIL ")+name)
 if not all(profile_checks.values()): raise SystemExit("Profile action verification failed")
 
 if 'private fun showProfileEditor(' not in ms:
-    print("NOTE profile editor absent after transformations; skipping editor patch safely")
-    login.write_text(ls,encoding="utf-8")
-    main.write_text(ms,encoding="utf-8")
-    print("GOOGLE IDENTITY PERSISTENCE APPLIED")
-    raise SystemExit(0)
+    raise SystemExit("FAIL showProfileEditor was removed by an earlier source transformation; refusing to ship an APK with a broken Profile action")
 
 if 'val accountEmail=prefs.getString("profile_email"' not in ms:
     line=' content.addView(label("Create and manage your customer profile",15f,false,secondaryText),margin(0,0,0,16))'
