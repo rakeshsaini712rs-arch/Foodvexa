@@ -81,8 +81,12 @@ if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in 
         print("NOTE startup anchor differs; profile gate not inserted")
 # Apply and verify Profile row routing BEFORE the optional editor enhancement.
 # The old early-exit path skipped the click fix entirely when the editor modifier differed.
-profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_fn=ms.find("fun showProfile(){")
+if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
+profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_end_fn=ms.find("fun savedFavoriteNames",profile_fn+len("fun showProfile(){"))
+if profile_end_fn < 0: raise SystemExit("FAIL savedFavoriteNames boundary not found")
+profile_end=ms.rfind("\\n",0,profile_end_fn)+1
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL Profile row boundaries not found before editor branch")
 profile_block=ms[profile_pos:profile_end]
@@ -111,8 +115,12 @@ helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
 '''
 profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
 ms=ms[:profile_pos]+profile_block+ms[profile_end:]
-profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_fn=ms.find("fun showProfile(){")
+if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
+profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_end_fn=ms.find("fun savedFavoriteNames",profile_fn+len("fun showProfile(){"))
+if profile_end_fn < 0: raise SystemExit("FAIL savedFavoriteNames boundary not found")
+profile_end=ms.rfind("\\n",0,profile_end_fn)+1
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
  "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in profile_block,
@@ -251,8 +259,12 @@ ms=ms[:editor_start]+editor+ms[editor_end:]
 # Final deterministic Profile row tap fix. Earlier variants used different
 # listener spellings (action() vs clickAction), so replace the whole helper rather
 # than silently skipping the patch when a string anchor changes.
-profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_fn=ms.find("fun showProfile(){")
+if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
+profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_end_fn=ms.find("fun savedFavoriteNames",profile_fn+len("fun showProfile(){"))
+if profile_end_fn < 0: raise SystemExit("FAIL savedFavoriteNames boundary not found")
+profile_end=ms.rfind("\\n",0,profile_end_fn)+1
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL Profile row boundaries not found")
 profile_block=ms[profile_pos:profile_end]
@@ -283,8 +295,12 @@ profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
 ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 
 # Fail the build unless all six requested Profile rows retain working actions.
-profile_pos=ms.find("private fun showProfile(){")
-profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_fn=ms.find("fun showProfile(){")
+if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
+profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_end_fn=ms.find("fun savedFavoriteNames",profile_fn+len("fun showProfile(){"))
+if profile_end_fn < 0: raise SystemExit("FAIL savedFavoriteNames boundary not found")
+profile_end=ms.rfind("\\n",0,profile_end_fn)+1
 if profile_pos < 0 or profile_end <= profile_pos:
     raise SystemExit("FAIL final Profile source boundaries missing")
 profile_block=ms[profile_pos:profile_end]
