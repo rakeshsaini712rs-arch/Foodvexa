@@ -1,4 +1,5 @@
 name: Build Foodvexa APK
+# Rebuild after profile menu tap-routing fix (db23bf2)
 
 on:
   push:
