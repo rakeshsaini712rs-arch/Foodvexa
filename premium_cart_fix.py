@@ -37,14 +37,10 @@ def remove_method(src,name):
         raise SystemExit("Could not safely isolate method " + name + " before " + next_method)
     raise SystemExit("No safe removal boundary configured for " + name)
 
-for method in ("showCart","updateCartBadge","placeOrderAndShowOrders"):
+for method in ("showCart","placeOrderAndShowOrders"):
     s=remove_method(s,method)
 
-body=r'''private fun updateCartBadge(){
-    val count=cart.values.sum()
-    cartNavLabel?.text=if(count>0)"🛒\\nCART $count" else "🛒\\nCART"
-}
-private fun placeOrderAndShowOrders(){
+body=r'''private fun placeOrderAndShowOrders(){
     if(cart.isEmpty()){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
     val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
     val total=subtotal+30
