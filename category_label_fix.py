@@ -37,6 +37,7 @@ new='''private fun categoryCard(c:Category):LinearLayout{
 s=s[:a]+new+s[b:]
 s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78)).apply{rightMargin=dp(9)}','LinearLayout.LayoutParams(dp(88),dp(90)).apply{rightMargin=dp(6)}')
 s=s.replace('LinearLayout.LayoutParams(dp(92),dp(78))','LinearLayout.LayoutParams(dp(92),dp(112))')
+s=s.replace('LinearLayout.LayoutParams(-1,dp(78))','LinearLayout.LayoutParams(-1,dp(132))',1)
 s=s.replace('LinearLayout.LayoutParams(dp(88),dp(70))','LinearLayout.LayoutParams(dp(92),dp(112))')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(42)).apply{bottomMargin=dp(2)}','LinearLayout.LayoutParams(-1,dp(54)).apply{bottomMargin=dp(3)}')
 s=s.replace('LinearLayout.LayoutParams(-1,dp(34))','LinearLayout.LayoutParams(-1,dp(50))')
