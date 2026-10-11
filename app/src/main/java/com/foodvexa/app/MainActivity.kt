@@ -295,11 +295,11 @@ private fun bannerGrid():LinearLayout{
   text.addView(primaryButton("ORDER NOW  ›"){selectedCategory="All";renderProducts()},LinearLayout.LayoutParams(dp(145),dp(40)))
   card.addView(text,LinearLayout.LayoutParams(0,-1,1f))
   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  card.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)})
+  card.addView(pic,LinearLayout.LayoutParams(dp(172),dp(232)).apply{leftMargin=dp(8)})
   loadImage(pic,b.third)
-  strip.addView(card,LinearLayout.LayoutParams(-1,dp(150)))
+  strip.addView(card,LinearLayout.LayoutParams(-1,dp(250)))
  }
- container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(150)))},LinearLayout.LayoutParams(-1,dp(154)))
+ container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(250)))},LinearLayout.LayoutParams(-1,dp(254)))
  return container
 }
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
