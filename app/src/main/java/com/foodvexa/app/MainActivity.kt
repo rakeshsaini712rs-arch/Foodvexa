@@ -274,7 +274,31 @@ private fun placeOrderAndShowOrders(){
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"🛒\nCART $count" else "🛒\nCART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
-private fun bannerGrid():LinearLayout=professionalBanner()
+private fun bannerGrid():LinearLayout{
+ val container=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+ val banners=listOf(
+  Triple("HOT & FRESH FOOD","Freshly prepared • Fast delivery",foodImages[0]),
+  Triple("SWEET MOMENTS","Fresh sweets for every occasion",foodImages.getOrElse(1){foodImages[0]}),
+  Triple("SNACKS & CHAAT","Your favourite bites, made fresh",foodImages.getOrElse(2){foodImages[0]}),
+  Triple("ORDER WITH FOODVEXA","Taste the Happiness",foodImages.getOrElse(3){foodImages[0]})
+ )
+ val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+ banners.forEachIndexed{index,b->
+  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true}
+  val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
+  text.addView(label("FOODVEXA",12f,true,Color.WHITE))
+  text.addView(label(b.first,20f,true,Color.WHITE))
+  text.addView(label(b.second,12f,false,Color.LTGRAY),margin(0,2,0,7))
+  text.addView(primaryButton("ORDER NOW  ›"){selectedCategory="All";renderProducts()},LinearLayout.LayoutParams(dp(145),dp(40)))
+  card.addView(text,LinearLayout.LayoutParams(0,-1,1f))
+  val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
+  card.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)})
+  loadImage(pic,b.third)
+  strip.addView(card,LinearLayout.LayoutParams(dp(320),dp(150)).apply{rightMargin=dp(10)})
+ }
+ container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;addView(strip)},LinearLayout.LayoutParams(-1,dp(154)))
+ return container
+}
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){ showHome() }
