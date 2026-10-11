@@ -502,6 +502,29 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
+      - name: Restore canonical Kotlin source before compilation
+        run: |
+          git checkout HEAD -- app/src/main/java/com/foodvexa/app/MainActivity.kt
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt").read_text(encoding="utf-8")
+          required=[
+            "private fun showProfile(){",
+            "private fun showProfileEditor(){",
+            "private fun showAddressBook(){",
+            "private fun showCollection(){",
+            "private fun showPaymentSettings(){",
+            "private fun showFeedback(){",
+            "private fun updateCartBadge(){",
+            "private val primaryText:Int",
+            "private val secondaryText:Int",
+            "import com.google.firebase.auth.FirebaseAuth",
+          ]
+          missing=[x for x in required if x not in s]
+          if missing: raise SystemExit("Canonical source missing required code: "+", ".join(missing))
+          print("PASS canonical source restored; profile screens and required symbols present")
+          PY
+
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
