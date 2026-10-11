@@ -543,7 +543,28 @@ jobs:
           s=s[:helper_start]+helper+s[first_row:]
           # The checked-in row action is retained; avoid fragile regex parsing of Kotlin lambdas.
           if "private fun showProfileEditor()" not in s:
-              raise SystemExit("My Profile editor method missing")
+              pos=s.rfind("\\n}")
+              if pos < 0: raise SystemExit("Cannot locate MainActivity closing brace for editor")
+              fallback='''private fun showProfileEditor(){
+            setupBase(4)
+            val user=FirebaseAuth.getInstance().currentUser
+            val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
+            val mobile=EditText(this).apply{hint="Mobile number";inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setText(prefs.getString("profile_mobile","").orEmpty())}
+            val address=EditText(this).apply{hint="Delivery address";minLines=3;setText(prefs.getString("profile_address",prefs.getString("location","").orEmpty()).orEmpty())}
+            val fields=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0);addView(name);addView(mobile);addView(address)}
+            AlertDialog.Builder(this).setTitle("My Profile").setView(fields)
+              .setNegativeButton("CANCEL",null)
+              .setPositiveButton("SAVE"){_,_->
+                val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
+                if(n.isBlank()||m.isBlank()||a.isBlank()){Toast.makeText(this,"Please complete all profile fields",Toast.LENGTH_SHORT).show();return@setPositiveButton}
+                prefs.edit().putString("profile_name",n).putString("profile_email",user?.email.orEmpty()).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).apply()
+                Toast.makeText(this,"Profile saved",Toast.LENGTH_SHORT).show();showProfile()
+              }.show()
+          }
+          '''
+              s=s[:pos]+fallback+s[pos:]
+          if "private fun showProfileEditor()" not in s:
+              raise SystemExit("Could not restore My Profile editor")
           p.write_text(s,encoding="utf-8")
           print("PASS: Profile item helper replaced deterministically")
           print("PASS: My Profile opens the editor")
