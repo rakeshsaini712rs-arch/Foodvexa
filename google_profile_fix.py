@@ -215,15 +215,23 @@ if profile_pos >= 0 and profile_end > profile_pos:
                 rows[idx]=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
             break
     profile_block="".join(rows)
-    # Route taps from each row's text column, title, subtitle, and chevron to its action.
-    # Apply to every profile menu item, not just My Profile.
-    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE))','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})')
-    profile_block=profile_block.replace('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})','texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})')
-    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))')
-    profile_block=profile_block.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))','if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))')
-    profile_block=profile_block.replace('  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))','  texts.setOnClickListener{action()}\n  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))')
-    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY))','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})')
-    profile_block=profile_block.replace('box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})','box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})')
+    # Keep row labels passive; consume touch on the parent row so taps always trigger the row action.
+    for old_label, new_label in [
+        ('texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})', 'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})'),
+        ('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})', 'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})'),
+        ('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))', 'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))'),
+        ('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))', 'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))'),
+        ('box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})', 'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})'),
+        ('box.addView(label("›",24f,true,Color.LTGRAY))', 'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})'),
+    ]:
+        profile_block=profile_block.replace(old_label,new_label)
+    profile_block=profile_block.replace('  texts.setOnClickListener{action()}\\n','')
+    import re
+    touch='setOnTouchListener{_,event->if(event.action==android.view.MotionEvent.ACTION_UP)action();true}'
+    if touch not in profile_block:
+        # Attach to the row's apply block regardless of whether the source is one-line or multiline.
+        profile_block=re.sub(r'setOnClickListener\\s*\\{\\s*action\\(\\)\\s*\\}', lambda m: m.group(0)+';'+touch, profile_block)
+
     ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 else:
     print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
