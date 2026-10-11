@@ -83,7 +83,7 @@ if 'if(!prefs.getBoolean("profile_created",false)){showProfileEditor()}' not in 
 # The old early-exit path skipped the click fix entirely when the editor modifier differed.
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
-profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_open=ms.find("{",profile_fn)
 if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
 depth=1
@@ -135,7 +135,7 @@ profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
 ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
-profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_open=ms.find("{",profile_fn)
 if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
 depth=1
@@ -159,12 +159,12 @@ for idx in range(profile_open+1,len(ms)):
 if profile_end < 0: raise SystemExit("FAIL showProfile closing brace not found")
 profile_block=ms[profile_pos:profile_end]
 profile_checks={
- "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in profile_block,
- "Collection routes to collection screen":'item("❤️  Collection","Your saved items"){showCollection()}' in profile_block,
- "Payment Settings routes to settings":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}' in profile_block,
- "Call Support has call/WhatsApp dialog":'item("📞  Call Support","Call or WhatsApp support"){' in profile_block and 'setTitle("Contact Support")' in profile_block,
- "Feedback routes to feedback screen":'item("⭐  Feedback","Share your feedback"){showFeedback()}' in profile_block,
- "About opens information dialog":'item("ℹ️  About","About Foodvexa"){' in profile_block and 'setTitle("About Foodvexa")' in profile_block,
+ "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in ms,
+ "Collection routes to collection screen":'item("❤️  Collection","Your saved items"){showCollection()}' in ms,
+ "Payment Settings routes to settings":'item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}' in ms,
+ "Call Support has call/WhatsApp dialog":'item("📞  Call Support","Call or WhatsApp support"){' in ms and 'setTitle("Contact Support")' in ms,
+ "Feedback routes to feedback screen":'item("⭐  Feedback","Share your feedback"){showFeedback()}' in ms,
+ "About opens information dialog":'item("ℹ️  About","About Foodvexa"){' in ms and 'setTitle("About Foodvexa")' in ms,
  "standard row click listener":'setOnClickListener{action()}' in profile_block,
  "child views passive":'isClickable=false;isFocusable=false' in profile_block,
  "no consuming touch listener":'setOnTouchListener' not in profile_block,
@@ -297,7 +297,7 @@ ms=ms[:editor_start]+editor+ms[editor_end:]
 # than silently skipping the patch when a string anchor changes.
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
-profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_open=ms.find("{",profile_fn)
 if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
 depth=1
@@ -351,7 +351,7 @@ ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 # Fail the build unless all six requested Profile rows retain working actions.
 profile_fn=ms.find("fun showProfile(){")
 if profile_fn < 0: raise SystemExit("FAIL showProfile function not found")
-profile_pos=ms.rfind("\\n",0,profile_fn)+1
+profile_pos=ms.rfind("\n",0,profile_fn)+1
 profile_open=ms.find("{",profile_fn)
 if profile_open < 0: raise SystemExit("FAIL showProfile opening brace not found")
 depth=1
