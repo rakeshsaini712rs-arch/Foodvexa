@@ -38,8 +38,6 @@ jobs:
         run: python3 navigation_fix.py
       - name: Compact premium home layout
         run: python3 compact_layout.py
-      - name: Apply premium cart interface
-        run: python3 premium_cart_fix.py
       - name: Final stability pass from video review
         run: python3 final_stability_fix.py
       - name: Match Zomato scroll behavior with sticky categories
