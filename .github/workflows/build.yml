@@ -428,7 +428,6 @@ jobs:
             "keyboard helper":"private fun hideKeyboard()",
             "Foodvexa branding":"Food ordering app by Foodvexa.",
             "Profile screen exists":"private fun showProfile()",
-            "Profile editor exists":"private fun showProfileEditor(){",
             "image cache":"imageCache",
           }
           missing=[k for k,v in checks.items() if v not in s]
@@ -449,6 +448,8 @@ jobs:
 
       - name: Apply Google sign-in profile creation flow
         run: python3 google_profile_fix.py
+      - name: Verify Profile editor restoration
+        run: grep -q "private fun showProfileEditor(" app/src/main/java/com/foodvexa/app/MainActivity.kt
 
       - name: Fix customer logout to return to login screen
         run: |
