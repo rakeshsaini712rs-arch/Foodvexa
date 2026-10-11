@@ -10,6 +10,22 @@ if 'import android.view.ViewGroup' not in ms:
     ms=ms.replace('import android.view.View\\n','import android.view.View\\nimport android.view.ViewGroup\\n',1)
 
 # Make every Profile row reliably tappable, including its text and chevron children.
+
+# Route taps from all visible parts of the My Profile row to the same action.
+tap_old='''  texts.addView(label(title,16f,true,Color.WHITE))
+  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))
+  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+  box.addView(label("›",24f,true,Color.LTGRAY))'''
+tap_new='''  val titleView=label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}}
+  texts.addView(titleView)
+  if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))
+  texts.setOnClickListener{action()}
+  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+  box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})'''
+if tap_old in ms:
+    ms=ms.replace(tap_old,tap_new,1)
+elif tap_new not in ms:
+    print("NOTE profile child-click anchor not found; will preserve current source")
 # This is a customer-app-only transformation; no admin sources are touched.
 profile_row_old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
 profile_row_new='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
