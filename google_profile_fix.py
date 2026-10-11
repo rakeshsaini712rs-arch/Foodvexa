@@ -230,7 +230,7 @@ if profile_pos >= 0 and profile_end > profile_pos:
     touch='setOnTouchListener{_,event->if(event.action==android.view.MotionEvent.ACTION_UP)action();true}'
     if touch not in profile_block:
         # Attach to the row's apply block regardless of whether the source is one-line or multiline.
-        profile_block=re.sub(r'setOnClickListener\\s*\\{\\s*action\\(\\)\\s*\\}', lambda m: m.group(0)+';'+touch, profile_block)
+        profile_block=re.sub(r'setOnClickListener\s*\{\s*action\(\)\s*\}', lambda m: m.group(0)+';'+touch, profile_block)
 
     ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 else:
