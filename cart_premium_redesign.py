@@ -8,22 +8,56 @@ def method_bounds(src, signature):
     if a<0: raise SystemExit("Method not found: "+signature)
     op=src.find("{",a)
     if op<0: raise SystemExit("Opening brace missing: "+signature)
-    depth=0
-    in_string=False
-    escaped=False
-    for i in range(op,len(src)):
-        ch=src[i]
-        if in_string:
-            if escaped: escaped=False
-            elif ch=="\\": escaped=True
-            elif ch=='"': in_string=False
-            continue
-        if ch=='"':
-            in_string=True
-        elif ch=="{": depth+=1
-        elif ch=="}":
-            depth-=1
-            if depth==0: return a,i+1
+    depth=1
+    pos=op+1
+    stack=[{"state":"code","depth":0,"escaped":False}]
+    while pos<len(src) and depth:
+        frame=stack[-1]
+        state=frame["state"]
+        ch=src[pos]
+        nxt=src[pos+1] if pos+1<len(src) else ""
+        if state=="code":
+            if ch=="/" and nxt=="/":
+                stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
+            elif ch=="/" and nxt=="*":
+                stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
+            elif ch=='"':
+                stack.append({"state":"string","depth":0,"escaped":False})
+            elif ch=="'":
+                stack.append({"state":"char","depth":0,"escaped":False})
+            elif ch=="{":
+                depth+=1
+            elif ch=="}":
+                depth-=1
+                if depth==0: return a,pos+1
+        elif state=="string":
+            if frame["escaped"]: frame["escaped"]=False
+            elif ch=="\\": frame["escaped"]=True
+            elif ch=='"': stack.pop()
+            elif ch=="$" and nxt=="{":
+                stack.append({"state":"interpolation","depth":1,"escaped":False}); pos+=1
+        elif state=="interpolation":
+            if ch=="/" and nxt=="/":
+                stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
+            elif ch=="/" and nxt=="*":
+                stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
+            elif ch=='"':
+                stack.append({"state":"string","depth":0,"escaped":False})
+            elif ch=="'":
+                stack.append({"state":"char","depth":0,"escaped":False})
+            elif ch=="{": frame["depth"]+=1
+            elif ch=="}":
+                frame["depth"]-=1
+                if frame["depth"]==0: stack.pop()
+        elif state=="char":
+            if frame["escaped"]: frame["escaped"]=False
+            elif ch=="\\": frame["escaped"]=True
+            elif ch=="'": stack.pop()
+        elif state=="line_comment":
+            if ch=="\n": stack.pop()
+        elif state=="block_comment":
+            if ch=="*" and nxt=="/": stack.pop(); pos+=1
+        pos+=1
     raise SystemExit("Unclosed method: "+signature)
 
 a,b=method_bounds(s,"private fun showCart(){")
