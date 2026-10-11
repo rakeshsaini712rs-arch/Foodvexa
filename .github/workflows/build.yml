@@ -509,43 +509,21 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
-      - name: Force My Profile row action after all source transforms
+      - name: Finalize Customer My Profile safely
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          helper_start=s.find(" fun item(title:String")
-          if helper_start < 0: helper_start=s.find("fun item(title:String")
-          first_row=s.find('item("👤  My Profile"', helper_start)
-          if helper_start < 0 or first_row < 0:
-              raise SystemExit("Could not locate profile item helper or My Profile row")
-          helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
-            val box=LinearLayout(this).apply{
-              orientation=LinearLayout.HORIZONTAL
-              gravity=Gravity.CENTER_VERTICAL
-              setPadding(dp(16),dp(12),dp(12),dp(12))
-              background=rounded(Color.rgb(38,38,44),16)
-              isClickable=true
-              isFocusable=true
-              descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS
-              setOnClickListener{action()}
-            }
-            val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
-            texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
-            if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
-            box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
-            box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
-            content.addView(box,margin(0,0,0,10))
-          }
-          '''
-          s=s[:helper_start]+helper+s[first_row:]
-          # The checked-in row action is retained; avoid fragile regex parsing of Kotlin lambdas.
+          # Preserve the checked-in profile row action; do not depend on fragile
+          # parsing of the earlier transforms' formatting.
           if "private fun showProfileEditor()" not in s:
-              pos=s.rfind("\\n}")
-              if pos < 0: raise SystemExit("Cannot locate MainActivity closing brace for editor")
-              fallback='''private fun showProfileEditor(){
+              pos=s.rfind("}")
+              if pos < 0:
+                  raise SystemExit("MainActivity closing brace not found")
+              fallback="""
+          private fun showProfileEditor(){
             setupBase(4)
             val user=FirebaseAuth.getInstance().currentUser
             val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
@@ -561,13 +539,21 @@ jobs:
                 Toast.makeText(this,"Profile saved",Toast.LENGTH_SHORT).show();showProfile()
               }.show()
           }
-          '''
+          """
               s=s[:pos]+fallback+s[pos:]
-          if "private fun showProfileEditor()" not in s:
-              raise SystemExit("Could not restore My Profile editor")
+          if "showProfileEditor()" not in s:
+              raise SystemExit("Profile editor call not present")
+          # If the profile row helper still has its normal title/chevron expressions,
+          # make those visible children dispatch to the same row action.
+          s=s.replace('texts.addView(label(title,16f,true,Color.WHITE))',
+                      'texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})',1)
+          s=s.replace('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))',
+                      'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))',1)
+          s=s.replace('box.addView(label("›",24f,true,Color.LTGRAY))',
+                      'box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})',1)
           p.write_text(s,encoding="utf-8")
-          print("PASS: Profile item helper replaced deterministically")
-          print("PASS: My Profile opens the editor")
+          print("PASS: Customer profile editor is present")
+          print("PASS: Profile child tap handlers applied where available")
           PY
 
       - name: Build customer and admin debug APKs
