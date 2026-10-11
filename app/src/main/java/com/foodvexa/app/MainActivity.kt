@@ -299,7 +299,20 @@ private fun bannerGrid():LinearLayout{
   loadImage(pic,b.third)
   strip.addView(card,LinearLayout.LayoutParams(-1,dp(250)))
  }
- container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(250)))},LinearLayout.LayoutParams(-1,dp(254)))
+ val carousel=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(250)))}
+ container.addView(carousel,LinearLayout.LayoutParams(-1,dp(254)))
+ // Automatically advance one full-width banner every 4 seconds.
+ val slideHandler=android.os.Handler(android.os.Looper.getMainLooper())
+ var slideIndex=0
+ val slideTask=object:Runnable{
+  override fun run(){
+   if(!carousel.isAttachedToWindow)return
+   slideIndex=(slideIndex+1)%banners.size
+   carousel.smoothScrollTo(slideIndex*carousel.width,0)
+   slideHandler.postDelayed(this,4000)
+  }
+ }
+ carousel.postDelayed(slideTask,4000)
  return container
 }
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
