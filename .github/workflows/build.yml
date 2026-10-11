@@ -507,6 +507,9 @@ jobs:
           print("PASS LoginActivity force-login route verified")
           PY
 
+      - name: Repair Kotlin class scope after source transforms
+        run: python3 repair_kotlin_scope.py
+
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
