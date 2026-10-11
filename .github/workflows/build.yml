@@ -517,7 +517,7 @@ jobs:
           s=p.read_text(encoding="utf-8")
           start=s.find("private fun showProfile(){")
           if start < 0: raise SystemExit("Customer showProfile() missing")
-          end=s.find("\\nprivate fun ", start+1)
+          end=s.find("private fun ", start+1)
           if end < 0: raise SystemExit("Cannot find end of customer showProfile()")
           block=s[start:end]
           old='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
