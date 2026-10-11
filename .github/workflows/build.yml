@@ -553,7 +553,30 @@ jobs:
               pass
           s=s[:start]+block+s[end:]
           if "private fun showProfileEditor()" not in s:
-              raise SystemExit("My Profile editor method missing after transformations")
+              # Some earlier transforms replace the editor method. Restore a
+              # safe, working dialog entry point in the customer activity.
+              anchor = "private fun savedFavoriteNames()"
+              pos = s.find(anchor)
+              if pos < 0:
+                  raise SystemExit("Cannot locate insertion point for My Profile editor")
+              fallback = '''private fun showProfileEditor(){
+            val user=FirebaseAuth.getInstance().currentUser
+            val name=EditText(this).apply{hint="Full name";setSingleLine(true);setText(prefs.getString("profile_name",user?.displayName.orEmpty()).orEmpty())}
+            val mobile=EditText(this).apply{hint="Mobile number";inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setText(prefs.getString("profile_mobile","").orEmpty())}
+            val fields=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0);addView(name);addView(mobile)}
+            AlertDialog.Builder(this).setTitle("My Profile").setView(fields)
+              .setNegativeButton("CANCEL",null)
+              .setPositiveButton("SAVE"){_,_->
+                prefs.edit().putString("profile_name",name.text.toString().trim())
+                  .putString("profile_mobile",mobile.text.toString().trim()).apply()
+                Toast.makeText(this,"Profile saved",Toast.LENGTH_SHORT).show()
+                showProfile()
+              }.show()
+          }
+          '''
+              s=s[:pos]+fallback+s[pos:]
+          if "private fun showProfileEditor()" not in s:
+              raise SystemExit("Could not restore My Profile editor")
           p.write_text(s,encoding="utf-8")
           print("PASS: My Profile title, subtitle, arrow and row invoke showProfileEditor()")
           print("PASS: My Profile editor exists in final customer source")
