@@ -101,7 +101,7 @@ class MainActivity:AppCompatActivity(){
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(muted);setTextColor(ink);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
   fixed.addView(search,margin(0,0,0,7))
-  fixed.addView(bannerGrid(),margin(0,0,0,4))
+  content.addView(bannerGrid(),margin(0,0,0,8))
   fixed.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
