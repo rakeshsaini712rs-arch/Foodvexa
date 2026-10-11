@@ -101,7 +101,7 @@ class MainActivity:AppCompatActivity(){
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(muted);setTextColor(ink);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
   fixed.addView(search,margin(0,0,0,7))
-  content.addView(bannerGrid(),margin(0,0,0,8))
+  fixed.addView(bannerGrid(),margin(0,0,0,4))
   fixed.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
@@ -157,7 +157,7 @@ filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
     val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(7));background=rounded(Color.rgb(38,29,22),18);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-    card.addView(pic,LinearLayout.LayoutParams(-1,dp(112)))
+    card.addView(pic,LinearLayout.LayoutParams(-1,dp(155)))
     loadImage(pic,p.imageUrl)
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
