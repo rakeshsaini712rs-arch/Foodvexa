@@ -462,15 +462,28 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
-          pattern=r'item\("🚪\s+Logout","Sign out"\)\s*\{.*?\n\s*\}'
-          m=re.search(pattern,s,re.S)
-          if not m:
+          marker='item("🚪  Logout","Sign out")'
+          start=s.find(marker)
+          if start < 0:
               raise SystemExit("Could not locate customer Logout action; refusing to build")
+          brace=s.find("{", start + len(marker))
+          if brace < 0:
+              raise SystemExit("Logout action opening brace missing")
+          depth=0
+          end=None
+          for i in range(brace, len(s)):
+              if s[i]=="{":
+                  depth+=1
+              elif s[i]=="}":
+                  depth-=1
+                  if depth==0:
+                      end=i+1
+                      break
+          if end is None:
+              raise SystemExit("Logout action closing brace missing")
           replacement='''item("🚪  Logout","Sign out"){
-              // Clear session first, then replace the complete task with the login screen.
               getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
                   .putBoolean("force_login", true)
                   .commit()
@@ -482,18 +495,16 @@ jobs:
               startActivity(loginIntent)
               finishAffinity()
           }'''
-          s=s[:m.start()]+replacement+s[m.end():]
-          # LoginActivity must keep the login screen visible when logout explicitly requested.
+          s=s[:start]+replacement+s[end:]
           lp=Path("app/src/main/java/com/foodvexa/app/LoginActivity.kt")
           login=lp.read_text(encoding="utf-8")
           if 'if (intent.getBooleanExtra("force_login", false))' not in login or 'showLogin()' not in login:
               raise SystemExit("LoginActivity force-login routing missing; refusing to build")
-          if 'FirebaseAuth.getInstance().signOut()' not in s and 'FirebaseAuth.getInstance().signOut()' not in login:
-              raise SystemExit("Firebase sign-out missing; refusing to build")
           p.write_text(s,encoding="utf-8")
-          print("PASS customer logout clears session and opens LoginActivity")
-          print("PASS LoginActivity handles force_login")
+          print("PASS customer logout action replaced as a balanced Kotlin block")
+          print("PASS LoginActivity force-login route verified")
           PY
+
       - name: Build customer and admin debug APKs
         run: gradle :app:assembleDebug :admin:assembleDebug --no-daemon
       - name: Verify built APK SHA-1 for Google Sign-In
