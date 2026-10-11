@@ -48,7 +48,6 @@ while i<len(s):
             state="code"
         elif ch=="$" and i<len(s) and s[i]=="{":
             out.append("{"); i+=1
-            stack.append(("string",state))
             state="interpolation"
             interp_depth=1
     elif state=="interpolation":
