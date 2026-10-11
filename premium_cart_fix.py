@@ -22,69 +22,20 @@ if "private var cartDialog:android.app.Dialog?=null" not in s:
     s=s.replace("private var searchBox:EditText?=null;","private var searchBox:EditText?=null;private var cartDialog:android.app.Dialog?=null;",1)
 
 def remove_method(src,name):
-    # Parse Kotlin braces safely. A quote inside \${...} must not terminate the
-    # surrounding string; otherwise this can eat Profile click lambdas.
-    pat=re.compile(r"private fun "+re.escape(name)+r"\s*\([^)]*\)\s*\{")
-    while True:
-        m=pat.search(src)
-        if not m: return src
-        i=m.start()
-        pos=m.end()
-        method_depth=1
-        stack=[{"state":"code","depth":0,"escaped":False}]
-        while pos<len(src) and method_depth:
-            frame=stack[-1]
-            state=frame["state"]
-            ch=src[pos]
-            nxt=src[pos+1] if pos+1<len(src) else ""
-            if state=="code":
-                if ch=="/" and nxt=="/":
-                    stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
-                elif ch=="/" and nxt=="*":
-                    stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
-                elif ch=='"':
-                    stack.append({"state":"string","depth":0,"escaped":False})
-                elif ch=="'":
-                    stack.append({"state":"char","depth":0,"escaped":False})
-                elif ch=="{":
-                    method_depth+=1
-                elif ch=="}":
-                    method_depth-=1
-                    if method_depth==0:
-                        pos+=1
-                        break
-            elif state=="string":
-                if frame["escaped"]: frame["escaped"]=False
-                elif ch=="\\": frame["escaped"]=True
-                elif ch=='"': stack.pop()
-                elif ch=="$" and nxt=="{":
-                    stack.append({"state":"interpolation","depth":1,"escaped":False}); pos+=1
-            elif state=="interpolation":
-                if ch=="/" and nxt=="/":
-                    stack.append({"state":"line_comment","depth":0,"escaped":False}); pos+=1
-                elif ch=="/" and nxt=="*":
-                    stack.append({"state":"block_comment","depth":0,"escaped":False}); pos+=1
-                elif ch=='"':
-                    stack.append({"state":"string","depth":0,"escaped":False})
-                elif ch=="'":
-                    stack.append({"state":"char","depth":0,"escaped":False})
-                elif ch=="{":
-                    frame["depth"]+=1
-                elif ch=="}":
-                    frame["depth"]-=1
-                    if frame["depth"]==0: stack.pop()
-            elif state=="char":
-                if frame["escaped"]: frame["escaped"]=False
-                elif ch=="\\": frame["escaped"]=True
-                elif ch=="'": stack.pop()
-            elif state=="line_comment":
-                if ch=="\n": stack.pop()
-            elif state=="block_comment":
-                if ch=="*" and nxt=="/": stack.pop(); pos+=1
-            pos+=1
-        if method_depth:
-            raise SystemExit("Unclosed Kotlin method while removing "+name)
-        src=src[:i]+src[pos:]
+    # These methods have stable neighboring declarations in this source. Remove
+    # only their exact regions instead of trying to parse Kotlin interpolation.
+    next_method = {
+        "placeOrderAndShowOrders": "private fun updateCartBadge",
+        "updateCartBadge": "private fun addToCart",
+        "showCart": "private fun showOrders",
+    }.get(name)
+    if next_method:
+        start = src.find("private fun " + name + "(")
+        end = src.find(next_method, start + 1) if start >= 0 else -1
+        if start >= 0 and end > start:
+            return src[:start] + src[end:]
+        raise SystemExit("Could not safely isolate method " + name + " before " + next_method)
+    raise SystemExit("No safe removal boundary configured for " + name)
 
 for method in ("showCart","updateCartBadge","placeOrderAndShowOrders"):
     s=remove_method(s,method)
