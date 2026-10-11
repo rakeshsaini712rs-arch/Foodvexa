@@ -149,6 +149,38 @@ if oldcard not in block: raise SystemExit("Profile Google account card not found
 block=block.replace(oldcard,newcard,1)
 ms=ms[:start]+block+ms[end:]
 
+# Replace the customer My Profile editor as one complete, deterministic block.
+# Gmail comes from the active Firebase user and is persisted with the profile.
+editor_start=ms.find("private fun showProfileEditor(){")
+editor_end=ms.find("private fun showAddressBook(){",editor_start)
+if editor_start < 0 or editor_end < 0:
+    raise SystemExit("Could not locate customer My Profile editor boundaries")
+editor = '''private fun showProfileEditor(){
+ setupBase(4)
+ val user=FirebaseAuth.getInstance().currentUser
+ val googleName=user?.displayName.orEmpty().ifBlank{prefs.getString("google_name","").orEmpty()}
+ val googleEmail=user?.email.orEmpty().ifBlank{prefs.getString("google_email","").orEmpty()}
+ content.addView(label("My Profile",28f,true,primaryText),margin(0,10,0,8))
+ content.addView(label("Your Google account",14f,true,secondaryText),margin(0,0,0,4))
+ content.addView(label(googleName.ifBlank{"Google account"},17f,true,primaryText),margin(0,0,0,3))
+ if(googleEmail.isNotBlank())content.addView(label(googleEmail,14f,false,secondaryText),margin(0,0,0,14))
+ val name=EditText(this).apply{hint="Full name";setText(googleName.ifBlank{prefs.getString("profile_name","").orEmpty()});setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,14)}
+ val mobile=EditText(this).apply{hint="Mobile number";setText(prefs.getString("profile_mobile","").orEmpty());inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(14),0,dp(14),0);background=rounded(Color.WHITE,14)}
+ val address=EditText(this).apply{hint="Delivery address";setText(prefs.getString("profile_address",prefs.getString("location","").orEmpty()).orEmpty());setTextColor(ink);setHintTextColor(muted);minLines=3;gravity=Gravity.TOP;setPadding(dp(14),dp(12),dp(14),dp(12));background=rounded(Color.WHITE,14)}
+ content.addView(name,margin(0,0,0,10));content.addView(mobile,margin(0,0,0,10));content.addView(address,margin(0,0,0,14))
+ content.addView(primaryButton("💾  Save Profile"){
+   val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
+   if(n.isBlank()){name.error="Please enter your name";name.requestFocus();return@primaryButton}
+   if(m.isBlank()){mobile.error="Please enter mobile number";mobile.requestFocus();return@primaryButton}
+   if(a.isBlank()){address.error="Please enter delivery address";address.requestFocus();return@primaryButton}
+   prefs.edit().putString("google_uid",user?.uid.orEmpty()).putString("google_name",user?.displayName.orEmpty().ifBlank{n}).putString("google_email",googleEmail).putString("profile_name",n).putString("profile_email",googleEmail).putString("profile_mobile",m).putString("profile_address",a).putString("location",a).putString("delivery_address",a).putString("location_label","Delivery").putBoolean("profile_created",true).apply()
+   Toast.makeText(this,"Profile saved successfully",Toast.LENGTH_SHORT).show();showProfile()
+ },margin(0,0,0,12))
+ content.addView(primaryButton("📍  Manage Address Book"){showAddressBook()},margin(0,0,0,10))
+}
+'''
+ms=ms[:editor_start]+editor+ms[editor_end:]
+
 checks={
  "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
  "Google email persisted":'putString("google_email", account.email.orEmpty())' in ls,
