@@ -313,7 +313,6 @@ private fun showCart(){setupBase(3);content.addView(label("Your Cart",24f,true,p
     startActivity(intent)
     finishAffinity()
 }}
-}
 private fun savedFavoriteNames():MutableSet<String>{
  return prefs.getStringSet("favorite_products", emptySet())?.toMutableSet() ?: mutableSetOf()
 }
