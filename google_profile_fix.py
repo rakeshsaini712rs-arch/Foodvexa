@@ -199,56 +199,57 @@ editor = '''private fun showProfileEditor(){
 '''
 ms=ms[:editor_start]+editor+ms[editor_end:]
 
-# Final, idempotent My Profile row tap fix, applied after all earlier profile edits.
-# Make the entire row consume touches before child TextViews can intercept them.
+# Final deterministic Profile row tap fix. Earlier variants used different
+# listener spellings (action() vs clickAction), so replace the whole helper rather
+# than silently skipping the patch when a string anchor changes.
 profile_pos=ms.find("private fun showProfile(){")
 profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
-if profile_pos >= 0 and profile_end > profile_pos:
-    profile_block=ms[profile_pos:profile_end]
-    old_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;setOnClickListener{action()}}'''
-    new_box='''  val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(16),dp(12),dp(12),dp(12));background=rounded(Color.rgb(38,38,44),16);isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;setOnClickListener{action()}}'''
-    # Patch the first row container structurally rather than requiring one exact line.
-    rows=profile_block.splitlines(keepends=True)
-    for idx,line in enumerate(rows):
-        if "val box=LinearLayout(this).apply{" in line and "setOnClickListener{action()}" in line:
-            if "descendantFocusability" not in line:
-                rows[idx]=line.replace("isClickable=true;", "isClickable=true;isFocusable=true;descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS;")
-            break
-    profile_block="".join(rows)
-    # Keep row labels passive; consume touch on the parent row so taps always trigger the row action.
-    for old_label, new_label in [
-        ('texts.addView(label(title,16f,true,Color.WHITE).apply{setOnClickListener{action()}})', 'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})'),
-        ('texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})', 'texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})'),
-        ('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{setOnClickListener{action()}},margin(0,3,0,0))', 'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))'),
-        ('if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY),margin(0,3,0,0))', 'if(subtitle.isNotBlank()) texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))'),
-        ('box.addView(label("›",24f,true,Color.LTGRAY).apply{setOnClickListener{action()}})', 'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})'),
-        ('box.addView(label("›",24f,true,Color.LTGRAY))', 'box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})'),
-    ]:
-        profile_block=profile_block.replace(old_label,new_label)
-    profile_block=profile_block.replace('  texts.setOnClickListener{action()}\\n','')
-    import re
-    touch='setOnTouchListener{_,event->if(event.action==android.view.MotionEvent.ACTION_UP)action();true}'
-    if touch not in profile_block:
-        # Attach to the row's apply block regardless of whether the source is one-line or multiline.
-        profile_block=re.sub(r'setOnClickListener\s*\{\s*action\(\)\s*\}', lambda m: m.group(0)+';'+touch, profile_block)
+if profile_pos < 0 or profile_end <= profile_pos:
+    raise SystemExit("FAIL Profile row boundaries not found")
+profile_block=ms[profile_pos:profile_end]
+helper_start=profile_block.find(" fun item(title:String, subtitle:String=\"\"")
+helper_end=profile_block.find(' item("👤  My Profile"', helper_start)
+if helper_start < 0 or helper_end <= helper_start:
+    raise SystemExit("FAIL Profile item helper boundaries not found")
+helper=''' fun item(title:String, subtitle:String="", action:()->Unit={}){
+  val box=LinearLayout(this).apply{
+   orientation=LinearLayout.HORIZONTAL
+   gravity=Gravity.CENTER_VERTICAL
+   setPadding(dp(16),dp(12),dp(12),dp(12))
+   background=rounded(Color.rgb(38,38,44),16)
+   isClickable=true
+   isFocusable=true
+   descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
+   setOnClickListener{action()}
+   setOnTouchListener{v,event->
+    if(event.action==android.view.MotionEvent.ACTION_UP)v.performClick()
+    true
+   }
+  }
+  val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;isClickable=false;isFocusable=false}
+  texts.addView(label(title,16f,true,Color.WHITE).apply{isClickable=false;isFocusable=false})
+  if(subtitle.isNotBlank())texts.addView(label(subtitle,12f,false,Color.LTGRAY).apply{isClickable=false;isFocusable=false},margin(0,3,0,0))
+  box.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+  box.addView(label("›",24f,true,Color.LTGRAY).apply{isClickable=false;isFocusable=false})
+  content.addView(box,margin(0,0,0,10))
+ }
+'''
+profile_block=profile_block[:helper_start]+helper+profile_block[helper_end:]
+ms=ms[:profile_pos]+profile_block+ms[profile_end:]
 
-    ms=ms[:profile_pos]+profile_block+ms[profile_end:]
-else:
-    print("NOTE final My Profile row tap patch could not locate showProfile boundaries")
-
-# Fail the build if the final transformed profile row does not retain a working editor action.
-profile_check_start=ms.find("private fun showProfile(){")
-profile_check_end=ms.find("private fun savedFavoriteNames",profile_check_start+len("private fun showProfile(){"))
-if profile_check_start < 0 or profile_check_end <= profile_check_start:
-    raise SystemExit("FAIL My Profile source boundaries not found after patch")
-profile_check=ms[profile_check_start:profile_check_end]
-if 'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' not in profile_check:
-    raise SystemExit("FAIL My Profile row does not call showProfileEditor")
-if "setOnClickListener{action()}" not in profile_check:
-    raise SystemExit("FAIL My Profile row action listener missing")
-if "descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS" not in profile_check:
-    raise SystemExit("FAIL My Profile row focus handling missing")
-print("PASS My Profile editor action and tap handling verified in final transformed source")
+# Verify the final helper itself, not merely some unrelated click listener.
+profile_pos=ms.find("private fun showProfile(){")
+profile_end=ms.find("private fun savedFavoriteNames",profile_pos+len("private fun showProfile(){"))
+profile_block=ms[profile_pos:profile_end]
+checks_profile={
+ "My Profile routes to editor":'item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}' in profile_block,
+ "row uses performClick on touch-up":'if(event.action==android.view.MotionEvent.ACTION_UP)v.performClick()' in profile_block,
+ "row has click listener":'setOnClickListener{action()}' in profile_block,
+ "children do not intercept taps":'isClickable=false;isFocusable=false' in profile_block,
+ "focus descendants blocked":'descendantFocusability=android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS' in profile_block,
+}
+for k,v in checks_profile.items(): print(("PASS " if v else "FAIL ")+k)
+if not all(checks_profile.values()): raise SystemExit("Profile tap-routing verification failed")
 
 checks={
  "Google UID persisted":'putString("google_uid", auth.currentUser?.uid.orEmpty())' in ls,
