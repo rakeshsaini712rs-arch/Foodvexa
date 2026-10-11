@@ -100,6 +100,7 @@ class MainActivity:AppCompatActivity(){
   fixed.addView(locationHeader(),margin(0,2,0,6))
   val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(if(isLightTheme)muted else Color.LTGRAY);setTextColor(primaryText);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
   searchBox=search
+  search.clearFocus()
   fixed.addView(search,margin(0,0,0,7))
   val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground)}
   stickyCategories.addView(label("Categories",18f,true,primaryText),margin(0,0,0,3))
@@ -121,6 +122,8 @@ class MainActivity:AppCompatActivity(){
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(0,2,0,5))
   renderProducts()
+  root.isFocusableInTouchMode=true
+  root.requestFocus()
  }
 
  private fun locationHeader():LinearLayout{val saved=prefs.getString("location","").orEmpty();val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),18);isClickable=true;setOnClickListener{locationDialog()}};val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER};box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(42)));val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};texts.addView(label("Deliver to",11f,true,if(isLightTheme)muted else Color.LTGRAY));texts.addView(label(if(saved.isBlank())"Select delivery location" else saved,15f,true,if(isLightTheme)ink else Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END});box.addView(texts,LinearLayout.LayoutParams(0,-2,1f));box.addView(label("⌄",18f,true,if(isLightTheme)muted else Color.LTGRAY),LinearLayout.LayoutParams(dp(28),dp(42)).apply{gravity=Gravity.CENTER});return box}
@@ -294,9 +297,9 @@ private fun bannerGrid():LinearLayout{
   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
   card.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)})
   loadImage(pic,b.third)
-  strip.addView(card,LinearLayout.LayoutParams(dp(320),dp(150)).apply{rightMargin=dp(10)})
+  strip.addView(card,LinearLayout.LayoutParams(-1,dp(150)))
  }
- container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;addView(strip)},LinearLayout.LayoutParams(-1,dp(154)))
+ container.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=true;addView(strip,LinearLayout.LayoutParams(-1,dp(150)))},LinearLayout.LayoutParams(-1,dp(154)))
  return container
 }
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
