@@ -464,6 +464,10 @@ jobs:
           from pathlib import Path
           p=Path("app/src/main/java/com/foodvexa/app/MainActivity.kt")
           s=p.read_text(encoding="utf-8")
+          if "import android.content.Intent" not in s:
+              anchor="package com.foodvexa.app"
+              if anchor not in s: raise SystemExit("Customer package declaration missing")
+              s=s.replace(anchor, anchor+chr(10)+chr(10)+"import android.content.Intent", 1)
           marker='item("🚪  Logout","Sign out")'
           start=s.find(marker)
           if start < 0:
