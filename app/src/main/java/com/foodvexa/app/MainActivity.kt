@@ -291,16 +291,16 @@ private fun bannerGrid():LinearLayout{
    else setBackgroundColor(Color.DKGRAY)
    contentDescription=name
   }
-  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(250)))
+  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(300)))
  }
  val carousel=HorizontalScrollView(this).apply{
   isHorizontalScrollBarEnabled=false
   overScrollMode=View.OVER_SCROLL_NEVER
   isFillViewport=false
   clipToPadding=true
-  addView(strip,LinearLayout.LayoutParams(-2,dp(250)))
+  addView(strip,LinearLayout.LayoutParams(-2,dp(300)))
  }
- container.addView(carousel,LinearLayout.LayoutParams(-1,dp(254)))
+ container.addView(carousel,LinearLayout.LayoutParams(-1,dp(304)))
  val slideHandler=android.os.Handler(android.os.Looper.getMainLooper())
  var slideIndex=0
  val slideTask=object:Runnable{
