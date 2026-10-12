@@ -183,39 +183,62 @@ class MainActivity:AppCompatActivity(){
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
  private fun renderPartnerShopCards(){
+ data class ShopCard(val name:String,val subtitle:String,val address:String,val imageRes:Int)
  val shops=listOf(
-  Triple("FOODVEXA","Foodvexa • All products","https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=85"),
-  Triple("Cake Tower","Cakes & Birthday Specials","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85")
+  ShopCard("FOODVEXA","All products","Nansa Gate, Nawalgarh, Rajasthan",R.drawable.foodvexa_card),
+  ShopCard("Cake Tower","Cakes & Birthday Specials","Ghoom Chakkaar, Nawalgarh",R.drawable.cake_tower_card),
+  ShopCard("Santa Banta Bakery","Bakery • Pizza • Fast Food","Near OBC Bank, Jangir Hospital Road, Nansa Gate",R.drawable.santa_banta_bakery),
+  ShopCard("Kanha Bakery & Fast Food","Bakery • Fast Food • Beverages","Chuna Chowk, Bus Stand, Nawalgarh",R.drawable.kanha_bakery_fast_food),
+  ShopCard("Sadafal Cafe & Dining","Cafe • Pizza • Sandwich • Indian Food","Nansa Gate, near OBC Bank, Nawalgarh",R.drawable.sadafal_cafe_dining),
+  ShopCard("Bistro Nawalgarh","Cafe • Fast Food • Beverages","Near SBI Bank, opposite Podar College, Nawalgarh",R.drawable.bistro_nawalgarh),
+  ShopCard("Brew & Bite","Cafe • Coffee • Snacks • Shakes","Nawalgarh, Rajasthan",R.drawable.brew_and_bite),
+  ShopCard("Chotiya Ji Sweets","Mithai • Namkeen • Sweets","Ward 9, near Nagar Palika, Station Road, Nawalgarh",R.drawable.chotiya_ji_sweets),
+  ShopCard("Shree Rajaram Peda Bhandar","Peda • Sweets • Namkeen","Nansa Gate, near OBC Bank, Poddar College Road",R.drawable.shree_rajaram_peda_bhandar),
+  ShopCard("Royal Fast Food","Burger • Pizza • Fast Food","Rise Complex, Nawalgarh",R.drawable.royal_fast_food),
+  ShopCard("Hotel Marwadi & Restaurant","Rajasthani Food • North Indian • Thali","Near Utsav Vatika, Nawalgarh",R.drawable.hotel_marwadi_restaurant),
+  ShopCard("Mayur Hotel & Restaurant","Hotel • Restaurant • Thali • Indian Food","Loharu–Sikar Road, Nawalgarh",R.drawable.mayur_hotel_restaurant),
+  ShopCard("La Veg Pizza","Pizza • Pasta • Fast Food","Nawalgarh, Rajasthan",R.drawable.la_veg_pizza),
+  ShopCard("Hotel Nawalgarh Plaza","Hotel • Rooms • Restaurant","Near Roadways Bus Depot, Sikar–Jhunjhunu Road",R.drawable.hotel_nawalgarh_plaza),
+  ShopCard("Vivaana Museum Hotel","Heritage Hotel • Stay • Restaurant","Mandi Gate, Nawalgarh, Rajasthan 333042",R.drawable.vivaana_museum_hotel),
+  ShopCard("Bungli Restaurant","Indian Food • Thali • Family Dining","Nawalgarh, Rajasthan",R.drawable.bungli_restaurant)
  )
  var row:LinearLayout?=null
  shops.forEachIndexed{index,shop->
   if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
   val card=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL;setPadding(dp(6),dp(6),dp(6),dp(8))
-   background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41));cornerRadius=dp(16).toFloat();setStroke(dp(2),if(index==0)orange else Color.rgb(225,225,230))}
+   orientation=LinearLayout.VERTICAL
+   setPadding(dp(4),dp(4),dp(4),dp(6))
+   background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41));cornerRadius=dp(16).toFloat();setStroke(dp(1),if(index<2)orange else Color.rgb(225,225,230))}
    isClickable=true;isFocusable=true
    setOnClickListener{
-    selectedCategory=if(shop.first=="FOODVEXA")"All" else "Birthday Special"
-    for(i in 0 until (categoryRow?.childCount?:0)){
-     val item=categoryRow?.getChildAt(i) as? LinearLayout ?: continue
-     val cat=categories.getOrNull(i) ?: continue
-     item.background=categoryBackground(cat.name==selectedCategory)
-     if(item.childCount>1)(item.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
+    if(shop.name=="FOODVEXA" || shop.name=="Cake Tower"){
+     selectedCategory=if(shop.name=="FOODVEXA")"All" else "Birthday Special"
+     for(i in 0 until (categoryRow?.childCount?:0)){
+      val item=categoryRow?.getChildAt(i) as? LinearLayout ?: continue
+      val cat=categories.getOrNull(i) ?: continue
+      item.background=categoryBackground(cat.name==selectedCategory)
+      if(item.childCount>1)(item.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
+     }
+     renderProducts()
+    }else{
+     AlertDialog.Builder(this@MainActivity)
+      .setTitle(shop.name)
+      .setMessage(shop.address+"\n\n"+shop.subtitle+"\n\nMenu and current prices should be confirmed with the shop before enabling orders.")
+      .setPositiveButton("OK",null)
+      .show()
     }
-    renderProducts()
-    val scroll=(content.parent as? ScrollView);val target=content.getChildAt(0)
-    if(target!=null)scroll?.post{scroll.smoothScrollTo(0,target.top)}
    }
   }
   val artwork=ImageView(this).apply{
    scaleType=ImageView.ScaleType.FIT_CENTER
    adjustViewBounds=true
-   setImageResource(if(shop.first=="FOODVEXA")R.drawable.foodvexa_card else R.drawable.cake_tower_card)
-   contentDescription=shop.first
+   setImageResource(shop.imageRes)
+   contentDescription=shop.name+" — "+shop.address
   }
-  card.setPadding(dp(3),dp(3),dp(3),dp(3))
-  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(238)))
-  row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6);leftMargin=dp(6);bottomMargin=dp(10)})
+  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(150)))
+  card.addView(label(shop.name,13f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),0)})
+  card.addView(label(shop.address,10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),dp(3))})
+  row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5);leftMargin=dp(5);bottomMargin=dp(10)})
   if(index%2==1)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
  if(shops.size%2!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
