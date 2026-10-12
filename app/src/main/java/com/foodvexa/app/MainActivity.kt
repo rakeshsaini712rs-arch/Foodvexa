@@ -369,7 +369,7 @@ private fun placeOrderAndShowOrders(){
    Toast.makeText(this,"Order save nahi hua. Error screen par dekhein.",Toast.LENGTH_LONG).show()
   }
 }
-private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"🛒\nCART $count" else "🛒\nCART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
+private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
 private fun bannerGrid():HorizontalScrollView{
