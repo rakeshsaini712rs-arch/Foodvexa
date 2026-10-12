@@ -91,18 +91,17 @@ class MainActivity:AppCompatActivity(){
   stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
   fixed.addView(stickyCategories)
 
-  // The uploaded banner artwork already contains Foodvexa branding, delivery and search UI.
-  // Display it as one complete image to avoid duplicating overlays and cropping its sides.
+  // Banner artwork contains the logo, delivery label and search illustration already.
+  // Never add real search/location controls over the banner artwork.
   content.addView(bannerGrid(),margin(0,0,0,8))
-  content.addView(label("Categories",21f,true,primaryText),margin(8,4,8,4))
+  val categoryTitle=label("Categories",21f,true,primaryText)
+  content.addView(categoryTitle,margin(8,4,8,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
   content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
   val scrollView=content.parent as ScrollView
-  val categoryTitleIndex=content.childCount-2
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
-   val titleView=content.getChildAt(categoryTitleIndex)
-   stickyCategories.visibility=if(titleView.top-scrollY<=0)View.VISIBLE else View.GONE
+   stickyCategories.visibility=if(categoryTitle.top-scrollY<=0)View.VISIBLE else View.GONE
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
   renderProducts()
