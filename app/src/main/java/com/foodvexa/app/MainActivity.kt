@@ -118,7 +118,7 @@ class MainActivity:AppCompatActivity(){
    }
    addView(notificationIcon,FrameLayout.LayoutParams(-1,-1))
    addView(View(this@MainActivity).apply{
-    background=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(Color.rgb(255,65,65))}
+    background=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(Color.TRANSPARENT)}
    },FrameLayout.LayoutParams(dp(10),dp(10),Gravity.TOP or Gravity.END).apply{topMargin=dp(5);rightMargin=dp(5)})
   },LinearLayout.LayoutParams(dp(44),dp(44)))
   content.addView(header,LinearLayout.LayoutParams(-1,-2))
@@ -238,7 +238,7 @@ filtered.forEachIndexed{index,p->
  private fun locationDialog(){
   val current=prefs.getString("location","").orEmpty()
   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))}
-  panel.addView(label("Delivery boy ko exact ghar/shop tak pahunchne ke liye poora address likhein.",12f,false,muted),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+  panel.addView(label("Add your complete delivery address.",12f,false,muted),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
   val search=EditText(this).apply{
    hint="House/Shop no., street, colony, area, Nawalgarh, district, PIN code"
    setText(current)
