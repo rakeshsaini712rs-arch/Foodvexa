@@ -6,6 +6,9 @@ import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
 import android.location.LocationManager
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -60,8 +63,9 @@ class LocationGateActivity : AppCompatActivity() {
     }
 
     private fun obtainLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        val fineGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarseGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!fineGranted && !coarseGranted) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
@@ -70,37 +74,58 @@ class LocationGateActivity : AppCompatActivity() {
             return
         }
 
-        val manager = getSystemService(LOCATION_SERVICE) as LocationManager
-        var best: android.location.Location? = null
-        for (provider in manager.getProviders(true)) {
-            try {
-                val location = manager.getLastKnownLocation(provider) ?: continue
-                if (best == null || location.accuracy < best!!.accuracy) best = location
-            } catch (_: SecurityException) { }
-        }
-
-        Thread {
-            val address = best?.let { reverseGeocode(it.latitude, it.longitude) }
-            val finalLocation = address ?: ""
-            runOnUiThread {
-                if (finalLocation.isNotBlank()) {
-                    getSharedPreferences("foodvexa", MODE_PRIVATE).edit()
-                        .putString("location", finalLocation)
-                        .apply()
-                }
-                val prefs = getSharedPreferences("foodvexa", MODE_PRIVATE)
-                val forceLogin = prefs.getBoolean("force_login", false)
-                val loggedIn = FirebaseAuth.getInstance().currentUser != null
-                if (forceLogin || !loggedIn) {
-                    startActivity(Intent(this, LoginActivity::class.java).apply {
-                        putExtra("force_login", true)
-                    })
-                } else {
-                    startActivity(Intent(this, MainActivity::class.java))
-                }
-                finish()
+        val prefs = getSharedPreferences("foodvexa", MODE_PRIVATE)
+        val forceLogin = prefs.getBoolean("force_login", false)
+        val loggedIn = FirebaseAuth.getInstance().currentUser != null
+        val client = LocationServices.getFusedLocationProviderClient(this)
+        try {
+            client.getCurrentLocation(
+                if (fineGranted) Priority.PRIORITY_HIGH_ACCURACY else Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                CancellationTokenSource().token
+            ).addOnSuccessListener { current ->
+                Thread {
+                    val resolved = current?.let {
+                        reverseGeocode(it.latitude, it.longitude)?.let { address ->
+                            Pair(address, Pair(it.latitude, it.longitude))
+                        }
+                    }
+                    runOnUiThread {
+                        if (resolved != null) {
+                            prefs.edit()
+                                .putString("location", resolved.first)
+                                .putString("delivery_address", resolved.first)
+                                .putString("location_latitude", resolved.second.first.toString())
+                                .putString("location_longitude", resolved.second.second.toString())
+                                .putBoolean("location_is_gps", true)
+                                .apply()
+                        } else {
+                            // Keep a previously resolved address if a fresh GPS fix is unavailable.
+                            android.widget.Toast.makeText(
+                                this,
+                                "Current location nahi mili. Phone ki Location aur Precise location ON karein.",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        continueToApp(forceLogin, loggedIn)
+                    }
+                }.start()
+            }.addOnFailureListener {
+                continueToApp(forceLogin, loggedIn)
             }
-        }.start()
+        } catch (_: SecurityException) {
+            continueToApp(forceLogin, loggedIn)
+        }
+    }
+
+    private fun continueToApp(forceLogin: Boolean, loggedIn: Boolean) {
+        if (forceLogin || !loggedIn) {
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                putExtra("force_login", true)
+            })
+        } else {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+        finish()
     }
 
     private fun reverseGeocode(lat: Double, lon: Double): String? {
@@ -109,7 +134,7 @@ class LocationGateActivity : AppCompatActivity() {
             val results: List<Address> = Geocoder(this, Locale.getDefault())
                 .getFromLocation(lat, lon, 1) ?: emptyList()
             val a = results.firstOrNull() ?: return null
-            listOfNotNull(a.subLocality, a.locality, a.subAdminArea, a.adminArea, a.postalCode)
+            listOfNotNull(a.featureName, a.subThoroughfare, a.thoroughfare, a.subLocality, a.locality, a.subAdminArea, a.adminArea, a.postalCode)
                 .distinct()
                 .joinToString(", ")
                 .takeIf { it.isNotBlank() }
