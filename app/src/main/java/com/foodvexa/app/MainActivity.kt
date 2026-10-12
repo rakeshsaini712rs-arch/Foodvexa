@@ -82,45 +82,66 @@ class MainActivity:AppCompatActivity(){
  }
  private fun showHome(selectedNav:Int=0){
   setupHomeBase(selectedNav)
-  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(0),dp(8),dp(0))}
+  val shell=(content.parent as ScrollView).parent as LinearLayout
+  val fixed=shell.getChildAt(0) as LinearLayout
+  fixed.removeAllViews()
+  val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),0)}
+  val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(68)).apply{rightMargin=dp(7)})}
+  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
+  fixed.addView(stickyCategories)
+
+  // Full-width hero: rotating food artwork with the Foodvexa controls layered on top.
+  val hero=FrameLayout(this).apply{clipChildren=true;clipToPadding=true}
+  hero.addView(bannerGrid(),FrameLayout.LayoutParams(-1,dp(500)))
+  val overlay=LinearLayout(this).apply{
+   orientation=LinearLayout.VERTICAL
+   setPadding(dp(16),dp(8),dp(16),0)
+   background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(0xB8000000.toInt(),0x65000000,Color.TRANSPARENT)).apply{cornerRadius=0f}
+  }
+  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(4),0,dp(4),0)}
   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  val name=label("FOODVEXA",26f,true,primaryText)
+  val name=label("FOODVEXA",26f,true,Color.WHITE)
   val styled=android.text.SpannableString("FOODVEXA")
-  styled.setSpan(android.text.style.ForegroundColorSpan(primaryText),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  styled.setSpan(android.text.style.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
   styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
   name.text=styled
   brand.addView(name)
-  brand.addView(label("Taste the Happiness",11f,false,secondaryText))
-  header.addView(brand,LinearLayout.LayoutParams(0,dp(54),1f))
-  val bell=label("♧",26f,false,primaryText).apply{gravity=Gravity.CENTER}
-  header.addView(bell,LinearLayout.LayoutParams(dp(40),dp(50)))
-  val shell=(content.parent as ScrollView).parent as LinearLayout
-  val fixed=shell.getChildAt(0) as LinearLayout
-  fixed.addView(header)
-  val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground)}
-  stickyCategories.addView(label("Categories",18f,true,primaryText),margin(0,0,0,3))
-  val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(68)).apply{rightMargin=dp(7)})}
-  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
-  fixed.addView(stickyCategories)
-  content.addView(locationHeader(),margin(0,0,0,6))
-  val search=EditText(this).apply{hint="Search food, sweets, fast food...";setHintTextColor(if(isLightTheme)muted else Color.LTGRAY);setTextColor(primaryText);setSingleLine(true);inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0);background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),16);addTextChangedListener(object:android.text.TextWatcher{override fun beforeTextChanged(s:CharSequence?,st:Int,c:Int,a:Int){};override fun onTextChanged(s:CharSequence?,st:Int,b:Int,c:Int){query=s?.toString().orEmpty();renderProducts()};override fun afterTextChanged(e:android.text.Editable?){} })}
-  searchBox=search
-  search.clearFocus()
-  content.addView(search,margin(0,0,0,7))
-  content.addView(bannerGrid(),margin(0,0,0,8))
-  content.addView(label("Categories",21f,true,primaryText),margin(0,0,0,4))
+  brand.addView(label("Taste the Happiness",11f,false,Color.WHITE))
+  header.addView(brand,LinearLayout.LayoutParams(0,dp(58),1f))
+  header.addView(label("♧",26f,false,Color.WHITE).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(40),dp(50)))
+  overlay.addView(header,LinearLayout.LayoutParams(-1,dp(62)))
+
+  val location=locationHeader().apply{
+   background=GradientDrawable().apply{setColor(0x4D161616);setStroke(dp(1),0x99FFFFFF.toInt());cornerRadius=dp(18).toFloat()}
+  }
+  overlay.addView(location,margin(0,dp(4),0,8))
+  val search=EditText(this).apply{
+   hint="Search food, sweets, fast food..."
+   setHintTextColor(Color.DKGRAY);setTextColor(Color.BLACK);setSingleLine(true)
+   inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0)
+   background=rounded(Color.WHITE,28)
+   addTextChangedListener(object:android.text.TextWatcher{
+    override fun beforeTextChanged(s:CharSequence?,st:Int,count:Int,after:Int){}
+    override fun onTextChanged(s:CharSequence?,st:Int,before:Int,count:Int){query=s?.toString().orEmpty();renderProducts()}
+    override fun afterTextChanged(e:android.text.Editable?){}
+   })
+  }
+  searchBox=search;search.clearFocus()
+  overlay.addView(search,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(4)})
+  hero.addView(overlay,FrameLayout.LayoutParams(-1,-2,Gravity.TOP))
+  content.addView(hero,LinearLayout.LayoutParams(-1,dp(500)))
+  content.addView(label("Categories",21f,true,primaryText),margin(8,8,8,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
-  content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=android.view.View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
+  content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
   val scrollView=content.parent as ScrollView
   val categoryTitleIndex=content.childCount-2
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
    val titleView=content.getChildAt(categoryTitleIndex)
-   val sticky=titleView.top-scrollY<=0
-   stickyCategories.visibility=if(sticky)View.VISIBLE else View.GONE
+   stickyCategories.visibility=if(titleView.top-scrollY<=0)View.VISIBLE else View.GONE
   }
-  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(0,2,0,5))
+  content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
   renderProducts()
   root.isFocusableInTouchMode=true
   root.requestFocus()
@@ -276,42 +297,39 @@ private fun placeOrderAndShowOrders(){
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"🛒\nCART $count" else "🛒\nCART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
-private fun bannerGrid():LinearLayout{
- val container=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
- val bannerNames=listOf("banner_pizza","banner_birthday","banner_desi_rasoi","banner_burger")
- val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
- val cardWidth=resources.displayMetrics.widthPixels
- bannerNames.forEach{name->
-  val imageId=resources.getIdentifier(name,"drawable",packageName)
-  val image=ImageView(this).apply{
-   scaleType=ImageView.ScaleType.FIT_XY
-   adjustViewBounds=false
-   if(imageId!=0)setImageResource(imageId)
-   else setBackgroundColor(Color.DKGRAY)
-   contentDescription=name
-  }
-  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(300)))
- }
+private fun bannerGrid():HorizontalScrollView{
+ val bannerNames=listOf("banner_pizza","banner_burger","banner_desi_rasoi","banner_birthday")
  val carousel=HorizontalScrollView(this).apply{
   isHorizontalScrollBarEnabled=false
   overScrollMode=View.OVER_SCROLL_NEVER
   isFillViewport=false
   clipToPadding=true
-  addView(strip,LinearLayout.LayoutParams(-2,dp(300)))
  }
- container.addView(carousel,LinearLayout.LayoutParams(-1,dp(304)))
- val slideHandler=android.os.Handler(android.os.Looper.getMainLooper())
+ val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+ val cardWidth=resources.displayMetrics.widthPixels
+ bannerNames.forEach{name->
+  val imageId=resources.getIdentifier(name,"drawable",packageName)
+  val image=ImageView(this).apply{
+   scaleType=ImageView.ScaleType.CENTER_CROP
+   adjustViewBounds=false
+   if(imageId!=0)setImageResource(imageId) else setBackgroundColor(Color.DKGRAY)
+   contentDescription=name
+  }
+  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(500)))
+ }
+ carousel.addView(strip,LinearLayout.LayoutParams(-2,dp(500)))
+ val slideHandler=Handler(Looper.getMainLooper())
  var slideIndex=0
  val slideTask=object:Runnable{
   override fun run(){
    if(!carousel.isAttachedToWindow)return
    slideIndex=(slideIndex+1)%bannerNames.size
    carousel.smoothScrollTo(slideIndex*cardWidth,0)
-   slideHandler.postDelayed(this,4000)
+   slideHandler.postDelayed(this,4500)
   }
  }
- carousel.postDelayed(slideTask,4000)
- return container
+ carousel.postDelayed(slideTask,4500)
+ return carousel
 }
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
