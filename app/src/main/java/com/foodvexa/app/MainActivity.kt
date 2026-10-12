@@ -91,8 +91,35 @@ class MainActivity:AppCompatActivity(){
   stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
   fixed.addView(stickyCategories)
 
-  // Banner artwork contains the logo, delivery label and search illustration already.
-  // Never add real search/location controls over the banner artwork.
+  // Real app header and controls sit ABOVE the clean promotional banner.
+  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(4),dp(8),dp(6))}
+  val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+  val brandText=label("FOODVEXA",26f,true,if(isLightTheme)Color.BLACK else Color.WHITE)
+  val brandSpan=android.text.SpannableString("FOODVEXA")
+  brandSpan.setSpan(android.text.style.ForegroundColorSpan(if(isLightTheme)Color.BLACK else Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  brandSpan.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+  brandText.text=brandSpan
+  brand.addView(brandText)
+  brand.addView(label("Taste the Happiness",11f,false,muted))
+  header.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
+  header.addView(label("♧",25f,false,primaryText),LinearLayout.LayoutParams(dp(36),dp(48)))
+  content.addView(header,LinearLayout.LayoutParams(-1,-2))
+  content.addView(locationHeader(),margin(4,2,4,8))
+  val search=EditText(this).apply{
+   hint="Search food, sweets, fast food..."
+   setHintTextColor(if(isLightTheme)Color.GRAY else Color.LTGRAY)
+   setTextColor(primaryText);setSingleLine(true);textSize=16f
+   inputType=InputType.TYPE_CLASS_TEXT
+   setPadding(dp(14),0,dp(14),0)
+   background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),28)
+   addTextChangedListener(object:android.text.TextWatcher{
+    override fun beforeTextChanged(s:CharSequence?,st:Int,count:Int,after:Int){}
+    override fun onTextChanged(s:CharSequence?,st:Int,before:Int,count:Int){query=s?.toString().orEmpty();renderProducts()}
+    override fun afterTextChanged(e:android.text.Editable?){}
+   })
+  }
+  searchBox=search
+  content.addView(search,margin(4,0,4,10))
   content.addView(bannerGrid(),margin(0,0,0,8))
   val categoryTitle=label("Categories",21f,true,primaryText)
   content.addView(categoryTitle,margin(8,4,8,4))
