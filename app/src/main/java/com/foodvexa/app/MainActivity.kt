@@ -279,34 +279,32 @@ private val paymentStatus:String get()=prefs.getString("payment_status","Pending
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
 private fun bannerGrid():LinearLayout{
  val container=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+ data class Promo(val title:String,val subtitle:String,val image:String,val color:Int)
  val banners=listOf(
-  Triple("PIZZA SPECIAL","Freshly prepared pizza",foodImages[0]),
-  Triple("BURGER SPECIAL","Burgers, fries & more",foodImages.getOrElse(1){foodImages[0]}),
-  Triple("DESI RASOI","Your favourite Indian food",foodImages.getOrElse(2){foodImages[0]}),
-  Triple("BIRTHDAY SPECIAL","Cakes for your celebrations",foodImages.getOrElse(3){foodImages[0]})
+  Promo("PIZZA SPECIAL","Freshly prepared pizza","https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=85",Color.rgb(135,18,18)),
+  Promo("BURGER SPECIAL","Burgers, fries & more","https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85",Color.rgb(5,54,30)),
+  Promo("DESI RASOI","Your favourite Indian food","https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg",Color.rgb(110,54,20)),
+  Promo("BIRTHDAY SPECIAL","Cakes for your celebrations","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=85",Color.rgb(190,66,100))
  )
  val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
  val logoId=resources.getIdentifier("foodvexa_exact_logo","drawable",packageName)
  val cardWidth=resources.displayMetrics.widthPixels
- banners.forEachIndexed{index,b->
-  val bg=when(index){0->Color.rgb(135,18,18);1->Color.rgb(5,54,30);2->Color.rgb(110,54,20);else->Color.rgb(190,66,100)}
-  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(bg,18);clipChildren=true}
+ banners.forEach{b->
+  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(8),dp(8),dp(8));background=rounded(b.color,18);clipChildren=true;clipToPadding=true}
   if(logoId!=0){
    val logo=ImageView(this).apply{setImageResource(logoId);scaleType=ImageView.ScaleType.FIT_CENTER}
-   card.addView(logo,LinearLayout.LayoutParams(dp(108),dp(108)).apply{rightMargin=dp(8)})
+   card.addView(logo,LinearLayout.LayoutParams(dp(76),dp(76)).apply{rightMargin=dp(7)})
   } else {
-   val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-   brand.addView(label("FOODVEXA",16f,true,Color.WHITE))
-   card.addView(brand,LinearLayout.LayoutParams(dp(108),-2).apply{rightMargin=dp(8)})
+   card.addView(label("FOODVEXA",13f,true,Color.WHITE),LinearLayout.LayoutParams(dp(76),-2).apply{rightMargin=dp(7)})
   }
   val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  text.addView(label(b.first,18f,true,Color.WHITE))
-  text.addView(label(b.second,11f,false,Color.LTGRAY),margin(0,3,0,0))
+  text.addView(label(b.title,15f,true,Color.WHITE))
+  text.addView(label(b.subtitle,10f,false,Color.LTGRAY),margin(0,3,0,0))
   card.addView(text,LinearLayout.LayoutParams(0,-1,1f))
   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  card.addView(pic,LinearLayout.LayoutParams(dp(132),dp(210)).apply{leftMargin=dp(6)})
-  loadImage(pic,b.third)
-  strip.addView(card,LinearLayout.LayoutParams(cardWidth,dp(250)).apply{setMargins(dp(4),0,dp(4),0)})
+  card.addView(pic,LinearLayout.LayoutParams(dp(142),dp(218)).apply{leftMargin=dp(5)})
+  loadImage(pic,b.image)
+  strip.addView(card,LinearLayout.LayoutParams(cardWidth,dp(250)))
  }
  val carousel=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=false;addView(strip,LinearLayout.LayoutParams(-2,dp(250)))}
  container.addView(carousel,LinearLayout.LayoutParams(-1,dp(254)))
