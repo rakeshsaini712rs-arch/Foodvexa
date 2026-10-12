@@ -296,7 +296,7 @@ private fun bannerGrid():HorizontalScrollView{
  }
  val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
  val cardWidth=resources.displayMetrics.widthPixels-dp(8)
- val cardHeight=(cardWidth*470f/836f).toInt()
+ val cardHeight=(cardWidth*380f/1015f).toInt()
  bannerNames.forEach{name->
   val imageId=resources.getIdentifier(name,"drawable",packageName)
   val image=ImageView(this).apply{
