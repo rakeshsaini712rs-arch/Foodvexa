@@ -183,7 +183,6 @@ class MainActivity:AppCompatActivity(){
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
  private fun renderPartnerShopCards(){
- content.addView(label("Choose a shop",18f,true,primaryText),margin(8,4,8,8))
  val shops=listOf(
   Triple("FOODVEXA","Foodvexa • All products","https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=85"),
   Triple("Cake Tower","Cakes & Birthday Specials","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85")
@@ -208,8 +207,9 @@ class MainActivity:AppCompatActivity(){
     if(target!=null)scroll?.post{scroll.smoothScrollTo(0,target.top)}
    }
   }
-  val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  card.addView(pic,LinearLayout.LayoutParams(-1,dp(120)));loadImage(pic,shop.third)
+  val pic=ImageView(this).apply{scaleType=if(shop.first=="FOODVEXA")ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP;if(shop.first=="FOODVEXA"){setPadding(dp(20),dp(12),dp(20),dp(12));setBackgroundColor(Color.WHITE)}}
+  card.addView(pic,LinearLayout.LayoutParams(-1,dp(120)))
+  if(shop.first=="FOODVEXA")pic.setImageResource(R.drawable.foodvexa_exact_logo) else loadImage(pic,shop.third)
   card.addView(label(shop.first,16f,true,primaryText).apply{gravity=Gravity.CENTER;setPadding(0,dp(8),0,dp(2))})
   card.addView(label(shop.second,11f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER;maxLines=2})
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6);leftMargin=dp(6);bottomMargin=dp(10)})
