@@ -228,8 +228,34 @@ filtered.forEachIndexed{index,p->
 }
 }
  private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
- private fun locationDialog(){val current=prefs.getString("location","").orEmpty();val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))};val search=EditText(this).apply{hint="Search area, street or landmark";setSingleLine(true);setText(current);setPadding(dp(14),0,dp(14),0);background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)};panel.addView(search,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(12)});val use=primaryButton("⌖  Use current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()};panel.addView(use,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)});val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home")};panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)});val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work")};panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)));AlertDialog.Builder(this).setTitle("Choose delivery location").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery")}.show()}
- private fun saveLocation(value:String,label:String){val v=value.trim();if(v.isBlank()){Toast.makeText(this,"Please enter a delivery location",Toast.LENGTH_SHORT).show();return};val e=prefs.edit().putString("location",v).putString("location_label",label);when(label){"Home"->e.putString("home_address",v);"Work"->e.putString("work_address",v);"Delivery"->e.putString("delivery_address",v)};e.apply();showHome()}
+ private fun locationDialog(){
+  val current=prefs.getString("location","").orEmpty()
+  val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))}
+  panel.addView(label("Delivery boy ko exact ghar/shop tak pahunchne ke liye poora address likhein.",12f,false,muted),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+  val search=EditText(this).apply{
+   hint="House/Shop no., street, colony, area, Nawalgarh, district, PIN code"
+   setText(current)
+   minLines=3;maxLines=5;gravity=Gravity.TOP or Gravity.START
+   inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+   setPadding(dp(14),dp(12),dp(14),dp(12))
+   background=rounded(Color.rgb(245,245,247),16)
+   setTextColor(ink);setHintTextColor(muted)
+  }
+  panel.addView(search,LinearLayout.LayoutParams(-1,dp(112)).apply{bottomMargin=dp(12)})
+  val landmark=EditText(this).apply{
+   hint="Nearby landmark (optional)"
+   setSingleLine(true);setPadding(dp(14),0,dp(14),0)
+   background=rounded(Color.rgb(245,245,247),16);setTextColor(ink);setHintTextColor(muted)
+   setText(prefs.getString("delivery_landmark","").orEmpty())
+  }
+  panel.addView(landmark,LinearLayout.LayoutParams(-1,dp(48)).apply{bottomMargin=dp(12)})
+  val home=primaryButton("⌂  Save as Home"){saveLocation(search.text.toString(),"Home",landmark.text.toString())}
+  panel.addView(home,LinearLayout.LayoutParams(-1,dp(46)).apply{bottomMargin=dp(8)})
+  val work=primaryButton("▣  Save as Work"){saveLocation(search.text.toString(),"Work",landmark.text.toString())}
+  panel.addView(work,LinearLayout.LayoutParams(-1,dp(46)))
+  AlertDialog.Builder(this).setTitle("Complete delivery address").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery",landmark.text.toString())}.show()
+ }
+ private fun saveLocation(value:String,label:String,landmark:String=""){val v=value.trim();if(v.isBlank()||v.length<10||!v.contains(Regex("[,0-9]"))){Toast.makeText(this,"House/shop number, street or area aur city ke saath poora address likhein",Toast.LENGTH_LONG).show();return};val full=if(landmark.trim().isBlank())v else "$v\nLandmark: ${landmark.trim()}";val e=prefs.edit().putString("location",full).putString("location_label",label).putString("delivery_landmark",landmark.trim());when(label){"Home"->e.putString("home_address",full);"Work"->e.putString("work_address",full);"Delivery"->e.putString("delivery_address",full)};e.apply();showHome()}
  private fun loadSharedMenu(){
  FirebaseFirestore.getInstance().collection("menu").addSnapshotListener(this){snapshot,error->
   if(error!=null||snapshot==null||snapshot.isEmpty)return@addSnapshotListener
