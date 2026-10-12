@@ -102,7 +102,13 @@ class MainActivity:AppCompatActivity(){
   brand.addView(brandText)
   brand.addView(label("Taste the Happiness",11f,false,muted))
   header.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
-  header.addView(label("♧",25f,false,primaryText),LinearLayout.LayoutParams(dp(36),dp(48)))
+  val brandLogo=ImageView(this).apply{
+   val logoId=resources.getIdentifier("ic_foodvexa_logo","drawable",packageName)
+   if(logoId!=0){setImageResource(logoId);scaleType=ImageView.ScaleType.FIT_CENTER}
+   else{setImageDrawable(null);visibility=View.GONE}
+   contentDescription="Foodvexa logo"
+  }
+  header.addView(brandLogo,LinearLayout.LayoutParams(dp(42),dp(42)))
   content.addView(header,LinearLayout.LayoutParams(-1,-2))
   content.addView(locationHeader(),margin(4,2,4,8))
   val search=EditText(this).apply{
