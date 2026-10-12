@@ -201,6 +201,7 @@ class MainActivity:AppCompatActivity(){
   ShopCard("Hotel Nawalgarh Plaza","Hotel • Rooms • Restaurant","Near Roadways Bus Depot, Sikar–Jhunjhunu Road",R.drawable.hotel_nawalgarh_plaza),
   ShopCard("Vivaana Museum Hotel","Heritage Hotel • Stay • Restaurant","Mandi Gate, Nawalgarh, Rajasthan 333042",R.drawable.vivaana_museum_hotel),
   ShopCard("Bungli Restaurant","Indian Food • Thali • Family Dining","Nawalgarh, Rajasthan",R.drawable.bungli_restaurant)
+  ,ShopCard("Ganpati Restaurant","Sweets","Nansa Gate, Nawalgarh",R.drawable.ganpati_restaurant_sweets_nawalgarh)
  )
  var row:LinearLayout?=null
  shops.forEachIndexed{index,shop->
