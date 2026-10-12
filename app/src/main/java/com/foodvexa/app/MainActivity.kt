@@ -185,7 +185,7 @@ class MainActivity:AppCompatActivity(){
  private fun renderPartnerShopCards(){
  data class ShopCard(val name:String,val subtitle:String,val address:String,val imageRes:Int)
  val shops=listOf(
-  ShopCard("FOODVEXA","All products","Nansa Gate, Nawalgarh, Rajasthan",R.drawable.foodvexa_card),
+  ShopCard("FOODVEXA","All products","",R.drawable.foodvexa_card),
   ShopCard("Cake Tower","Cakes & Birthday Specials","Ghoom Chakkaar, Nawalgarh",R.drawable.cake_tower_card),
   ShopCard("Santa Banta Bakery","Bakery • Pizza • Fast Food","Near OBC Bank, Jangir Hospital Road, Nansa Gate",R.drawable.santa_banta_bakery),
   ShopCard("Kanha Bakery & Fast Food","Bakery • Fast Food • Beverages","Chuna Chowk, Bus Stand, Nawalgarh",R.drawable.kanha_bakery_fast_food),
@@ -208,7 +208,7 @@ class MainActivity:AppCompatActivity(){
   val card=LinearLayout(this).apply{
    orientation=LinearLayout.VERTICAL
    setPadding(dp(4),dp(4),dp(4),dp(6))
-   background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41));cornerRadius=dp(16).toFloat();setStroke(dp(1),if(index<2)orange else Color.rgb(225,225,230))}
+   background=GradientDrawable().apply{setColor(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41));cornerRadius=dp(16).toFloat();setStroke(dp(1),Color.rgb(225,225,230))}
    isClickable=true;isFocusable=true
    setOnClickListener{
     if(shop.name=="FOODVEXA" || shop.name=="Cake Tower"){
@@ -237,7 +237,7 @@ class MainActivity:AppCompatActivity(){
   }
   card.addView(artwork,LinearLayout.LayoutParams(-1,dp(150)))
   card.addView(label(shop.name,13f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),0)})
-  card.addView(label(shop.address,10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),dp(3))})
+  if(shop.address.isNotBlank()) card.addView(label(shop.address,10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),dp(3))})
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5);leftMargin=dp(5);bottomMargin=dp(10)})
   if(index%2==1)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
