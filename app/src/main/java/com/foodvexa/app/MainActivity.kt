@@ -279,41 +279,34 @@ private val paymentStatus:String get()=prefs.getString("payment_status","Pending
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
 private fun bannerGrid():LinearLayout{
  val container=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
- data class Promo(val title:String,val subtitle:String,val image:String,val color:Int)
- val banners=listOf(
-  Promo("PIZZA SPECIAL","Freshly prepared pizza","https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=85",Color.rgb(135,18,18)),
-  Promo("BURGER SPECIAL","Burgers, fries & more","https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85",Color.rgb(5,54,30)),
-  Promo("DESI RASOI","Your favourite Indian food","https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg",Color.rgb(110,54,20)),
-  Promo("BIRTHDAY SPECIAL","Cakes for your celebrations","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=900&q=85",Color.rgb(190,66,100))
- )
+ val bannerNames=listOf("banner_pizza","banner_birthday","banner_desi_rasoi","banner_burger")
  val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
- val logoId=resources.getIdentifier("foodvexa_exact_logo","drawable",packageName)
  val cardWidth=resources.displayMetrics.widthPixels
- banners.forEach{b->
-  val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(8),dp(8),dp(8));background=rounded(b.color,18);clipChildren=true;clipToPadding=true}
-  if(logoId!=0){
-   val logo=ImageView(this).apply{setImageResource(logoId);scaleType=ImageView.ScaleType.FIT_CENTER}
-   card.addView(logo,LinearLayout.LayoutParams(dp(76),dp(76)).apply{rightMargin=dp(7)})
-  } else {
-   card.addView(label("FOODVEXA",13f,true,Color.WHITE),LinearLayout.LayoutParams(dp(76),-2).apply{rightMargin=dp(7)})
+ bannerNames.forEach{name->
+  val imageId=resources.getIdentifier(name,"drawable",packageName)
+  val image=ImageView(this).apply{
+   scaleType=ImageView.ScaleType.FIT_XY
+   adjustViewBounds=false
+   if(imageId!=0)setImageResource(imageId)
+   else setBackgroundColor(Color.DKGRAY)
+   contentDescription=name
   }
-  val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  text.addView(label(b.title,15f,true,Color.WHITE))
-  text.addView(label(b.subtitle,10f,false,Color.LTGRAY),margin(0,3,0,0))
-  card.addView(text,LinearLayout.LayoutParams(0,-1,1f))
-  val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  card.addView(pic,LinearLayout.LayoutParams(dp(142),dp(218)).apply{leftMargin=dp(5)})
-  loadImage(pic,b.image)
-  strip.addView(card,LinearLayout.LayoutParams(cardWidth,dp(250)))
+  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(250)))
  }
- val carousel=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFillViewport=false;addView(strip,LinearLayout.LayoutParams(-2,dp(250)))}
+ val carousel=HorizontalScrollView(this).apply{
+  isHorizontalScrollBarEnabled=false
+  overScrollMode=View.OVER_SCROLL_NEVER
+  isFillViewport=false
+  clipToPadding=true
+  addView(strip,LinearLayout.LayoutParams(-2,dp(250)))
+ }
  container.addView(carousel,LinearLayout.LayoutParams(-1,dp(254)))
  val slideHandler=android.os.Handler(android.os.Looper.getMainLooper())
  var slideIndex=0
  val slideTask=object:Runnable{
   override fun run(){
    if(!carousel.isAttachedToWindow)return
-   slideIndex=(slideIndex+1)%banners.size
+   slideIndex=(slideIndex+1)%bannerNames.size
    carousel.smoothScrollTo(slideIndex*cardWidth,0)
    slideHandler.postDelayed(this,4000)
   }
