@@ -112,9 +112,9 @@ class MainActivity:AppCompatActivity(){
    isClickable=true;isFocusable=true
    setOnClickListener{
     AlertDialog.Builder(this@MainActivity)
-     .setTitle("Foodvexa Notifications")
-     .setMessage("Abhi koi nayi notification nahi hai.")
-     .setPositiveButton("OK",null).show()
+     .setTitle("Notifications")
+     .setMessage("You’re all caught up.")
+     .setPositiveButton("Done",null).show()
    }
    addView(notificationIcon,FrameLayout.LayoutParams(-1,-1))
    addView(View(this@MainActivity).apply{
