@@ -109,6 +109,13 @@ class MainActivity:AppCompatActivity(){
    contentDescription="Notifications"
   }
   header.addView(FrameLayout(this).apply{
+   isClickable=true;isFocusable=true
+   setOnClickListener{
+    AlertDialog.Builder(this@MainActivity)
+     .setTitle("Foodvexa Notifications")
+     .setMessage("Abhi koi nayi notification nahi hai.")
+     .setPositiveButton("OK",null).show()
+   }
    addView(notificationIcon,FrameLayout.LayoutParams(-1,-1))
    addView(View(this@MainActivity).apply{
     background=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(Color.rgb(255,65,65))}
@@ -146,7 +153,7 @@ class MainActivity:AppCompatActivity(){
   root.isFocusableInTouchMode=true
   root.requestFocus()
  }
- private fun locationHeader():LinearLayout{val saved=prefs.getString("location","").orEmpty();val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),18);isClickable=true;setOnClickListener{locationDialog()}};val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER};box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(42)));val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};texts.addView(label("Deliver to",11f,true,if(isLightTheme)muted else Color.LTGRAY));texts.addView(label(if(saved.isBlank())"Select delivery location" else saved,15f,true,if(isLightTheme)ink else Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END});box.addView(texts,LinearLayout.LayoutParams(0,-2,1f));box.addView(label("⌄",18f,true,if(isLightTheme)muted else Color.LTGRAY),LinearLayout.LayoutParams(dp(28),dp(42)).apply{gravity=Gravity.CENTER});return box}
+ private fun locationHeader():LinearLayout{val saved=prefs.getString("location","").orEmpty();val display=if(saved.isBlank())"Add house no., street, area & PIN code" else saved.replace(", Jaipur Division","").replace(", Jaipur Division,"," ,").replace(Regex("\\s+,"),",").trim();val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(35,35,41),18);isClickable=true;setOnClickListener{locationDialog()}};val pin=TextView(this).apply{text="⌖";textSize=25f;setTextColor(orange);gravity=Gravity.CENTER};box.addView(pin,LinearLayout.LayoutParams(dp(38),dp(42)));val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL};texts.addView(label("Deliver to",11f,true,if(isLightTheme)muted else Color.LTGRAY));texts.addView(label(display,15f,true,if(isLightTheme)ink else Color.WHITE).apply{maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END});box.addView(texts,LinearLayout.LayoutParams(0,-2,1f));box.addView(label("⌄",18f,true,if(isLightTheme)muted else Color.LTGRAY),LinearLayout.LayoutParams(dp(28),dp(42)).apply{gravity=Gravity.CENTER});return box}
  private fun professionalBanner():LinearLayout{val box=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(10),dp(10),dp(10));background=rounded(green,20);clipChildren=true};val text=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL};text.addView(label("FOODVEXA",12f,true,Color.WHITE));text.addView(label("HOT & FRESH FOOD",20f,true,Color.WHITE));text.addView(label("Freshly prepared • Fast delivery",12f,false,Color.LTGRAY),margin(0,2,0,7));text.addView(primaryButton("ORDER NOW  ›"){},LinearLayout.LayoutParams(dp(145),dp(40)));box.addView(text,LinearLayout.LayoutParams(0,-1,1f));val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};box.addView(pic,LinearLayout.LayoutParams(dp(138),dp(138)).apply{leftMargin=dp(8)});loadImage(pic,foodImages[0]);return box}
  private fun categoryCard(c:Category):LinearLayout{
   val selected=c.name==selectedCategory
