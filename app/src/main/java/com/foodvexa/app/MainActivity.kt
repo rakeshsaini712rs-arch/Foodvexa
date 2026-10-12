@@ -207,21 +207,14 @@ class MainActivity:AppCompatActivity(){
     if(target!=null)scroll?.post{scroll.smoothScrollTo(0,target.top)}
    }
   }
-  if(shop.first=="FOODVEXA"){
-   val brand=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setPadding(dp(16),dp(8),dp(16),dp(8));setBackgroundColor(Color.rgb(15,15,18));setImageResource(R.drawable.foodvexa_exact_logo)}
-   card.addView(brand,LinearLayout.LayoutParams(-1,dp(92)))
-   val food=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;setImageResource(R.drawable.banner_burger)}
-   card.addView(food,LinearLayout.LayoutParams(-1,dp(88)))
-   val footer=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(4),dp(8),dp(4),dp(8));background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(Color.rgb(255,165,0),Color.rgb(255,210,75))).apply{cornerRadius=dp(10).toFloat()}}
-   footer.addView(label("FOODVEXA",16f,true,Color.BLACK).apply{gravity=Gravity.CENTER})
-   footer.addView(label("All Products",12f,true,Color.rgb(65,45,10)).apply{gravity=Gravity.CENTER})
-   card.addView(footer,LinearLayout.LayoutParams(-1,-2))
-  }else{
-   val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-   card.addView(pic,LinearLayout.LayoutParams(-1,dp(120)));loadImage(pic,shop.third)
-   card.addView(label(shop.first,16f,true,primaryText).apply{gravity=Gravity.CENTER;setPadding(0,dp(8),0,dp(2))})
-   card.addView(label(shop.second,11f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER;maxLines=2})
+  val artwork=ImageView(this).apply{
+   scaleType=ImageView.ScaleType.FIT_CENTER
+   adjustViewBounds=true
+   setImageResource(if(shop.first=="FOODVEXA")R.drawable.foodvexa_card else R.drawable.cake_tower_card)
+   contentDescription=shop.first
   }
+  card.setPadding(dp(3),dp(3),dp(3),dp(3))
+  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(238)))
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6);leftMargin=dp(6);bottomMargin=dp(10)})
   if(index%2==1)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
