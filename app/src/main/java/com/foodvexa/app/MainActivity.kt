@@ -91,47 +91,10 @@ class MainActivity:AppCompatActivity(){
   stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
   fixed.addView(stickyCategories)
 
-  // Full-width hero: rotating food artwork with the Foodvexa controls layered on top.
-  val hero=FrameLayout(this).apply{clipChildren=true;clipToPadding=true}
-  hero.addView(bannerGrid(),FrameLayout.LayoutParams(-1,dp(500)))
-  val overlay=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL
-   setPadding(dp(16),dp(8),dp(16),0)
-   background=GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,intArrayOf(0xB8000000.toInt(),0x65000000,Color.TRANSPARENT)).apply{cornerRadius=0f}
-  }
-  val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(4),0,dp(4),0)}
-  val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_VERTICAL}
-  val name=label("FOODVEXA",26f,true,Color.WHITE)
-  val styled=android.text.SpannableString("FOODVEXA")
-  styled.setSpan(android.text.style.ForegroundColorSpan(Color.WHITE),0,4,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-  styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(255,196,0)),4,8,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-  name.text=styled
-  brand.addView(name)
-  brand.addView(label("Taste the Happiness",11f,false,Color.WHITE))
-  header.addView(brand,LinearLayout.LayoutParams(0,dp(58),1f))
-  header.addView(label("♧",26f,false,Color.WHITE).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(40),dp(50)))
-  overlay.addView(header,LinearLayout.LayoutParams(-1,dp(62)))
-
-  val location=locationHeader().apply{
-   background=GradientDrawable().apply{setColor(0x4D161616);setStroke(dp(1),0x99FFFFFF.toInt());cornerRadius=dp(18).toFloat()}
-  }
-  overlay.addView(location,margin(0,dp(4),0,8))
-  val search=EditText(this).apply{
-   hint="Search food, sweets, fast food..."
-   setHintTextColor(Color.DKGRAY);setTextColor(Color.BLACK);setSingleLine(true)
-   inputType=InputType.TYPE_CLASS_TEXT;setPadding(dp(14),0,dp(14),0)
-   background=rounded(Color.WHITE,28)
-   addTextChangedListener(object:android.text.TextWatcher{
-    override fun beforeTextChanged(s:CharSequence?,st:Int,count:Int,after:Int){}
-    override fun onTextChanged(s:CharSequence?,st:Int,before:Int,count:Int){query=s?.toString().orEmpty();renderProducts()}
-    override fun afterTextChanged(e:android.text.Editable?){}
-   })
-  }
-  searchBox=search;search.clearFocus()
-  overlay.addView(search,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(4)})
-  hero.addView(overlay,FrameLayout.LayoutParams(-1,-2,Gravity.TOP))
-  content.addView(hero,LinearLayout.LayoutParams(-1,dp(500)))
-  content.addView(label("Categories",21f,true,primaryText),margin(8,8,8,4))
+  // The uploaded banner artwork already contains Foodvexa branding, delivery and search UI.
+  // Display it as one complete image to avoid duplicating overlays and cropping its sides.
+  content.addView(bannerGrid(),margin(0,0,0,8))
+  content.addView(label("Categories",21f,true,primaryText),margin(8,4,8,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
   content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
@@ -302,22 +265,23 @@ private fun bannerGrid():HorizontalScrollView{
  val carousel=HorizontalScrollView(this).apply{
   isHorizontalScrollBarEnabled=false
   overScrollMode=View.OVER_SCROLL_NEVER
-  isFillViewport=false
+  isFillViewport=true
   clipToPadding=true
  }
  val strip=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
- val cardWidth=resources.displayMetrics.widthPixels
+ val cardWidth=resources.displayMetrics.widthPixels-dp(8)
+ val cardHeight=(cardWidth*470f/836f).toInt()
  bannerNames.forEach{name->
   val imageId=resources.getIdentifier(name,"drawable",packageName)
   val image=ImageView(this).apply{
-   scaleType=ImageView.ScaleType.CENTER_CROP
+   scaleType=ImageView.ScaleType.FIT_XY
    adjustViewBounds=false
    if(imageId!=0)setImageResource(imageId) else setBackgroundColor(Color.DKGRAY)
    contentDescription=name
   }
-  strip.addView(image,LinearLayout.LayoutParams(cardWidth,dp(500)))
+  strip.addView(image,LinearLayout.LayoutParams(cardWidth,cardHeight))
  }
- carousel.addView(strip,LinearLayout.LayoutParams(-2,dp(500)))
+ carousel.addView(strip,LinearLayout.LayoutParams(-2,cardHeight))
  val slideHandler=Handler(Looper.getMainLooper())
  var slideIndex=0
  val slideTask=object:Runnable{
