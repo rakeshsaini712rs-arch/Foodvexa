@@ -515,13 +515,14 @@ private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:
   val color=if(isLightTheme)Color.rgb(190,45,45) else Color.rgb(255,110,110)
   card.addView(label(if(normalized=="rejected")"✕  Order rejected" else "✕  Order cancelled",15f,true,color),margin(0,0,0,2))
  }else{
-  if(current<0)card.addView(label("Waiting for restaurant confirmation",14f,true,orange),margin(0,0,0,8))
+  if(current<0)card.addView(label("Waiting for restaurant confirmation",14f,true,secondaryText),margin(0,0,0,8))
   steps.forEachIndexed{index,step->
    val done=current>=index
-   val tint=if(done)orange else secondaryText
+   val trackingGreen=Color.rgb(46,204,113)
+   val tint=if(done)trackingGreen else secondaryText
    val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
    row.addView(label(if(done)"✓" else "○",15f,true,tint),LinearLayout.LayoutParams(dp(26),dp(28)))
-   row.addView(label(step,14f,done,if(done)primaryText else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
+   row.addView(label(step,14f,done,if(done)trackingGreen else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
    card.addView(row)
   }
  }
