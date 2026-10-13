@@ -189,6 +189,11 @@ class MainActivity:AppCompatActivity(){
  private fun loadImage(view:ImageView,url:String){
   view.tag=url
   if(url.isBlank()){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38));return}
+  if(url.startsWith("local://sweets/")){
+   val resourceName=url.substringAfterLast('/').lowercase(java.util.Locale.ROOT)
+   val resourceId=resources.getIdentifier(resourceName,"drawable",packageName)
+   if(resourceId!=0){view.setImageResource(resourceId);return}
+  }
   photoCache.get(url)?.let{view.setImageBitmap(it);return}
   view.setBackgroundColor(Color.rgb(48,42,38))
   imageExecutor.execute{
@@ -294,7 +299,12 @@ private fun correctedImageUrl(p:Product):String {
     // Canonical product-name photo corrections. These override stale URLs from
     // both the built-in catalog and Firestore so a saved mismatched image cannot
     // silently reappear on the customer menu.
-    val name=p.name.trim().lowercase()
+    val name=p.name.trim().lowercase(java.util.Locale.ROOT)
+    // All Sweets catalog items use their dedicated bundled WebP asset so stale
+    // remote URLs from the hardcoded catalog or Firestore cannot mismatch.
+    if(p.category.equals("Sweets",ignoreCase=true)){
+        return "local://sweets/"+name.replace(Regex("\\s+"),"_")
+    }
     val corrected=when(name) {
         "jalebi" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Sweets_-_Jalebi.jpg"
         "gulab jamun" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gulab_Jamuns.jpg"
