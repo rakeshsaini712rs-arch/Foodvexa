@@ -476,7 +476,60 @@ private fun showCart(){
  content.addView(label("Delivery fee: ₹30",14f,false,secondaryText),margin(0,0,0,6))
  content.addView(label("Total: ₹${subtotal+30}",22f,true,primaryText),margin(0,0,0,14))
  content.addView(primaryButton("PLACE ORDER  •  ₹${subtotal+30}"){placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
-}private fun showOrders(){setupBase(2);content.addView(label("My Orders",24f,true,primaryText),margin(0,8,0,18));val raw=prefs.getString("orders","[]").orEmpty();val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()};if(arr.length()==0){val legacy=prefs.getString("last_order","").orEmpty();if(legacy.isBlank())content.addView(label("No orders yet",18f,false,secondaryText),margin(0,8,0,8))else{content.addView(label("Order",20f,true,primaryText),margin(0,0,0,10));content.addView(label(legacy,16f,false,primaryText),margin(0,0,0,16))}}else{for(i in arr.length()-1 downTo 0){content.addView(label("Order #"+(arr.length()-i),20f,true,Color.WHITE),margin(0,0,0,8));content.addView(label(arr.optString(i),16f,false,Color.WHITE),margin(0,0,0,12));if(i>0)content.addView(label("────────────",10f,false,Color.DKGRAY),margin(0,0,0,12))}};content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))}private fun showProfile(){
+}private fun showOrders(){
+ setupBase(2)
+ content.addView(label("My Orders",24f,true,primaryText),margin(0,8,0,18))
+ val raw=prefs.getString("orders","[]").orEmpty()
+ val arr=try{JSONArray(raw)}catch(_:Exception){JSONArray()}
+ if(arr.length()==0){
+  val legacy=prefs.getString("last_order","").orEmpty()
+  if(legacy.isBlank()) content.addView(label("No orders yet",18f,false,secondaryText),margin(0,8,0,8))
+  else addOrderHistoryCard("Order #1",legacy,"New")
+ }else{
+  for(i in arr.length()-1 downTo 0){
+   val order=arr.opt(i)
+   val details=if(order is JSONObject) order.optString("itemsText",order.optString("summary","Order details unavailable")) else order?.toString().orEmpty()
+   val status=if(order is JSONObject) order.optString("status","New") else "New"
+   addOrderHistoryCard("Order #"+(arr.length()-i),details,status)
+  }
+ }
+ content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))
+}
+private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String){
+ val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),16);elevation=dp(1).toFloat()}
+ card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,8))
+ card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,10))
+ card.addView(label("ORDER STATUS",12f,true,secondaryText),margin(0,0,0,8))
+ val normalized=statusValue.trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
+ val terminal=normalized=="rejected"||normalized=="cancelled"||normalized=="canceled"
+ val steps=listOf("New","Accepted","Preparing","Ready","Out for delivery","Delivered")
+ val current=when(normalized){
+  "new","pending","placed"->0
+  "accepted","accept"->1
+  "preparing","in preparation"->2
+  "ready","ready for pickup"->3
+  "out for delivery"->4
+  "delivered","complete","completed"->5
+  else->-1
+ }
+ if(terminal){
+  val color=if(isLightTheme)Color.rgb(190,45,45) else Color.rgb(255,110,110)
+  card.addView(label(if(normalized=="rejected")"✕  Order Rejected" else "✕  Order Cancelled",16f,true,color),margin(0,0,0,6))
+ }else{
+  steps.forEachIndexed{index,step->
+   val done=current>=index
+   val active=current==index
+   val tint=if(done)orange else secondaryText
+   val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+   row.addView(label(if(done)"●" else "○",16f,true,tint),LinearLayout.LayoutParams(dp(24),dp(28)))
+   row.addView(label(step,14f,active||done,if(done)primaryText else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
+   if(active)row.addView(label("CURRENT",10f,true,orange))
+   card.addView(row)
+  }
+ }
+ content.addView(card,margin(0,0,0,14))
+}
+private fun showProfile(){
  setupBase(4)
  val user=FirebaseAuth.getInstance().currentUser
  val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{user?.displayName.orEmpty()}
