@@ -92,34 +92,68 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
         "Udaipur" to listOf("Udaipur","Gogunda","Jhadol","Kherwara","Mavli","Salumber","Sarada")
     )
 
-    AlertDialog.Builder(this)
-        .setTitle("Select State")
-        .setItems(states.toTypedArray()) { _, stateIndex ->
-            val state = states[stateIndex]
-            val availableDistricts = (districtsByState[state] ?: if (state == "Rajasthan") districts else listOf(state)).distinct().sorted()
-            AlertDialog.Builder(this)
-                .setTitle("Select District")
-                .setItems(availableDistricts.toTypedArray()) { _, districtIndex ->
-                    val district = availableDistricts[districtIndex]
-                    val districtCities = ((if (state == "Rajasthan") cities[district] else null) ?: listOf(district)).distinct().sorted()
-                    AlertDialog.Builder(this)
-                        .setTitle("Select City • $district")
-                        .setItems(districtCities.toTypedArray()) { _, cityIndex ->
-                            val city = districtCities[cityIndex]
-                            prefs.edit()
-                                .putString("restaurant_state", state)
-                                .putString("restaurant_district", district)
-                                .putString("restaurant_city", city)
-                                .apply()
-                            Toast.makeText(this, "Selected: $state • $district • $city", Toast.LENGTH_SHORT).show()
-                            onDone()
-                        }
-                        .setNegativeButton("Back", null)
-                        .show()
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        }
+    val panel = android.widget.LinearLayout(this)
+    panel.orientation = android.widget.LinearLayout.VERTICAL
+    panel.setPadding(32, 8, 32, 4)
+    fun addHeading(value: String) {
+        val heading = android.widget.TextView(this)
+        heading.text = value
+        heading.textSize = 13f
+        heading.setTextColor(0xFF999999.toInt())
+        heading.setPadding(0, 12, 0, 4)
+        panel.addView(heading)
+    }
+    fun makePicker(options: List<String>): android.widget.Spinner {
+        val picker = android.widget.Spinner(this)
+        picker.adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options)
+        panel.addView(picker)
+        return picker
+    }
+    addHeading("SELECT STATE")
+    val statePicker = makePicker(states)
+    addHeading("SELECT DISTRICT")
+    val districtPicker = makePicker(districts.distinct().sorted())
+    addHeading("SELECT CITY")
+    val cityPicker = makePicker(listOf("Select city"))
+    val agreement = android.widget.TextView(this)
+    agreement.textSize = 15f
+    agreement.setPadding(0, 20, 0, 8)
+    panel.addView(agreement)
+    fun refreshAgreement(city: String) {
+        val found = city.equals("Nawalgarh", true)
+        agreement.text = if (found) "✓ Agreement available — partner restaurants will be shown" else "No agreement in this city"
+        agreement.setTextColor(if (found) 0xFF22C55E.toInt() else 0xFFAAAAAA.toInt())
+    }
+    fun refreshCities() {
+        val district = districtPicker.selectedItem?.toString().orEmpty()
+        val options = (cities[district] ?: listOf(district)).distinct().sorted()
+        cityPicker.adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options)
+        if (options.isNotEmpty()) refreshAgreement(options.first())
+    }
+    districtPicker.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+        override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) { refreshCities() }
+    }
+    cityPicker.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+        override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) { refreshAgreement(cityPicker.selectedItem?.toString().orEmpty()) }
+    }
+    val dialog = AlertDialog.Builder(this)
+        .setTitle("Restaurant / Hotel")
+        .setView(panel)
         .setNegativeButton("Cancel", null)
-        .show()
+        .setPositiveButton("Show Results", null)
+        .create()
+    dialog.setOnShowListener {
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            prefs.edit()
+                .putString("restaurant_state", statePicker.selectedItem?.toString().orEmpty())
+                .putString("restaurant_district", districtPicker.selectedItem?.toString().orEmpty())
+                .putString("restaurant_city", cityPicker.selectedItem?.toString().orEmpty())
+                .apply()
+            dialog.dismiss()
+            onDone()
+        }
+    }
+    dialog.show()
 }
