@@ -449,10 +449,19 @@ private fun bannerGrid():HorizontalScrollView{
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){
+ val selectedCity=prefs.getString("restaurant_city","").orEmpty().trim()
  prefs.edit().putBoolean("restaurant_hotel_results",true).apply()
- selectedCategory="Restaurants & Hotels"
+ selectedCategory="Deals & Offers"
  showHome()
-}
+ // Keep the selected Deals & Offers category highlighted and show the city-specific partner list.
+ categoryRow?.let { row ->
+  for(i in 0 until row.childCount){
+   val card=row.getChildAt(i) as? LinearLayout ?: continue
+   val cat=categories.getOrNull(i) ?: continue
+   card.background=categoryBackground(cat.name=="Deals & Offers")
+   if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name=="Deals & Offers")Color.WHITE else ink)
+  }
+ }
 }
 private fun dealsOffersDialog(){
  val panel=LinearLayout(this).apply{
