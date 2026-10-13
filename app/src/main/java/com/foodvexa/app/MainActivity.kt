@@ -189,7 +189,7 @@ class MainActivity:AppCompatActivity(){
  private fun loadImage(view:ImageView,url:String){
   view.tag=url
   if(url.isBlank()){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38));return}
-  if(url.startsWith("local://sweets/")){
+  if(url.startsWith("local://sweets/") || url.startsWith("local://foodvexa/")){
    val resourceName=url.substringAfterLast('/').lowercase(java.util.Locale.ROOT)
    val resourceId=resources.getIdentifier(resourceName,"drawable",packageName)
    if(resourceId!=0){view.setImageResource(resourceId);return}
@@ -305,6 +305,32 @@ private fun correctedImageUrl(p:Product):String {
     if(p.category.equals("Sweets",ignoreCase=true)){
         return "local://sweets/"+name.replace(Regex("\\s+"),"_")
     }
+    // Bundled, cropped fast-food photos override stale remote URLs for these catalog items.
+    val localFastFoodPhotos=mapOf(
+        "onion & tomato pizza" to "foodvexa_01_onion_tomato_pizza",
+        "paneer & corn pizza" to "foodvexa_02_paneer_corn_pizza",
+        "cheese burst pizza" to "foodvexa_03_cheese_burst_pizza",
+        "jalapeño cheese pizza" to "foodvexa_04_jalapeno_cheese_pizza",
+        "mushroom pizza" to "foodvexa_05_mushroom_pizza",
+        "capsicum & onion pizza" to "foodvexa_06_capsicum_onion_pizza",
+        "veggie paradise pizza" to "foodvexa_07_veggie_paradise_pizza",
+        "mexican green wave pizza" to "foodvexa_08_mexican_green_wave_pizza",
+        "peri peri paneer pizza" to "foodvexa_09_peri_peri_paneer_pizza",
+        "tandoori paneer pizza" to "foodvexa_10_tandoori_paneer_pizza",
+        "paneer tikka pizza" to "foodvexa_11_paneer_tikka_pizza",
+        "farmhouse pizza" to "foodvexa_12_farmhouse_pizza",
+        "veg loaded pizza" to "foodvexa_13_veg_loaded_pizza",
+        "corn cheese pizza" to "foodvexa_14_corn_cheese_pizza",
+        "double cheese pizza" to "foodvexa_15_double_cheese_pizza",
+        "classic cheese pizza" to "foodvexa_16_classic_cheese_pizza",
+        "margherita pizza" to "foodvexa_17_margherita_pizza",
+        "maggi" to "foodvexa_18_maggi",
+        "veg sandwich" to "foodvexa_19_veg_sandwich",
+        "veg burger" to "foodvexa_20_veg_burger",
+        "masala dosa" to "foodvexa_21_masala_dosa",
+        "vada pav" to "foodvexa_22_vada_pav"
+    )
+    localFastFoodPhotos[name]?.let { return "local://foodvexa/"+it }
     val corrected=when(name) {
         "jalebi" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Sweets_-_Jalebi.jpg"
         "gulab jamun" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gulab_Jamuns.jpg"
