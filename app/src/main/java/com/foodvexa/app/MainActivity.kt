@@ -700,23 +700,30 @@ private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:
  (orderCardsContainer ?: content).addView(card,margin(0,0,0,14))
 }
 private fun confirmCustomerOrderCancellation(orderId:String){
- AlertDialog.Builder(this).setTitle("Cancel this order?").setMessage("You can cancel only before the restaurant starts preparing it.")
+ AlertDialog.Builder(this).setTitle("Cancel this order?").setMessage("You can cancel this order any time before the restaurant starts Preparing.")
   .setNegativeButton("KEEP ORDER",null)
   .setPositiveButton("CANCEL ORDER"){_,_->
    val user=FirebaseAuth.getInstance().currentUser
    if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_SHORT).show();return@setPositiveButton}
-   val ref=FirebaseFirestore.getInstance().collection("orders").document(orderId)
-   ref.get().addOnSuccessListener{doc->
-    if(!doc.exists()||doc.getString("customerUid")!=user.uid){Toast.makeText(this,"Order not found",Toast.LENGTH_SHORT).show();return@addOnSuccessListener}
-    val status=doc.getString("status").orEmpty().trim().lowercase(java.util.Locale.ROOT)
-    if(status !in listOf("new","pending","accepted")){
-     Toast.makeText(this,"Order ab cancel nahi ho sakta; restaurant se contact karein",Toast.LENGTH_LONG).show()
-     return@addOnSuccessListener
+   val db=FirebaseFirestore.getInstance()
+   val ref=db.collection("orders").document(orderId)
+   db.runTransaction { transaction ->
+    val doc=transaction.get(ref)
+    if(!doc.exists()||doc.getString("customerUid")!=user.uid) throw IllegalStateException("ORDER_NOT_FOUND")
+    val status=doc.getString("status").orEmpty().trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
+    if(status !in listOf("new","pending","accepted","accept")) throw IllegalStateException("ORDER_ALREADY_PREPARING")
+    transaction.update(ref,mapOf("status" to "Cancelled","cancelledBy" to "customer","cancelledAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp()))
+    null
+   }.addOnSuccessListener{
+    Toast.makeText(this,"Order cancelled successfully",Toast.LENGTH_LONG).show()
+   }.addOnFailureListener{e->
+    val message=when{
+     e.message.orEmpty().contains("ORDER_NOT_FOUND")->"Order nahi mila ya aap is order ke owner nahi hain."
+     e.message.orEmpty().contains("ORDER_ALREADY_PREPARING")->"Restaurant ne Preparing shuru kar di hai, isliye order cancel nahi ho sakta."
+     else->"Order cancel nahi hua. Internet/Firebase check karke dobara try karein."
     }
-    ref.update(mapOf("status" to "Cancelled","cancelledBy" to "customer","cancelledAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp()))
-     .addOnSuccessListener{Toast.makeText(this,"Order cancelled",Toast.LENGTH_SHORT).show()}
-     .addOnFailureListener{e->Toast.makeText(this,"Cancel nahi hua: ${e.message?: "please try again"}",Toast.LENGTH_LONG).show()}
-   }.addOnFailureListener{Toast.makeText(this,"Order status check nahi ho saka",Toast.LENGTH_LONG).show()}
+    Toast.makeText(this,message,Toast.LENGTH_LONG).show()
+   }
   }.show()
 }
 private fun showProfile(){
