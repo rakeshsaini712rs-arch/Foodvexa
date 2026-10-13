@@ -184,8 +184,11 @@ class MainActivity:AppCompatActivity(){
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
  private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
  private fun renderPartnerShopCards(){
+ val restaurantMode=prefs.getBoolean("restaurant_hotel_results",false)
+ if(restaurantMode)prefs.edit().remove("restaurant_hotel_results").apply()
+ val selectedCity=prefs.getString("restaurant_city","").orEmpty().trim()
  data class ShopCard(val name:String,val subtitle:String,val address:String,val imageRes:Int)
- val shops=listOf(
+ val allShops=listOf(
   ShopCard("FOODVEXA","All products","",R.drawable.foodvexa_card),
   ShopCard("Cake Tower","Cakes & Birthday Specials","Ghoom Chakkaar, Nawalgarh",R.drawable.cake_tower_card),
   ShopCard("Santa Banta Bakery","Bakery • Pizza • Fast Food","Near OBC Bank, Jangir Hospital Road, Nansa Gate",R.drawable.santa_banta_bakery),
@@ -204,6 +207,18 @@ class MainActivity:AppCompatActivity(){
   ShopCard("Bungli Restaurant","Indian Food • Thali • Family Dining","Nawalgarh, Rajasthan",R.drawable.bungli_restaurant),
   ShopCard("Ganpati Restaurant","Sweets","Nansa Gate, Nawalgarh",R.drawable.ganpati_restaurant_sweets_nawalgarh)
  )
+ val shops=if(!restaurantMode)allShops else if(selectedCity.equals("Nawalgarh",true))allShops.filter{it.name!="FOODVEXA"} else emptyList()
+ if(restaurantMode && shops.isEmpty()){
+  val message=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(24),dp(42),dp(24),dp(42))}
+  message.addView(TextView(this).apply{text="⌖";textSize=42f;gravity=Gravity.CENTER;setTextColor(secondaryText)})
+  message.addView(label("No agreement in this city",20f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER},margin(0,10,0,6))
+  message.addView(label("We haven’t partnered with any restaurant or hotel in $selectedCity yet. Please check again later.",14f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER},margin(0,0,0,12))
+  content.addView(message,LinearLayout.LayoutParams(-1,-2))
+  return
+ }
+ if(restaurantMode){
+  content.addView(label("Restaurants & Hotels in $selectedCity",18f,true,primaryText),margin(4,0,4,12))
+ }
  var row:LinearLayout?=null
  shops.forEachIndexed{index,shop->
   if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
@@ -257,7 +272,7 @@ for(i in 0 until content.childCount){
 if(ti<0)return
 (content.getChildAt(ti) as TextView).text=title
 while(content.childCount>ti+1)content.removeViewAt(ti+1)
-if(selectedCategory=="Deals & Offers"){
+if(selectedCategory=="Deals & Offers" || selectedCategory=="Restaurants & Hotels"){
  renderPartnerShopCards()
  return
 }
@@ -433,7 +448,11 @@ private fun bannerGrid():HorizontalScrollView{
 }
 private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
-showRestaurantHotelFlow(prefs){ showHome() }
+showRestaurantHotelFlow(prefs){
+ prefs.edit().putBoolean("restaurant_hotel_results",true).apply()
+ selectedCategory="Restaurants & Hotels"
+ showHome()
+}
 }
 private fun dealsOffersDialog(){
  val panel=LinearLayout(this).apply{
