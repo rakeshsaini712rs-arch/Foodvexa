@@ -107,7 +107,7 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
                 .setTitle("Select District")
                 .setItems(availableDistricts.toTypedArray()) { _, districtIndex ->
                     val district = availableDistricts[districtIndex]
-                    val districtCities = (if (state == "Rajasthan") cities[district] else null ?: listOf(district)).distinct().sorted()
+                    val districtCities = ((if (state == "Rajasthan") cities[district] else null) ?: listOf(district)).distinct().sorted()
                     AlertDialog.Builder(this)
                         .setTitle("Select City • $district")
                         .setItems(districtCities.toTypedArray()) { _, cityIndex ->
