@@ -496,34 +496,32 @@ private fun showCart(){
  content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))
 }
 private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String){
- val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),16);elevation=dp(1).toFloat()}
- card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,8))
- card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,10))
- card.addView(label("ORDER STATUS",12f,true,secondaryText),margin(0,0,0,8))
+ val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(16));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),18);elevation=dp(2).toFloat()}
+ card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,10))
+ card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,14))
  val normalized=statusValue.trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
  val terminal=normalized=="rejected"||normalized=="cancelled"||normalized=="canceled"
- val steps=listOf("New","Accepted","Preparing","Ready","Out for delivery","Delivered")
+ card.addView(label("ORDER TRACKING",11f,true,secondaryText),margin(0,0,0,10))
+ val steps=listOf("Accepted","Preparing","Ready","Out for delivery","Delivered")
  val current=when(normalized){
-  "new","pending","placed"->0
-  "accepted","accept"->1
-  "preparing","in preparation"->2
-  "ready","ready for pickup"->3
-  "out for delivery"->4
-  "delivered","complete","completed"->5
+  "accepted","accept"->0
+  "preparing","in preparation"->1
+  "ready","ready for pickup"->2
+  "out for delivery"->3
+  "delivered","complete","completed"->4
   else->-1
  }
  if(terminal){
   val color=if(isLightTheme)Color.rgb(190,45,45) else Color.rgb(255,110,110)
-  card.addView(label(if(normalized=="rejected")"✕  Order Rejected" else "✕  Order Cancelled",16f,true,color),margin(0,0,0,6))
+  card.addView(label(if(normalized=="rejected")"✕  Order rejected" else "✕  Order cancelled",15f,true,color),margin(0,0,0,2))
  }else{
+  if(current<0)card.addView(label("Waiting for restaurant confirmation",14f,true,orange),margin(0,0,0,8))
   steps.forEachIndexed{index,step->
    val done=current>=index
-   val active=current==index
    val tint=if(done)orange else secondaryText
    val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-   row.addView(label(if(done)"●" else "○",16f,true,tint),LinearLayout.LayoutParams(dp(24),dp(28)))
-   row.addView(label(step,14f,active||done,if(done)primaryText else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
-   if(active)row.addView(label("CURRENT",10f,true,orange))
+   row.addView(label(if(done)"✓" else "○",15f,true,tint),LinearLayout.LayoutParams(dp(26),dp(28)))
+   row.addView(label(step,14f,done,if(done)primaryText else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
    card.addView(row)
   }
  }
