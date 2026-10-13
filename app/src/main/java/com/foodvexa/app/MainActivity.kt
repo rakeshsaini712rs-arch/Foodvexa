@@ -182,7 +182,36 @@ class MainActivity:AppCompatActivity(){
   return box
  }
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
- private fun loadImage(view:ImageView,url:String){imageExecutor.execute{try{val con=URL(url).openConnection() as HttpURLConnection;con.connectTimeout=7000;con.readTimeout=7000;con.connect();val bmp=BitmapFactory.decodeStream(con.inputStream);con.disconnect();if(bmp!=null)mainHandler.post{if(!isFinishing)view.setImageBitmap(bmp)}}catch(_:Exception){}}}
+ private val photoCache=object:android.util.LruCache<String,Bitmap>((Runtime.getRuntime().maxMemory()/1024/8).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()){
+  override fun sizeOf(key:String,value:Bitmap)=value.byteCount/1024
+ }
+ private fun loadImage(view:ImageView,url:String){
+  view.tag=url
+  if(url.isBlank()){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38));return}
+  photoCache.get(url)?.let{view.setImageBitmap(it);return}
+  view.setBackgroundColor(Color.rgb(48,42,38))
+  imageExecutor.execute{
+   var bmp:Bitmap?=null
+   try{
+    val con=URL(url).openConnection() as HttpURLConnection
+    con.connectTimeout=12000
+    con.readTimeout=12000
+    con.instanceFollowRedirects=true
+    con.setRequestProperty("User-Agent","Foodvexa/1.0 (Android)")
+    con.setRequestProperty("Accept","image/avif,image/webp,image/apng,image/*,*/*;q=0.8")
+    con.connect()
+    if(con.responseCode in 200..299) con.inputStream.use{bmp=BitmapFactory.decodeStream(it)}
+    con.disconnect()
+   }catch(_:Exception){}
+   val loaded=bmp
+   if(loaded!=null){
+    photoCache.put(url,loaded)
+    mainHandler.post{if(!isFinishing && view.tag==url)view.setImageBitmap(loaded)}
+   }else{
+    mainHandler.post{if(!isFinishing && view.tag==url){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38))}}
+   }
+  }
+ }
  private fun renderPartnerShopCards(){
  val restaurantMode=prefs.getBoolean("restaurant_hotel_results",false)
  if(restaurantMode)prefs.edit().remove("restaurant_hotel_results").apply()
