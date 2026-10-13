@@ -290,7 +290,28 @@ class MainActivity:AppCompatActivity(){
  }
  if(shops.size%2!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
 }
-private fun correctedImageUrl(p:Product):String = p.imageUrl
+private fun correctedImageUrl(p:Product):String {
+    // Canonical product-name photo corrections. These override stale URLs from
+    // both the built-in catalog and Firestore so a saved mismatched image cannot
+    // silently reappear on the customer menu.
+    val name=p.name.trim().lowercase()
+    val corrected=when(name) {
+        "jalebi" -> "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jalebi_-_Closeup_View_of_Jalebis.JPG"
+        "gulab jamun" -> "https://images.unsplash.com/photo-1666190092159-4c4c0b1c7b2e?auto=format&fit=crop&w=800&q=85"
+        "rasgulla" -> "https://images.unsplash.com/photo-1601303516534-9b5f5c1a1f7b?auto=format&fit=crop&w=800&q=85"
+        "kaju katli" -> "https://chakkiwalle.com/cdn/shop/files/A8FA417E-1DE2-4C0F-8BFD-DC1AD143EAF0-550x550.jpg?v=1709208588&width=800"
+        "pav bhaji" -> "https://images.unsplash.com/photo-1606491956689-2ea866880c84?auto=format&fit=crop&w=800&q=85"
+        "bundi ladoo", "boondi" -> "https://images.unsplash.com/photo-1605197161470-5d2a3c7c0d15?auto=format&fit=crop&w=800&q=85"
+        "mix veg" -> "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=85"
+        "baingan bharta" -> "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=85"
+        "paneer dosa" -> "https://images.unsplash.com/photo-1630383249896-424e482df921?auto=format&fit=crop&w=800&q=85"
+        "kitkat chocolate cake" -> "https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=85"
+        "aloo pyaz" -> "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=85"
+        "lasooni palak" -> "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=85"
+        else -> p.imageUrl
+    }
+    return corrected
+}
 
  private fun renderProducts(){
 val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
@@ -313,7 +334,7 @@ filtered.forEachIndexed{index,p->
     val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(5),dp(5),dp(5),dp(6));background=rounded(Color.rgb(38,29,22),16);clipChildren=true}
     val pic=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
     card.addView(pic,LinearLayout.LayoutParams(-1,dp(175)))
-    loadImage(pic,p.imageUrl)
+    loadImage(pic,correctedImageUrl(p))
     pic.setOnClickListener{openProductPhoto(p)}
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
     card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
@@ -346,7 +367,7 @@ filtered.forEachIndexed{index,p->
     if(index%2==1 || index==filtered.lastIndex)content.addView(row,margin(0,0,0,10))
 }
 }
- private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,p.imageUrl)}
+ private fun openProductPhoto(p:Product){val dialog=android.app.Dialog(this);dialog.window?.setBackgroundDrawableResource(android.R.color.transparent);val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;background=ColorDrawable(Color.BLACK);setPadding(dp(10),dp(10),dp(10),dp(18))};val close=TextView(this).apply{text="✕";textSize=24f;setTextColor(Color.WHITE);gravity=Gravity.CENTER};val image=ImageView(this).apply{scaleType=ImageView.ScaleType.FIT_CENTER;setBackgroundColor(Color.BLACK)};box.addView(close,LinearLayout.LayoutParams(-1,dp(48)).apply{gravity=Gravity.END});box.addView(image,LinearLayout.LayoutParams(-1,0,1f));box.addView(label(p.name,20f,true,Color.WHITE),LinearLayout.LayoutParams(-1,dp(34)).apply{topMargin=dp(8)});box.addView(label("₹${p.price}",18f,true,Color.rgb(70,210,145)),LinearLayout.LayoutParams(-1,dp(30)));close.setOnClickListener{dialog.dismiss()};dialog.setContentView(box);dialog.show();dialog.window?.setLayout(-1,-1);loadImage(image,correctedImageUrl(p))}
  private fun locationDialog(){
   val current=prefs.getString("location","").orEmpty()
   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(4),dp(22),dp(4))}
@@ -741,7 +762,7 @@ private fun showCollection(){
   val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(10),dp(8),dp(10),dp(8));background=rounded(Color.rgb(38,29,22),16)}
   val photo=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
   card.addView(photo,LinearLayout.LayoutParams(dp(82),dp(76)))
-  loadImage(photo,p.imageUrl)
+  loadImage(photo,correctedImageUrl(p))
   val details=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(10),0,0,0)}
   details.addView(label(p.name,15f,true,primaryText))
   details.addView(label("₹"+p.price,14f,true,primaryText),margin(0,4,0,5))
