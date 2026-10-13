@@ -782,13 +782,13 @@ private fun showProfile(){
  item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}
  item("📞  Call Support","Call or WhatsApp support"){
   val supportDialog=AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose a support option.")
-   .setNegativeButton("🟢"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}
-   .setNeutralButton("☎"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}
+   .setNegativeButton("WhatsApp"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}
+   .setNeutralButton("Call"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}
    .setPositiveButton("CANCEL",null)
    .create()
   supportDialog.show()
-  supportDialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply{text="🟢";textSize=25f;contentDescription="WhatsApp"}
-  supportDialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply{text="☎";textSize=25f;contentDescription="Call"}
+  supportDialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply{text="WhatsApp";textSize=14f;contentDescription="WhatsApp";setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_whatsapp_brand,0,0,0);compoundDrawablePadding=dp(6)}
+  supportDialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply{text="Call";textSize=14f;contentDescription="Call";setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_call_brand,0,0,0);compoundDrawablePadding=dp(6)}
   supportDialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply{text="CANCEL";textSize=14f;contentDescription="Cancel"}
  }
  item("🗺️  Navigate to Shop","Open shop location"){
