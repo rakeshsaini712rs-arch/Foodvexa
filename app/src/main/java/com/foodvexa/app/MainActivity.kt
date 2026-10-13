@@ -722,7 +722,14 @@ private fun showProfile(){
  item("❤️  Collection","Your saved items"){showCollection()}
  item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}
  item("📞  Call Support","Call or WhatsApp support"){
-  AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose a support option.").setNegativeButton("CANCEL",null).setNeutralButton("WHATSAPP"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}.setPositiveButton("CALL"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}.show()
+  val supportDialog=AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose a support option.")
+   .setNegativeButton("CANCEL",null)
+   .setNeutralButton("WHATSAPP"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}
+   .setPositiveButton("CALL"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}
+   .create()
+  supportDialog.show()
+  supportDialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply{text="🟢";textSize=25f;contentDescription="WhatsApp"}
+  supportDialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply{text="☎";textSize=25f;contentDescription="Call"}
  }
  item("🗺️  Navigate to Shop","Open shop location"){
   try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
