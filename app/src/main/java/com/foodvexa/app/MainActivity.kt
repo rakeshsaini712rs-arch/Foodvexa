@@ -431,15 +431,17 @@ private fun placeOrderAndShowOrders(){
  val savedMobile=prefs.getString("profile_mobile","").orEmpty()
  val savedAddress=prefs.getString("profile_address","").orEmpty().ifBlank{prefs.getString("delivery_address","").orEmpty().ifBlank{prefs.getString("location","").orEmpty()}}
  val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),dp(4))}
- val name=EditText(this).apply{hint="Customer name";setText(savedName);setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
+ val name=EditText(this).apply{hint="Customer name";setText(savedName);setSingleLine(true);setTextColor(primaryText);setHintTextColor(secondaryText);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
  val mobile=EditText(this).apply{hint="10-digit mobile number";setText(savedMobile);inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setTextColor(ink);setHintTextColor(muted);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
- val address=EditText(this).apply{hint="Full delivery address";setText(savedAddress);minLines=2;gravity=Gravity.TOP;setTextColor(ink);setHintTextColor(muted);setPadding(dp(12),dp(10),dp(12),dp(10));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
+ val address=EditText(this).apply{hint="Full delivery address";setText(savedAddress);minLines=2;gravity=Gravity.TOP;setTextColor(primaryText);setHintTextColor(secondaryText);setPadding(dp(12),dp(10),dp(12),dp(10));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
  form.addView(label("Confirm customer details",20f,true,primaryText),margin(0,0,0,12))
  form.addView(label("Name",13f,true,secondaryText),margin(0,0,0,4));form.addView(name,margin(0,0,0,10))
  form.addView(label("Mobile number",13f,true,secondaryText),margin(0,0,0,4));form.addView(mobile,margin(0,0,0,10))
  form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4));form.addView(address,margin(0,0,0,8))
  val dialog=AlertDialog.Builder(this).setTitle("Customer Details").setView(form).setNegativeButton("CANCEL",null).setPositiveButton("CONFIRM ORDER",null).create()
  dialog.setOnShowListener{
+  name.clearFocus();mobile.clearFocus();address.clearFocus()
+  dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN or android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
   dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{
    val n=name.text.toString().trim();val m=mobile.text.toString().trim();val a=address.text.toString().trim()
    if(n.isBlank()){name.error="Enter customer name";return@setOnClickListener}
