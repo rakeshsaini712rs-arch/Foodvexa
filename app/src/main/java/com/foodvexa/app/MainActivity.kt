@@ -463,6 +463,8 @@ showRestaurantHotelFlow(prefs){
   }
  }
 }
+}
+
 private fun dealsOffersDialog(){
  val panel=LinearLayout(this).apply{
   orientation=LinearLayout.VERTICAL
