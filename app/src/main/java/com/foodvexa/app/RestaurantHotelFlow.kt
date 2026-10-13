@@ -92,20 +92,50 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
         "Udaipur" to listOf("Udaipur","Gogunda","Jhadol","Kherwara","Mavli","Salumber","Sarada")
     )
 
-    val panel = android.widget.LinearLayout(this)
-    panel.orientation = android.widget.LinearLayout.VERTICAL
-    panel.setPadding(32, 8, 32, 4)
+    val panel = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(24, 8, 24, 4)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF15151B.toInt())
+            cornerRadius = 22f
+            setStroke(1, 0xFF393941.toInt())
+        }
+    }
     fun addHeading(value: String) {
-        val heading = android.widget.TextView(this)
-        heading.text = value
-        heading.textSize = 13f
-        heading.setTextColor(0xFF999999.toInt())
-        heading.setPadding(0, 12, 0, 4)
-        panel.addView(heading)
+        panel.addView(android.widget.TextView(this).apply {
+            text = value
+            textSize = 12f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(0xFFB7B7C1.toInt())
+            setPadding(0, 10, 0, 3)
+        })
     }
     fun makePicker(options: List<String>): android.widget.Spinner {
         val picker = android.widget.Spinner(this)
-        picker.adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options)
+        val adapter = object : android.widget.ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, options) {
+            override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                val view = super.getView(position, convertView, parent) as android.widget.TextView
+                view.setTextColor(0xFFF4F4F7.toInt())
+                view.textSize = 16f
+                view.setPadding(14, 12, 14, 12)
+                view.background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFF25252D.toInt())
+                    cornerRadius = 12f
+                    setStroke(1, 0xFF41414B.toInt())
+                }
+                return view
+            }
+            override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                val view = super.getDropDownView(position, convertView, parent) as android.widget.TextView
+                view.setTextColor(0xFFF4F4F7.toInt())
+                view.setBackgroundColor(0xFF25252D.toInt())
+                view.setPadding(18, 14, 18, 14)
+                return view
+            }
+        }
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        picker.adapter = adapter
+        picker.setPopupBackgroundDrawable(android.graphics.drawable.ColorDrawable(0xFF25252D.toInt()))
         panel.addView(picker)
         return picker
     }
@@ -115,28 +145,68 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
     val districtPicker = makePicker(districts.distinct().sorted())
     addHeading("SELECT CITY")
     val cityPicker = makePicker(listOf("Select city"))
-    val agreement = android.widget.TextView(this)
-    agreement.textSize = 15f
-    agreement.setPadding(0, 20, 0, 8)
-    panel.addView(agreement)
+    val agreement = android.widget.TextView(this).apply {
+        textSize = 14f
+        setPadding(14, 14, 14, 14)
+        setTextColor(0xFFB7B7C1.toInt())
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF202027.toInt())
+            cornerRadius = 14f
+            setStroke(1, 0xFF41414B.toInt())
+        }
+    }
+    val agreementBox = android.widget.LinearLayout(this).apply {
+        orientation = android.widget.LinearLayout.VERTICAL
+        setPadding(0, 16, 0, 4)
+        addView(agreement)
+    }
+    panel.addView(agreementBox)
     fun refreshAgreement(city: String) {
         val found = city.equals("Nawalgarh", true)
-        agreement.text = if (found) "✓ Agreement available — partner restaurants will be shown" else "No agreement in this city"
-        agreement.setTextColor(if (found) 0xFF22C55E.toInt() else 0xFFAAAAAA.toInt())
+        agreement.text = if (found) "✓  AGREEMENT AVAILABLE\nPartner restaurants in Nawalgarh will be shown." else "⌖  No agreement in this city\nइस शहर में अभी कोई पार्टनर रेस्टोरेंट नहीं है।"
+        agreement.setTextColor(if (found) 0xFF4ADE80.toInt() else 0xFFE0E0E6.toInt())
+        agreement.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(if (found) 0xFF10271D.toInt() else 0xFF202027.toInt())
+            cornerRadius = 14f
+            setStroke(1, if (found) 0xFF22C55E.toInt() else 0xFF41414B.toInt())
+        }
     }
-    fun refreshCities() {
+    fun refreshCities(preferredCity: String? = null) {
         val district = districtPicker.selectedItem?.toString().orEmpty()
         val options = (cities[district] ?: listOf(district)).distinct().sorted()
-        cityPicker.adapter = android.widget.ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options)
-        if (options.isNotEmpty()) refreshAgreement(options.first())
+        cityPicker.adapter = cityPicker.adapter.let {
+            object : android.widget.ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, options) {
+                override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val view = super.getView(position, convertView, parent) as android.widget.TextView
+                    view.setTextColor(0xFFF4F4F7.toInt()); view.textSize = 16f; view.setPadding(14,12,14,12)
+                    view.background = android.graphics.drawable.GradientDrawable().apply { setColor(0xFF25252D.toInt()); cornerRadius=12f; setStroke(1,0xFF41414B.toInt()) }
+                    return view
+                }
+                override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                    val view=super.getDropDownView(position,convertView,parent) as android.widget.TextView
+                    view.setTextColor(0xFFF4F4F7.toInt()); view.setBackgroundColor(0xFF25252D.toInt()); view.setPadding(18,14,18,14)
+                    return view
+                }
+            }
+        }
+        cityPicker.setPopupBackgroundDrawable(android.graphics.drawable.ColorDrawable(0xFF25252D.toInt()))
+        val target = preferredCity ?: prefs.getString("restaurant_city", null)
+        val targetIndex = options.indexOfFirst { it.equals(target, true) }
+        if (targetIndex >= 0) cityPicker.setSelection(targetIndex)
+        if (options.isNotEmpty()) refreshAgreement(cityPicker.selectedItem?.toString() ?: options.first())
     }
     districtPicker.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
         override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) { refreshCities() }
+        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+            val district = districtPicker.selectedItem?.toString().orEmpty()
+            refreshCities(if (district.equals("Jhunjhunu", true)) "Nawalgarh" else null)
+        }
     }
     cityPicker.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
         override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) { refreshAgreement(cityPicker.selectedItem?.toString().orEmpty()) }
+        override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+            refreshAgreement(cityPicker.selectedItem?.toString().orEmpty())
+        }
     }
     val dialog = AlertDialog.Builder(this)
         .setTitle("Restaurant / Hotel")
@@ -145,6 +215,35 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
         .setPositiveButton("Show Results", null)
         .create()
     dialog.setOnShowListener {
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF15151B.toInt())
+            cornerRadius = 24f
+            setStroke(1, 0xFF393941.toInt())
+        })
+        dialog.window?.setDimAmount(0.72f)
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+            setTextColor(0xFFFF5A36.toInt())
+            textSize = 14f
+        }
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply {
+            setTextColor(0xFFB7B7C1.toInt())
+            textSize = 14f
+        }
+        val savedDistrict = prefs.getString("restaurant_district", null)
+        val defaultDistrict = if (savedDistrict != null) districts.indexOf(savedDistrict) else districts.indexOf("Jhunjhunu")
+        if (defaultDistrict >= 0) districtPicker.setSelection(defaultDistrict)
+        if (districtPicker.selectedItem?.toString().equals("Jhunjhunu", true)) refreshCities("Nawalgarh")
+    }
+    dialog.setOnShowListener(dialogOnShow@{
+        dialog.window?.setBackgroundDrawable(android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF15151B.toInt()); cornerRadius = 24f; setStroke(1, 0xFF393941.toInt())
+        })
+        dialog.window?.setDimAmount(0.72f)
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(0xFFFF5A36.toInt())
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(0xFFB7B7C1.toInt())
+        val savedDistrict = prefs.getString("restaurant_district", null)
+        val districtIndex = if (savedDistrict != null) districts.indexOf(savedDistrict) else districts.indexOf("Jhunjhunu")
+        if (districtIndex >= 0) districtPicker.setSelection(districtIndex)
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             prefs.edit()
                 .putString("restaurant_state", statePicker.selectedItem?.toString().orEmpty())
@@ -154,6 +253,6 @@ fun Activity.showRestaurantHotelFlow(prefs: SharedPreferences, onDone: () -> Uni
             dialog.dismiss()
             onDone()
         }
-    }
+    })
     dialog.show()
 }
