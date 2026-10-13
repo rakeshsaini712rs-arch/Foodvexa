@@ -378,7 +378,6 @@ private fun placeOrderAndShowOrders(){
   "createdAt" to FieldValue.serverTimestamp(),
   "updatedAt" to FieldValue.serverTimestamp()
  )
- Toast.makeText(this,"Order submit ho raha hai…",Toast.LENGTH_SHORT).show()
  FirebaseFirestore.getInstance().collection("orders").add(data)
   .addOnSuccessListener{
    val orders=try{JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){JSONArray()}
