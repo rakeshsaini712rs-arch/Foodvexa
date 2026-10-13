@@ -654,14 +654,14 @@ private fun showCart(){
        if(total.isNotBlank())append("\nTotal: ₹").append(total)
       }
       val status=doc.getString("status").orEmpty().ifBlank{"New"}
-      addOrderHistoryCard("Order #"+(index+1),details,status)
+      addOrderHistoryCard("Order #"+(index+1),details,status,doc.id)
      }
     }
    }
  }
  content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))
 }
-private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String){
+private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String,orderId:String?=null){
  val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(16));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),18);elevation=dp(2).toFloat()}
  card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,10))
  card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,14))
@@ -691,8 +691,31 @@ private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:
    row.addView(label(step,14f,done,if(done)trackingGreen else secondaryText),LinearLayout.LayoutParams(0,dp(28),1f))
    card.addView(row)
   }
+  if(orderId!=null&&(normalized=="new"||normalized=="pending"||normalized=="accepted")){
+   card.addView(primaryButton("✕  Cancel Order"){confirmCustomerOrderCancellation(orderId)},margin(0,12,0,0))
+  }
  }
  (orderCardsContainer ?: content).addView(card,margin(0,0,0,14))
+}
+private fun confirmCustomerOrderCancellation(orderId:String){
+ AlertDialog.Builder(this).setTitle("Cancel this order?").setMessage("You can cancel only before the restaurant starts preparing it.")
+  .setNegativeButton("KEEP ORDER",null)
+  .setPositiveButton("CANCEL ORDER"){_,_->
+   val user=FirebaseAuth.getInstance().currentUser
+   if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_SHORT).show();return@setPositiveButton}
+   val ref=FirebaseFirestore.getInstance().collection("orders").document(orderId)
+   ref.get().addOnSuccessListener{doc->
+    if(!doc.exists()||doc.getString("customerUid")!=user.uid){Toast.makeText(this,"Order not found",Toast.LENGTH_SHORT).show();return@addOnSuccessListener}
+    val status=doc.getString("status").orEmpty().trim().lowercase(java.util.Locale.ROOT)
+    if(status !in listOf("new","pending","accepted")){
+     Toast.makeText(this,"Order ab cancel nahi ho sakta; restaurant se contact karein",Toast.LENGTH_LONG).show()
+     return@addOnSuccessListener
+    }
+    ref.update(mapOf("status" to "Cancelled","cancelledBy" to "customer","cancelledAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp()))
+     .addOnSuccessListener{Toast.makeText(this,"Order cancelled",Toast.LENGTH_SHORT).show()}
+     .addOnFailureListener{e->Toast.makeText(this,"Cancel nahi hua: ${e.message?: "please try again"}",Toast.LENGTH_LONG).show()}
+   }.addOnFailureListener{Toast.makeText(this,"Order status check nahi ho saka",Toast.LENGTH_LONG).show()}
+  }.show()
 }
 private fun showProfile(){
  setupBase(4)
