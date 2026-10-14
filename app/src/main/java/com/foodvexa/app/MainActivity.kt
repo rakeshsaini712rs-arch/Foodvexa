@@ -399,6 +399,19 @@ filtered.forEachIndexed{index,p->
     card.addView(pic,LinearLayout.LayoutParams(-1,dp(175)))
     loadImage(pic,correctedImageUrl(p))
     pic.setOnClickListener{openProductPhoto(p)}
+    val freshnessTicker=TextView(this).apply{
+        text="🔥 Fresh & Hot   •   ⚡ Near Fast   •   20–25 min   •   "
+        textSize=10f
+        setTextColor(Color.rgb(255,190,95))
+        setSingleLine(true)
+        ellipsize=android.text.TextUtils.TruncateAt.MARQUEE
+        marqueeRepeatLimit=-1
+        isSelected=true
+        gravity=Gravity.CENTER_VERTICAL
+        setPadding(dp(4),0,dp(4),0)
+        background=rounded(Color.rgb(48,35,25),6)
+    }
+    card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
     card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
