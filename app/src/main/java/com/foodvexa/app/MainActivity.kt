@@ -302,9 +302,14 @@ private fun correctedImageUrl(p:Product):String {
     // both the built-in catalog and Firestore so a saved mismatched image cannot
     // silently reappear on the customer menu.
     val name=p.name.trim().lowercase(java.util.Locale.ROOT)
-    // Snacks product photos are intentionally disabled permanently, including
-    // stale Firestore image URLs, so they are not downloaded or displayed.
-    if(p.category.equals("Snacks",ignoreCase=true)) return ""
+    // Use the freshly uploaded, professionally cropped local photos for Snacks.
+    // Unknown Snacks products remain image-free so stale Firestore URLs cannot return.
+    if(p.category.equals("Snacks",ignoreCase=true)) return when(name){
+        "samosa" -> "local://snacks/samosa"
+        "kachori", "pyaz kachori" -> "local://snacks/pyaz_kachori"
+        "mirchi bada" -> "local://snacks/mirchi_bada"
+        else -> ""
+    }
     // All Sweets catalog items use their dedicated bundled WebP asset so stale
     // remote URLs from the hardcoded catalog or Firestore cannot mismatch.
     if(p.category.equals("Sweets",ignoreCase=true)){
