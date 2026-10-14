@@ -189,7 +189,7 @@ class MainActivity:AppCompatActivity(){
  private fun loadImage(view:ImageView,url:String){
   view.tag=url
   if(url.isBlank()){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38));return}
-  if(url.startsWith("local://sweets/") || url.startsWith("local://foodvexa/")){
+  if(url.startsWith("local://sweets/") || url.startsWith("local://foodvexa/") || url.startsWith("local://snacks/")){
    val resourceName=url.substringAfterLast('/').lowercase(java.util.Locale.ROOT)
    val resourceId=resources.getIdentifier(resourceName,"drawable",packageName)
    if(resourceId!=0){view.setImageResource(resourceId);return}
