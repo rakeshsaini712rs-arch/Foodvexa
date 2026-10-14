@@ -25,7 +25,14 @@ service cloud.firestore {
         && request.resource.data.paymentMethod in ['COD', 'UPI'];
       allow read: if isAdmin() ||
         (signedIn() && resource.data.customerUid == request.auth.uid);
-      allow update: if isAdmin();
+      allow update: if isAdmin() ||
+        (signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status in ['New', 'new', 'Pending', 'pending', 'Accepted', 'accepted', 'Accept', 'accept']
+          && request.resource.data.status == 'Cancelled'
+          && request.resource.data.cancelledBy == 'customer'
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'cancelledBy', 'cancelledAt', 'updatedAt']));
       allow delete: if false;
     }
   }
