@@ -400,16 +400,20 @@ filtered.forEachIndexed{index,p->
     loadImage(pic,correctedImageUrl(p))
     pic.setOnClickListener{openProductPhoto(p)}
     val freshnessTicker=TextView(this).apply{
-        text="🔥 Fresh & Hot   •   ⚡ Near Fast   •   20–25 min   •   "
+        val tickerText="🔥 Fresh & Hot   •   ⚡ Near Fast   •   20–25 min   •   "
+        text=tickerText+tickerText+tickerText
         textSize=10f
         setTextColor(Color.rgb(255,190,95))
         setSingleLine(true)
         ellipsize=android.text.TextUtils.TruncateAt.MARQUEE
         marqueeRepeatLimit=-1
+        isFocusable=true
+        isFocusableInTouchMode=true
         isSelected=true
         gravity=Gravity.CENTER_VERTICAL
         setPadding(dp(4),0,dp(4),0)
         background=rounded(Color.rgb(48,35,25),6)
+        post { isSelected=true; requestFocus() }
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
