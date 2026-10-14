@@ -287,9 +287,10 @@ class MainActivity:AppCompatActivity(){
    setImageResource(shop.imageRes)
    contentDescription=shop.name+" — "+shop.address
   }
-  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(150)))
-  card.addView(label(shop.name,13f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),0)})
-  if(shop.address.isNotBlank()) card.addView(label(shop.address,10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(3),dp(3),dp(3))})
+  // Compact card; address is already printed inside the uploaded card artwork.
+  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(112)))
+  card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
+  if(shop.subtitle.isNotBlank() && shop.name!="FOODVEXA") card.addView(label(shop.subtitle,9f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),0,dp(3),dp(2))})
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5);leftMargin=dp(5);bottomMargin=dp(10)})
   if(index%2==1)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
