@@ -10,27 +10,28 @@ jobs:
   deploy-firestore-rules:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Firebase service account secret
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Firebase service account and project
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT repository secret."
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT repository secret. Add the service-account JSON for foodvexa-2daca in Settings > Secrets and variables > Actions."
             exit 1
           fi
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          node -e "const fs=require('fs'); const s=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); if(s.project_id !== 'foodvexa-2daca') { console.error('Wrong Firebase project; refusing to deploy.'); process.exit(2); }" "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
       - name: Install Firebase CLI
         run: npm install --global firebase-tools
+
       - name: Deploy Firestore rules only
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
-          node -e "const s=require(process.env.GOOGLE_APPLICATION_CREDENTIALS); if(s.project_id !== 'foodvexa-2daca') process.exit(2)"
-          firebase deploy --only firestore:rules --project foodvexa-2daca --non-interactive
+        run: firebase deploy --only firestore:rules --project foodvexa-2daca --non-interactive
