@@ -296,6 +296,8 @@ class MainActivity:AppCompatActivity(){
  if(shops.size%2!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
 }
 private fun correctedImageUrl(p:Product):String {
+    // Snacks category intentionally has no product photos; keep the product cards and details.
+    if(p.category.equals("Snacks",ignoreCase=true)) return ""
     // Canonical product-name photo corrections. These override stale URLs from
     // both the built-in catalog and Firestore so a saved mismatched image cannot
     // silently reappear on the customer menu.
