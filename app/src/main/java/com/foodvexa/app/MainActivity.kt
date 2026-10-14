@@ -189,7 +189,7 @@ class MainActivity:AppCompatActivity(){
  private fun loadImage(view:ImageView,url:String){
   view.tag=url
   if(url.isBlank()){view.setImageDrawable(null);view.setBackgroundColor(Color.rgb(48,42,38));return}
-  if(url.startsWith("local://sweets/") || url.startsWith("local://foodvexa/") || url.startsWith("local://snacks/") || url.startsWith("local://sabji/")){
+  if(url.startsWith("local://sweets/") || url.startsWith("local://foodvexa/") || url.startsWith("local://snacks/") || url.startsWith("local://sabji/") || url.startsWith("local://meals/")){
    val resourceName=url.substringAfterLast('/').lowercase(java.util.Locale.ROOT)
    val resourceId=resources.getIdentifier(resourceName,"drawable",packageName)
    if(resourceId!=0){view.setImageResource(resourceId);return}
@@ -321,6 +321,21 @@ private fun correctedImageUrl(p:Product):String {
             "shahi paneer"->1; "kadai paneer"->2; "paneer butter masala"->3; "matar paneer"->4; "palak paneer"->5; "malai kofta"->6; "mix veg"->7; "aloo gobi"->8; "dal makhani"->9; "dal tadka"->10; "chole masala"->11; "rajma masala"->12; "sev tamatar"->13; "gatte ki sabji"->14; "ker sangri"->15; "aloo pyaz"->16; "bhindi masala"->17; "baingan bharta"->18; "dum aloo"->19; "mushroom masala"->20; "methi matar malai"->21; "paneer tikka masala"->22; "achari paneer"->23; "chilli paneer"->24; "mushroom do pyaza"->25; "kaju curry"->26; "navratan korma"->27; "veg kolhapuri"->28; "handi paneer"->29; "paneer do pyaza"->30; "dum paneer"->31; "corn palak"->32; "aloo matar"->33; "matar mushroom"->1; "lasooni palak"->5; else->0
         }
         if(sabjiIndex>0) return "local://sabji/paneer_recipe_"+sabjiIndex.toString().padStart(2,'0')
+    }
+    // Use the uploaded, compressed local photos for the Meals catalog instead of remote URLs.
+    if(p.category.equals("Meals",ignoreCase=true)) {
+        val mealPhoto=when(name) {
+            "indian thali" -> "indian_thali"
+            "chole bhature" -> "chole_bhature"
+            "chole kulche" -> "chole_kulche"
+            "dosa", "masala dosa", "paneer dosa" -> "dosa"
+            "idli", "masala idli" -> "idli"
+            "vada" -> "vada"
+            "veg noodles" -> "veg_hakka_noodles"
+            "chilli potato" -> "honey_chilli_potato"
+            else -> ""
+        }
+        if(mealPhoto.isNotBlank()) return "local://meals/"+mealPhoto
     }
     // Bundled, cropped fast-food photos override stale remote URLs for these catalog items.
     val localFastFoodPhotos=mapOf(
