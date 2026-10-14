@@ -502,6 +502,7 @@ filtered.forEachIndexed{index,p->
 private fun placeOrderAndShowOrders(){
  val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
+ if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
  if(FirebaseAuth.getInstance().currentUser==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{FirebaseAuth.getInstance().currentUser?.displayName.orEmpty()}
  val savedMobile=prefs.getString("profile_mobile","").orEmpty()
@@ -533,6 +534,7 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
+ if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
  val user=FirebaseAuth.getInstance().currentUser
  val address=deliveryAddress
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
@@ -665,9 +667,10 @@ private fun showCart(){
   }
  }
  content.addView(label("Subtotal: ₹$subtotal",20f,true,primaryText),margin(0,10,0,6))
+ if(subtotal<150) content.addView(label("Minimum order ₹150 • Add ₹${150-subtotal} more to place order",14f,true,orange),margin(0,0,0,8))
  content.addView(label("Delivery fee: ₹30",14f,false,secondaryText),margin(0,0,0,6))
  content.addView(label("Total: ₹${subtotal+30}",22f,true,primaryText),margin(0,0,0,14))
- content.addView(primaryButton("PLACE ORDER  •  ₹${subtotal+30}"){placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
+ content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+30}"){if(subtotal<150)Toast.makeText(this,"Minimum order ₹150 hai.",Toast.LENGTH_LONG).show() else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
  orderStatusListener?.remove()
  orderStatusListener=null
