@@ -861,8 +861,8 @@ private fun showProfile(){
  item("💳  Payment Settings","COD and online payment"){showPaymentSettings()}
  item("📞  Call Support","Call or WhatsApp support"){
   val supportDialog=AlertDialog.Builder(this).setTitle("Contact Support").setMessage("Choose a support option.")
-   .setNegativeButton("WhatsApp"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917891851475")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}
-   .setNeutralButton("Call"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917891851475")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}
+   .setNegativeButton("WhatsApp"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://wa.me/917297809215")))}catch(_:Exception){Toast.makeText(this,"WhatsApp is not available",Toast.LENGTH_SHORT).show()}}
+   .setNeutralButton("Call"){_,_->try{startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL,android.net.Uri.parse("tel:+917297809215")))}catch(_:Exception){Toast.makeText(this,"Phone app is not available",Toast.LENGTH_SHORT).show()}}
    .setPositiveButton("CANCEL",null)
    .create()
   supportDialog.show()
