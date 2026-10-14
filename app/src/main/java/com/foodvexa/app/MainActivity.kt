@@ -407,13 +407,14 @@ filtered.forEachIndexed{index,p->
         setSingleLine(true)
         ellipsize=android.text.TextUtils.TruncateAt.MARQUEE
         marqueeRepeatLimit=-1
-        isFocusable=true
-        isFocusableInTouchMode=true
+        isFocusable=false
+        isFocusableInTouchMode=false
         isSelected=true
         gravity=Gravity.CENTER_VERTICAL
         setPadding(dp(4),0,dp(4),0)
         background=rounded(Color.rgb(48,35,25),6)
-        post { isSelected=true; requestFocus() }
+        // Keep marquee selected without stealing focus from other product cards.
+        post { isSelected=true }
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
