@@ -78,12 +78,12 @@ class LoginActivity : Activity() {
     private fun authorize(uid:String, onDenied:((String)->Unit)?=null) {
         db.collection("admins").document(uid).get()
             .addOnSuccessListener { doc ->
-                if(doc.exists() && doc.getBoolean("active") != false) {
+                if(doc.exists() && doc.getBoolean("active") == true) {
                     getSharedPreferences("admin_session",MODE_PRIVATE).edit().putBoolean("logged_in",true).putString("uid",uid).apply()
                     startActivity(android.content.Intent(this,AdminActivity::class.java)); finish()
                 } else {
                     auth.signOut()
-                    if(onDenied!=null) onDenied("Admin permission nahi hai. Firebase admins/$uid document add karein.")
+                    if(onDenied!=null) onDenied("Admin access denied. Firebase admins/$uid document mein active Boolean true set karein.")
                     else showLogin()
                 }
             }
