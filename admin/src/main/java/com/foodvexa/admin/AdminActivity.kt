@@ -88,8 +88,8 @@ class AdminActivity : Activity() {
     }
     private fun backendNotice(){
         val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape(Color.rgb(255,247,225),12)}
-        box.addView(text("LIVE FIRESTORE CONNECTION",12f,Color.rgb(130,83,0),true))
-        box.addView(text("Orders/menu live updates Firebase se aate hain. Agar data nahi dikh raha, Firebase Authentication, admins/{UID}, aur Firestore rules/config check karein.",12f,Color.rgb(91,66,28)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+        box.addView(text("LIVE DATABASE CONNECTION",12f,Color.rgb(130,83,0),true))
+        box.addView(text("Orders and menu update live from Firebase. If data is missing, check Firebase Authentication, the admins/{UID} document, and Firestore rules.",12f,Color.rgb(91,66,28)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
         body.addView(box,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
     }
     private fun dashboard(){
@@ -98,7 +98,7 @@ class AdminActivity : Activity() {
             if(error!=null){
                 ordersLoadError=error.localizedMessage?:error.javaClass.simpleName
                 if(page=="Dashboard")renderDashboardCounts()
-                Toast.makeText(this,"Orders read error: "+ordersLoadError,Toast.LENGTH_LONG).show()
+                Toast.makeText(this,"Order loading error: "+ordersLoadError,Toast.LENGTH_LONG).show()
                 return@addSnapshotListener
             }
             if(snap!=null){
@@ -110,22 +110,22 @@ class AdminActivity : Activity() {
     }
     private fun renderDashboardCounts(){
         body.removeAllViews()
-        addLine("Store overview",22f,ink,true);addLine("Live operations summary",13f,Color.GRAY);backendNotice()
+        addLine("Store Overview",22f,ink,true);addLine("Live Operations Summary",13f,Color.GRAY);backendNotice()
         addLine("Firebase project: "+(com.google.firebase.FirebaseApp.getInstance().options.projectId?: "unknown"),12f,Color.GRAY)
-        addLine("Signed-in Admin UID: "+(auth.currentUser?.uid?: "NOT_SIGNED_IN"),11f,Color.GRAY)
-        addLine(if(ordersLoadError==null) "Firestore orders status: "+orders.size+" order(s) loaded" else "Firestore orders status: READ ERROR",12f,if(ordersLoadError==null)green else red,true)
-        body.addView(button("REFRESH FIRESTORE ORDERS",{showPage("Dashboard")},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+        addLine("Admin UID: "+(auth.currentUser?.uid?: "NOT_SIGNED_IN"),11f,Color.GRAY)
+        addLine(if(ordersLoadError==null) "Order Database Status: "+orders.size+" order(s) loaded" else "Order Database Status: READ ERROR",12f,if(ordersLoadError==null)green else red,true)
+        body.addView(button("REFRESH ORDERS",{showPage("Dashboard")},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         if(ordersLoadError!=null){
-            addLine("FIRESTORE ORDERS READ FAILED",15f,red,true)
+            addLine("FAILED TO LOAD ORDERS",15f,red,true)
             addLine(ordersLoadError!!,13f,ink)
             addLine("Admin UID: "+(auth.currentUser?.uid?: "NOT_SIGNED_IN"),12f,Color.GRAY)
             addLine("Firebase project: "+(com.google.firebase.FirebaseApp.getInstance().options.projectId?: "unknown"),12f,Color.GRAY)
             body.addView(button("RETRY ORDERS CONNECTION",{showPage("Dashboard")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
-        card("TOTAL ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),if(ordersLoadError!=null)"Firestore connection error — count unavailable" else "Orders loaded from shared Firestore")
+        card("TOTAL ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),if(ordersLoadError!=null)"Database connection error — count unavailable" else "Orders loaded from the shared database")
         card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
-        card("PAYMENTS NEEDING REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
-        body.addView(button("OPEN ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+        card("PAYMENTS TO REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
+        body.addView(button("VIEW ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         body.addView(button("MANAGE MENU",{showPage("Menu")},Color.rgb(55,48,52)),LinearLayout.LayoutParams(-1,-2))
     }
     private fun listenOrders(onLoaded:()->Unit){
@@ -133,18 +133,18 @@ class AdminActivity : Activity() {
         ordersListener=db.collection("orders").addSnapshotListener(this){snap,error->
             if(error!=null){
                 val uid=auth.currentUser?.uid ?: "NOT_SIGNED_IN"
-                val detail="Orders read denied. UID=$uid · "+(error.localizedMessage?:error.javaClass.simpleName)
+                val detail="Unable to read orders. UID=$uid · "+(error.localizedMessage?:error.javaClass.simpleName)
                 if(page=="Orders"){
                     body.removeAllViews()
-                    addLine("Customer orders · permission error",20f,red,true)
+                    addLine("Customer Orders · Permission Error",20f,red,true)
                     addLine(detail,13f,ink)
-                    addLine("Firebase Console → Firestore → admins/$uid : active Boolean true hona chahiye. Phir Firestore Rules deploy karein.",13f,Color.GRAY)
+                    addLine("In Firebase Console, set admins/$uid → active to Boolean true, then deploy the Firestore rules.",13f,Color.GRAY)
                 }
                 Toast.makeText(this,detail,Toast.LENGTH_LONG).show()
                 db.collection("admins").document(uid).get().addOnSuccessListener{doc->
                     val state=if(!doc.exists()) "admin document missing" else "active="+doc.get("active")+" ("+(doc.get("active")?.javaClass?.simpleName?: "null")+")"
-                    Toast.makeText(this,"Admin check: $state",Toast.LENGTH_LONG).show()
-                }.addOnFailureListener{e->Toast.makeText(this,"Admin check failed: "+(e.localizedMessage?:e.javaClass.simpleName),Toast.LENGTH_LONG).show()}
+                    Toast.makeText(this,"Admin access check: $state",Toast.LENGTH_LONG).show()
+                }.addOnFailureListener{e->Toast.makeText(this,"Admin access check failed: "+(e.localizedMessage?:e.javaClass.simpleName),Toast.LENGTH_LONG).show()}
                 return@addSnapshotListener
             }
             orders.clear();snap?.documents?.forEach{orders.add(it.id to (it.data?:emptyMap()))}
@@ -154,10 +154,10 @@ class AdminActivity : Activity() {
         }
         onLoaded()
     }
-    private fun ordersPage(){addLine("Customer orders",22f,ink,true);addLine("Real-time order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
+    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
     private fun renderOrders(){
         body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true)
-        if(orders.isEmpty()){addLine("Abhi koi order nahi mila.",14f,Color.GRAY);return}
+        if(orders.isEmpty()){addLine("No orders found yet.",14f,Color.GRAY);return}
         orders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
             val total=d["total"]?.toString()?: "—"
@@ -176,21 +176,21 @@ class AdminActivity : Activity() {
             spinner.setSelection(statuses.indexOf(d["status"]?.toString()).coerceAtLeast(0))
             card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(7)})
             card.addView(button("UPDATE ORDER STATUS",{val chosen=spinner.selectedItem.toString();db.collection("orders").document(id).update(mapOf("status" to chosen,"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-            card.addView(button(if(payment=="COD")"COD: CUSTOMER SE ₹$total COLLECT" else if(pStatus=="VERIFIED")"UPI VERIFIED · CASH COLLECT NAHI KARNA" else "VERIFY UPI PAYMENT",{
-                if(payment=="COD")Toast.makeText(this,"Delivery instruction: customer se ₹$total collect karein",Toast.LENGTH_LONG).show()
-                else Toast.makeText(this,"UPI ko merchant/payment provider record se verify karke hi mark karein.",Toast.LENGTH_LONG).show()
+            card.addView(button(if(payment=="COD")"COD: COLLECT ₹$total" else if(pStatus=="VERIFIED")"UPI VERIFIED · NO CASH COLLECTION" else "VERIFY UPI PAYMENT",{
+                if(payment=="COD")Toast.makeText(this,"Delivery instruction: collect ₹$total from the customer.",Toast.LENGTH_LONG).show()
+                else Toast.makeText(this,"Verify the transaction against the merchant or payment provider record before marking it as verified.",Toast.LENGTH_LONG).show()
             },Color.rgb(40,120,80)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
-            if(payment=="UPI"&&pStatus!="VERIFIED")card.addView(button("MARK UPI VERIFIED",{
-                db.collection("orders").document(id).update(mapOf("paymentStatus" to "VERIFIED","paymentVerifiedAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Verification save nahi hua",Toast.LENGTH_LONG).show()}
+            if(payment=="UPI"&&pStatus!="VERIFIED")card.addView(button("MARK UPI AS VERIFIED",{
+                db.collection("orders").document(id).update(mapOf("paymentStatus" to "VERIFIED","paymentVerifiedAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Could not save payment verification.",Toast.LENGTH_LONG).show()}
             },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
     }
-    private fun paymentsPage(){addLine("Payments",22f,ink,true);addLine("COD collection and UPI verification",13f,Color.GRAY);listenOrders{renderPayments()}}
+    private fun paymentsPage(){addLine("Payments",22f,ink,true);addLine("Cash-on-delivery collection and UPI verification",13f,Color.GRAY);listenOrders{renderPayments()}}
     private fun renderPayments(){
-        body.removeAllViews();addLine("Payment review",21f,ink,true)
+        body.removeAllViews();addLine("Payment Review",21f,ink,true)
         val filtered=orders.filter{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}
-        card("UPI NEEDING REVIEW",filtered.size.toString(),"Payment provider/merchant record se transaction verify karein.")
+        card("UPI PAYMENTS TO REVIEW",filtered.size.toString(),"Verify each transaction against the payment provider or merchant record.")
         orders.forEach{(id,d)->
             val method=d["paymentMethod"]?.toString()?: "COD";val state=d["paymentStatus"]?.toString()?: "COD_DUE"
             val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(13),dp(13),dp(13));background=shape()}
@@ -199,28 +199,28 @@ class AdminActivity : Activity() {
             if(method=="UPI"&&state!="VERIFIED")c.addView(button("MARK VERIFIED AFTER CHECK",{
                 db.collection("orders").document(id).update(mapOf("paymentStatus" to "VERIFIED","paymentVerifiedAt" to FieldValue.serverTimestamp(),"updatedAt" to FieldValue.serverTimestamp()))
             },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
-            if(method=="COD")c.addView(text("Delivery: ₹"+(d["total"]?.toString()?: "—")+" cash collect karein",13f))
+            if(method=="COD")c.addView(text("Delivery: collect ₹"+(d["total"]?.toString()?: "—")+" in cash",13f))
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
     private fun menuPage(){
-        addLine("Shared menu management",22f,ink,true);addLine("Yahan save kiya product customer app ko live mil sakta hai.",13f,Color.GRAY)
+        addLine("Menu Management",22f,ink,true);addLine("Products saved here can appear in the customer app.",13f,Color.GRAY)
         val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape()}
         val name=EditText(this).apply{hint="Product name";isSingleLine=true}
         val category=EditText(this).apply{hint="Category (Snacks, Chaat, Fast Food...)";isSingleLine=true}
         val price=EditText(this).apply{hint="Price ₹";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true}
-        val image=EditText(this).apply{hint="Food image URL (https://...)";isSingleLine=true}
+        val image=EditText(this).apply{hint="Product image URL (https://...)";isSingleLine=true}
         listOf(name,category,price,image).forEach{form.addView(it,LinearLayout.LayoutParams(-1,dp(49)).apply{bottomMargin=dp(7)})}
-        form.addView(button("SAVE TO SHARED MENU",{
+        form.addView(button("SAVE PRODUCT",{
             val n=name.text.toString().trim();val c=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val u=image.text.toString().trim()
-            if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Name, category aur valid price bharein",Toast.LENGTH_SHORT).show();return@button}
+            if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a product name, category, and valid price.",Toast.LENGTH_SHORT).show();return@button}
             val data=hashMapOf<String,Any>("name" to n,"category" to c,"price" to p,"imageUrl" to u,"available" to true,"updatedAt" to FieldValue.serverTimestamp())
-            db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')).set(data).addOnSuccessListener{Toast.makeText(this,"Shared menu me save ho gaya",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
+            db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')).set(data).addOnSuccessListener{Toast.makeText(this,"Product saved successfully.",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
                 .addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
         }),LinearLayout.LayoutParams(-1,-2))
         body.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
         menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
-            if(error!=null){Toast.makeText(this,"Menu load error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
+            if(error!=null){Toast.makeText(this,"Menu loading error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
             products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
             if(page=="Menu")renderMenuList()
         }
@@ -229,19 +229,19 @@ class AdminActivity : Activity() {
     private fun renderMenuList(){
         val form=body.getChildAt(2)
         while(body.childCount>3)body.removeViewAt(3)
-        addLine("Shared products · "+products.size,16f,ink,true)
+        addLine("Products · "+products.size,16f,ink,true)
         products.forEach{(id,p)->
             val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape()}
             c.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
             c.addView(text((p["category"]?.toString()?: "Category")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY))
-            c.addView(button(if(p["available"]==false)"RESTORE PRODUCT" else "HIDE FROM CUSTOMER MENU",{db.collection("menu").document(id).update(mapOf("available" to (p["available"]==false),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            c.addView(button(if(p["available"]==false)"RESTORE PRODUCT" else "HIDE FROM CUSTOMER MENU",{db.collection("menu").document(id).update(mapOf("available" to (p["available"]==false),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed.",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         }
     }
     private fun deliveryPage(){
-        addLine("Delivery instructions",22f,ink,true)
-        card("COD","Collect the order total","Customer se cash collect karein aur delivery ke baad order delivered mark karein.")
-        card("UPI VERIFIED","No cash to collect","Sirf verified UPI status par cash collect na karein.")
-        addLine("Instructions order record se generate hoti hain. Real-time delivery-boy assignment/location ke liye alag delivery app aur permissions chahiye.",13f,Color.DKGRAY)
+        addLine("Delivery Instructions",22f,ink,true)
+        card("COD","Collect the order total","Collect cash from the customer and mark the order as delivered after delivery.")
+        card("UPI VERIFIED","No cash to collect","Do not collect cash for orders with verified UPI payments.")
+        addLine("Instructions are based on the order record. Live delivery-partner assignment and location tracking require a separate delivery app and permissions.",13f,Color.DKGRAY)
     }
 }
