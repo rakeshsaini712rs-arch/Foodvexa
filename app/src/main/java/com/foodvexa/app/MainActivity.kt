@@ -670,7 +670,7 @@ private fun showCart(){
  if(subtotal<150) content.addView(label("Minimum order ₹150 • Add ₹${150-subtotal} more to place order",14f,true,orange),margin(0,0,0,8))
  content.addView(label("Delivery fee: ₹30",14f,false,secondaryText),margin(0,0,0,6))
  content.addView(label("Total: ₹${subtotal+30}",22f,true,primaryText),margin(0,0,0,14))
- content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+30}"){if(subtotal<150)Toast.makeText(this,"Minimum order ₹150 hai.",Toast.LENGTH_LONG).show() else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
+ content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+30}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
  orderStatusListener?.remove()
  orderStatusListener=null
