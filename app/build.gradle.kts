@@ -27,6 +27,10 @@ android {
         getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
         }
+        getByName("release") {
+            // Use the existing Foodvexa upload key so Firebase SHA-1 remains consistent.
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 
     compileOptions {
