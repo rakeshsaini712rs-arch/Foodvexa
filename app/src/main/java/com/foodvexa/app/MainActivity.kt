@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.functions.FirebaseFunctions
 import org.json.JSONObject
 import org.json.JSONArray
 import java.net.HttpURLConnection
@@ -909,18 +910,46 @@ private fun showProfile(){
     finishAffinity()
 }}
 private fun showAccountDeletionDialog(){
- val user=FirebaseAuth.getInstance().currentUser
- val email=user?.email.orEmpty()
  AlertDialog.Builder(this)
-  .setTitle("Delete Foodvexa account?")
-  .setMessage("You can request permanent deletion of your Foodvexa account and associated personal data. Your order records may be retained where required for business, accounting, or legal purposes, with personal details removed where applicable. Tapping Continue opens WhatsApp to send a deletion request to Foodvexa support. Your account is not deleted automatically by this button.")
+  .setTitle("Permanently delete account?")
+  .setMessage("This permanently deletes your Foodvexa sign-in account and removes personal contact and delivery details from your saved orders. Order totals and items may be retained for accounting/legal requirements. This action cannot be undone. You may need to sign in again recently before deletion.")
   .setNegativeButton("Cancel",null)
-  .setPositiveButton("Continue"){_,_->
-   val message="Hello Foodvexa Support, I request permanent deletion of my Foodvexa account and associated personal data. Account email: "+email+". Please confirm when the request is completed."
-   val uri=android.net.Uri.parse("https://wa.me/917297809215?text="+android.net.Uri.encode(message))
-   try{startActivity(Intent(Intent.ACTION_VIEW,uri))}
-   catch(_:Exception){Toast.makeText(this,"WhatsApp/browser is not available. Please contact Foodvexa support.",Toast.LENGTH_LONG).show()}
-  }.show()
+  .setPositiveButton("Delete Account"){_,_->performAccountDeletion()}
+  .show()
+}
+private fun performAccountDeletion(){
+ val user=FirebaseAuth.getInstance().currentUser
+ if(user==null){
+  Toast.makeText(this,"Please sign in again before deleting your account.",Toast.LENGTH_LONG).show()
+  return
+ }
+ AlertDialog.Builder(this).setTitle("Deleting account")
+  .setMessage("Please wait while Foodvexa securely processes your request.")
+  .setCancelable(false).show().also { progress->
+   FirebaseFunctions.getInstance().getHttpsCallable("deleteFoodvexaAccount")
+    .call()
+    .addOnSuccessListener {
+     prefs.edit().clear().apply()
+     FirebaseAuth.getInstance().signOut()
+     progress.dismiss()
+     AlertDialog.Builder(this)
+      .setTitle("Account deletion complete")
+      .setMessage("Your Foodvexa account has been deleted. Order records required for accounting may remain with personal details removed.")
+      .setPositiveButton("OK"){_,_->
+       val intent=Intent(applicationContext,LoginActivity::class.java).apply{
+        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+       }
+       startActivity(intent);finishAffinity()
+      }.setCancelable(false).show()
+    }
+    .addOnFailureListener { e->
+     progress.dismiss()
+     val message=if(e.message.orEmpty().contains("recent",true)||e.message.orEmpty().contains("sign in",true))
+      "For your security, log out, sign in again with Google, then retry Delete Account."
+     else "Account was not deleted. The secure deletion service may not be deployed yet. Please try again later. Details: "+(e.message?:e.javaClass.simpleName)
+     AlertDialog.Builder(this).setTitle("Deletion not completed").setMessage(message).setPositiveButton("OK",null).show()
+    }
+  }
 }
 private fun savedFavoriteNames():MutableSet<String>{
  return prefs.getStringSet("favorite_products", emptySet())?.toMutableSet() ?: mutableSetOf()
