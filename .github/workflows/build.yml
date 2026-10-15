@@ -21,9 +21,11 @@ jobs:
           import json
           from pathlib import Path
           data=json.loads(Path("app/google-services.json").read_text())
-          package=data["client"][0]["client_info"]["android_client_info"]["package_name"]
-          if package != "com.foodvexa.app":
-              raise SystemExit("Wrong Android package: "+package)
+          clients=data.get("client", [])
+          app_client=next((c for c in clients if c.get("client_info", {}).get("android_client_info", {}).get("package_name") == "com.foodvexa.app"), None)
+          if app_client is None:
+              raise SystemExit("google-services.json has no com.foodvexa.app client")
+          package=app_client["client_info"]["android_client_info"]["package_name"]
           print("GOOGLE SIGN-IN CONFIG: package="+package)
           print("GOOGLE SIGN-IN CONFIG: google-services.json loaded")
           PY
@@ -545,7 +547,8 @@ jobs:
           import json,re
           from pathlib import Path
           data=json.loads(Path("app/google-services.json").read_text())
-          client=data["client"][0]
+          client=next((c for c in data.get("client",[]) if c.get("client_info",{}).get("android_client_info",{}).get("package_name")=="com.foodvexa.app"), None)
+          if client is None: raise SystemExit("No com.foodvexa.app client in google-services.json")
           hashes=[x.get("android_info",{}).get("certificate_hash","").replace(":","").lower() for x in client.get("oauth_client",[]) if x.get("client_type")==1]
           report=Path("/tmp/foodvexa-certs.txt").read_text()
           m=re.search(r"certificate SHA-1 digest:\s*([0-9A-Fa-f:]+)",report,re.I)
