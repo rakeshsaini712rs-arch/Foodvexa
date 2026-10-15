@@ -430,6 +430,10 @@ filtered.forEachIndexed{index,p->
     bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
+        if(productAvailability[p.name]==false){
+            val sold=TextView(this).apply{text="Sold Out";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
+            bottom.addView(sold,LinearLayout.LayoutParams(0,dp(30),1.08f))
+        }else{
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
         add.setTextSize(12f)
         add.maxLines=2
@@ -437,6 +441,7 @@ filtered.forEachIndexed{index,p->
         add.minWidth=0
         add.setPadding(dp(5),dp(4),dp(5),dp(4))
         bottom.addView(add,LinearLayout.LayoutParams(0,dp(30),1.08f))
+        }
     }else{
         val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();updateCartBadge();renderProducts()}
