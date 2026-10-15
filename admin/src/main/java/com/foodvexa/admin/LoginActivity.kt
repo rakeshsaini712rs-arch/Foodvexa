@@ -57,20 +57,20 @@ class LoginActivity : Activity() {
             background=rounded(red,12); setPadding(0,dp(15),0,dp(15))
             setOnClickListener {
                 val e=email.text.toString().trim(); val p=password.text.toString()
-                if(e.isBlank() || p.isBlank()) { message.text="Email aur password bharein"; return@setOnClickListener }
+                if(e.isBlank() || p.isBlank()) { message.text="Please enter your email and password."; return@setOnClickListener }
                 isEnabled=false; text="CHECKING…"; message.text=""
                 auth.signInWithEmailAndPassword(e,p).addOnSuccessListener { result ->
                     val uid=result.user?.uid
-                    if(uid.isNullOrBlank()) { auth.signOut(); isEnabled=true; text="LOGIN"; message.text="Account verify nahi hua"; return@addOnSuccessListener }
+                    if(uid.isNullOrBlank()) { auth.signOut(); isEnabled=true; text="LOGIN"; message.text="Unable to verify the account."; return@addOnSuccessListener }
                     authorize(uid) { isEnabled=true; text="LOGIN"; message.text=it }
-                }.addOnFailureListener { isEnabled=true; text="LOGIN"; message.text="Login fail: "+(it.localizedMessage ?: "credentials check karein") }
+                }.addOnFailureListener { isEnabled=true; text="LOGIN"; message.text="Login failed: "+(it.localizedMessage ?: "Please check your credentials.") }
             }
         }
         card.addView(signIn,LinearLayout.LayoutParams(-1,-2))
         card.addView(message,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(10) })
         root.addView(card,LinearLayout.LayoutParams(-1,-2))
         root.addView(TextView(this).apply {
-            text="Firebase Authentication + approved admin account required"; textSize=11f; setTextColor(Color.GRAY); gravity=Gravity.CENTER
+            text="Sign-in requires an approved admin account."; textSize=11f; setTextColor(Color.GRAY); gravity=Gravity.CENTER
         },LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(18) })
         setContentView(root)
     }
@@ -83,13 +83,13 @@ class LoginActivity : Activity() {
                     startActivity(android.content.Intent(this,AdminActivity::class.java)); finish()
                 } else {
                     auth.signOut()
-                    if(onDenied!=null) onDenied("Admin access denied. Firebase admins/$uid document mein active Boolean true set karein.")
+                    if(onDenied!=null) onDenied("Admin access denied. Set active to Boolean true in the admins/$uid document.")
                     else showLogin()
                 }
             }
             .addOnFailureListener {
                 auth.signOut()
-                if(onDenied!=null) onDenied("Admin access check fail: "+(it.localizedMessage ?: "Firestore rules check karein"))
+                if(onDenied!=null) onDenied("Admin access check failed: "+(it.localizedMessage ?: "Firestore rules check karein"))
                 else showLogin()
             }
     }
