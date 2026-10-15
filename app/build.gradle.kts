@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.foodvexa.app"
-    compileSdk = 35
+    compileSdk = 36
 
     signingConfigs.getByName("debug") {
         storeFile = file("foodvexa-debug.keystore")
@@ -18,7 +18,7 @@ android {
     defaultConfig {
         applicationId = "com.foodvexa.app"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 5
         versionName = "2.0"
     }
