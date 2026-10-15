@@ -211,6 +211,7 @@ class AdminActivity : Activity() {
     private val partnerCategories=linkedMapOf<String,MutableSet<String>>()
 
     private fun menuPage(){
+        body.removeAllViews()
         addLine("Menu Management",22f,ink,true)
         addLine("Select a partner, then manage its categories and products.",13f,Color.GRAY)
         addLine("PARTNERS",12f,Color.GRAY,true)
@@ -282,18 +283,13 @@ class AdminActivity : Activity() {
             card.addView(actions,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(9)})
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         }
-        menuListener?.remove()
-        menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
-            if(error!=null){Toast.makeText(this,"Menu loading error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
-            products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
-            if(page=="Menu")renderMenuPageFromListener()
+        if(menuListener==null){
+            menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
+                if(error!=null){Toast.makeText(this,"Menu loading error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
+                products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
+                if(page=="Menu"){body.removeAllViews();menuPage()}
+            }
         }
-    }
-
-    private fun renderMenuPageFromListener(){
-        // Rebuild the management view so partner/category counts and availability stay live.
-        menuListener?.remove();menuListener=null
-        showPage("Menu")
     }
 
     private fun categoryDialog(){
