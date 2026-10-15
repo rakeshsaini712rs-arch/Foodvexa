@@ -895,8 +895,11 @@ private fun showProfile(){
  item("ℹ️  About","About Foodvexa"){
   AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Foodvexa — Taste the Happiness. Food ordering and delivery app.").setPositiveButton("OK",null).show()
  }
+ item("🗑️  Delete Account","Request permanent account deletion"){
+  showAccountDeletionDialog()
+ }
  item("🚪  Logout","Sign out"){
-    val saved=prefs.edit().putBoolean("force_login",true).commit()
+    prefs.edit().putBoolean("force_login",true).commit()
     FirebaseAuth.getInstance().signOut()
     val intent=Intent(applicationContext,LoginActivity::class.java).apply{
         putExtra("force_login",true)
@@ -905,6 +908,20 @@ private fun showProfile(){
     startActivity(intent)
     finishAffinity()
 }}
+private fun showAccountDeletionDialog(){
+ val user=FirebaseAuth.getInstance().currentUser
+ val email=user?.email.orEmpty()
+ AlertDialog.Builder(this)
+  .setTitle("Delete Foodvexa account?")
+  .setMessage("You can request permanent deletion of your Foodvexa account and associated personal data. Your order records may be retained where required for business, accounting, or legal purposes, with personal details removed where applicable. Tapping Continue opens WhatsApp to send a deletion request to Foodvexa support. Your account is not deleted automatically by this button.")
+  .setNegativeButton("Cancel",null)
+  .setPositiveButton("Continue"){_,_->
+   val message="Hello Foodvexa Support, I request permanent deletion of my Foodvexa account and associated personal data. Account email: "+email+". Please confirm when the request is completed."
+   val uri=android.net.Uri.parse("https://wa.me/917297809215?text="+android.net.Uri.encode(message))
+   try{startActivity(Intent(Intent.ACTION_VIEW,uri))}
+   catch(_:Exception){Toast.makeText(this,"WhatsApp/browser is not available. Please contact Foodvexa support.",Toast.LENGTH_LONG).show()}
+  }.show()
+}
 private fun savedFavoriteNames():MutableSet<String>{
  return prefs.getStringSet("favorite_products", emptySet())?.toMutableSet() ?: mutableSetOf()
 }
