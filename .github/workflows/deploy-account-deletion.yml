@@ -1,6 +1,12 @@
 name: Deploy Foodvexa Account Deletion Service
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'functions/**'
+      - 'firebase.json'
+      - '.github/workflows/deploy-account-deletion.yml'
   workflow_dispatch:
 
 permissions:
