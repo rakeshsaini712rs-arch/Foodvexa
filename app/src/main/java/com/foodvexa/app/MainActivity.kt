@@ -424,7 +424,8 @@ filtered.forEachIndexed{index,p->
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
-    card.addView(label("• Available",10.5f,true,Color.rgb(50,205,120)),margin(0,4,0,0))
+    val soldOut=productAvailability[p.name]==false
+    card.addView(label(if(soldOut)"• Sold Out" else "• Available",10.5f,true,if(soldOut)Color.rgb(230,55,65) else Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
@@ -483,17 +484,20 @@ filtered.forEachIndexed{index,p->
   AlertDialog.Builder(this).setTitle("Complete delivery address").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->saveLocation(search.text.toString(),"Delivery",landmark.text.toString())}.show()
  }
  private fun saveLocation(value:String,label:String,landmark:String=""){val v=value.trim();if(v.isBlank()||v.length<10||!v.contains(Regex("[,0-9]"))){Toast.makeText(this,"Please enter your complete address, including house/shop number, street or area, and city.",Toast.LENGTH_LONG).show();return};val full=if(landmark.trim().isBlank())v else "$v\nLandmark: ${landmark.trim()}";val e=prefs.edit().putString("location",full).putString("location_label",label).putString("delivery_landmark",landmark.trim());when(label){"Home"->e.putString("home_address",full);"Work"->e.putString("work_address",full);"Delivery"->e.putString("delivery_address",full)};e.apply();showHome()}
- private fun loadSharedMenu(){
+ private val productAvailability=mutableMapOf<String,Boolean>()
+private fun loadSharedMenu(){
  FirebaseFirestore.getInstance().collection("menu").addSnapshotListener(this){snapshot,error->
   if(error!=null||snapshot==null||snapshot.isEmpty)return@addSnapshotListener
   val merged=products.toMutableList()
+  productAvailability.clear()
   snapshot.documents.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
    val available=doc.getBoolean("available")!=false
    val idx=merged.indexOfFirst{it.name.equals(name,true)}
-   if(!available){if(idx>=0)merged.removeAt(idx)}
-   else{
+   productAvailability[name]=available
+   // Keep sold-out products visible; availability controls ordering, not visibility.
+   {
     val price=(doc.getLong("price")?:merged.getOrNull(idx)?.price?.toLong()?:0L).toInt()
     val category=doc.getString("category")?:merged.getOrNull(idx)?.category?:"Snacks"
     val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:merged.getOrNull(idx)?.imageUrl.orEmpty()
