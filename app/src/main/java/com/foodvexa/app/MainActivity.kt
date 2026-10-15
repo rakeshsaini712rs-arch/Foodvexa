@@ -22,11 +22,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.functions.FirebaseFunctions
 import org.json.JSONObject
 import org.json.JSONArray
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import java.util.concurrent.Executors
 
 data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min")
@@ -911,45 +911,29 @@ private fun showProfile(){
 }}
 private fun showAccountDeletionDialog(){
  AlertDialog.Builder(this)
-  .setTitle("Permanently delete account?")
-  .setMessage("This permanently deletes your Foodvexa sign-in account and removes personal contact and delivery details from your saved orders. Order totals and items may be retained for accounting/legal requirements. This action cannot be undone. You may need to sign in again recently before deletion.")
+  .setTitle("Request account deletion?")
+  .setMessage("Foodvexa is using the free Firebase plan, so automatic deletion is not available yet. Continue to WhatsApp to send a deletion request to support. Your account will NOT be deleted just by opening WhatsApp; support must verify and process the request. Order records may be retained where legally required.")
   .setNegativeButton("Cancel",null)
-  .setPositiveButton("Delete Account"){_,_->performAccountDeletion()}
+  .setPositiveButton("Continue to WhatsApp"){_,_->performAccountDeletion()}
   .show()
 }
 private fun performAccountDeletion(){
  val user=FirebaseAuth.getInstance().currentUser
  if(user==null){
-  Toast.makeText(this,"Please sign in again before deleting your account.",Toast.LENGTH_LONG).show()
+  Toast.makeText(this,"Please sign in to Foodvexa first, then request account deletion.",Toast.LENGTH_LONG).show()
   return
  }
- AlertDialog.Builder(this).setTitle("Deleting account")
-  .setMessage("Please wait while Foodvexa securely processes your request.")
-  .setCancelable(false).show().also { progress->
-   FirebaseFunctions.getInstance().getHttpsCallable("deleteFoodvexaAccount")
-    .call()
-    .addOnSuccessListener {
-     prefs.edit().clear().apply()
-     FirebaseAuth.getInstance().signOut()
-     progress.dismiss()
-     AlertDialog.Builder(this)
-      .setTitle("Account deletion complete")
-      .setMessage("Your Foodvexa account has been deleted. Order records required for accounting may remain with personal details removed.")
-      .setPositiveButton("OK"){_,_->
-       val intent=Intent(applicationContext,LoginActivity::class.java).apply{
-        flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-       }
-       startActivity(intent);finishAffinity()
-      }.setCancelable(false).show()
-    }
-    .addOnFailureListener { e->
-     progress.dismiss()
-     val message=if(e.message.orEmpty().contains("recent",true)||e.message.orEmpty().contains("sign in",true))
-      "For your security, log out, sign in again with Google, then retry Delete Account."
-     else "Account was not deleted. The secure deletion service may not be deployed yet. Please try again later. Details: "+(e.message?:e.javaClass.simpleName)
-     AlertDialog.Builder(this).setTitle("Deletion not completed").setMessage(message).setPositiveButton("OK",null).show()
-    }
-  }
+ val email=user.email ?: "Not available"
+ val message="Hello Foodvexa Support, please permanently delete my Foodvexa account and associated personal data.\nAccount email: $email\nUser reference: ${user.uid}\nPlease confirm when the request has been processed. I understand this request is not completed until support verifies and processes it."
+ val url="https://wa.me/917297809215?text="+URLEncoder.encode(message,"UTF-8")
+ try{
+  startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)))
+ }catch(_:Exception){
+  AlertDialog.Builder(this)
+   .setTitle("WhatsApp unavailable")
+   .setMessage("Please contact Foodvexa support at +91 72978 09215 or visit https://rakeshsaini712rs-arch.github.io/Foodvexa/delete-account.html to request deletion.")
+   .setPositiveButton("OK",null).show()
+ }
 }
 private fun savedFavoriteNames():MutableSet<String>{
  return prefs.getStringSet("favorite_products", emptySet())?.toMutableSet() ?: mutableSetOf()
