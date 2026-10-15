@@ -205,7 +205,7 @@ class AdminActivity : Activity() {
     }
     private val partnerNames=listOf("FOODVEXA","Cake Tower","Santa Banta Bakery","Kanha Bakery & Fast Food","Sadafal Cafe & Dining","Bistro Nawalgarh","Brew & Bite","Chotiya Ji Sweets","Shree Rajaram Peda Bhandar","Royal Fast Food","Hotel Marwadi & Restaurant","Mayur Hotel & Restaurant","La Veg Pizza","Hotel Nawalgarh Plaza","Vivaana Museum Hotel","Bungli Restaurant","Ganpati Restaurant")
     private val defaultCategories=listOf("Snacks","Chaat Special","Fast Food","Beverages","Sweets","Birthday Special","Meals","Special Sabji","Deals & Offers")
-    private var selectedPartner="Samosa King"
+    private var selectedPartner="FOODVEXA"
     private var selectedMenuCategory="All Products"
     private var menuCategoryListener:ListenerRegistration?=null
     private val partnerCategories=linkedMapOf<String,MutableSet<String>>()
@@ -217,7 +217,7 @@ class AdminActivity : Activity() {
         addLine("PARTNERS",12f,Color.GRAY,true)
         val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         partnerNames.forEach { partner ->
-            val count=products.count{(it.second["partnerName"]?.toString()?: "Samosa King")==partner}
+            val count=products.count{(it.second["partnerName"]?.toString()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA")==partner}
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
                 setPadding(dp(12),dp(11),dp(12),dp(11))
@@ -236,7 +236,7 @@ class AdminActivity : Activity() {
         body.addView(partnerRow,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
-        val partnerProducts=products.filter{(it.second["partnerName"]?.toString()?: "Samosa King")==selectedPartner}
+        val partnerProducts=products.filter{(it.second["partnerName"]?.toString()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA")==selectedPartner}
         val categoryNames=(defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
         val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
         val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
