@@ -89,7 +89,7 @@ class LoginActivity : Activity() {
             }
             .addOnFailureListener {
                 auth.signOut()
-                if(onDenied!=null) onDenied("Admin access check failed: "+(it.localizedMessage ?: "Firestore rules check karein"))
+                if(onDenied!=null) onDenied("Admin access check failed: "+(it.localizedMessage ?: "Please check the Firestore rules."))
                 else showLogin()
             }
     }
