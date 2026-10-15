@@ -145,10 +145,12 @@ class MainActivity:AppCompatActivity(){
   content.addView(categoryTitle,margin(8,4,8,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
-  content.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)},LinearLayout.LayoutParams(-1,dp(82)))
+  val categoryScroller=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)}
+  content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(82)))
   val scrollView=content.parent as ScrollView
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
-   stickyCategories.visibility=if(categoryTitle.top-scrollY<=0)View.VISIBLE else View.GONE
+   // Show the fixed category strip only after the original category row has fully scrolled away.
+   stickyCategories.visibility=if(categoryScroller.bottom-scrollY<=0)View.VISIBLE else View.GONE
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
   renderProducts()
