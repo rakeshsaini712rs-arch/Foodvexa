@@ -538,8 +538,9 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  val user=FirebaseAuth.getInstance().currentUser
  val address=deliveryAddress
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
- val total=subtotal+30
- val orderRecord=summary+"\n\nPayment: Cash on Delivery\nTotal: ₹"+total
+ val deliveryFee=if(subtotal>500) 0 else 30
+ val total=subtotal+deliveryFee
+ val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)}}
  val data=hashMapOf<String,Any>(
   "customerUid" to user.uid,
@@ -549,7 +550,7 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
   "items" to items,
   "itemsText" to summary,
   "subtotal" to subtotal,
-  "deliveryFee" to 30,
+  "deliveryFee" to deliveryFee,
   "total" to total,
   "paymentMethod" to (if(paymentMethod.contains("UPI", ignoreCase=true)) "UPI" else "COD"),
   "paymentStatus" to paymentStatus,
@@ -668,9 +669,10 @@ private fun showCart(){
  }
  content.addView(label("Subtotal: ₹$subtotal",20f,true,primaryText),margin(0,10,0,6))
  if(subtotal<150) content.addView(label("Minimum order ₹150 • Add ₹${150-subtotal} more to place order",14f,true,orange),margin(0,0,0,8))
- content.addView(label("Delivery fee: ₹30",14f,false,secondaryText),margin(0,0,0,6))
- content.addView(label("Total: ₹${subtotal+30}",22f,true,primaryText),margin(0,0,0,14))
- content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+30}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
+ val deliveryFee=if(subtotal>500) 0 else 30
+ content.addView(label(if(deliveryFee==0) "Delivery fee: FREE" else "Delivery fee: ₹$deliveryFee",14f,false,secondaryText),margin(0,0,0,6))
+ content.addView(label("Total: ₹${subtotal+deliveryFee}",22f,true,primaryText),margin(0,0,0,14))
+ content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+deliveryFee}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
  orderStatusListener?.remove()
  orderStatusListener=null
