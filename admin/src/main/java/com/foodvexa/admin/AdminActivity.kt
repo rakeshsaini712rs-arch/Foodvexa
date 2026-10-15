@@ -203,40 +203,159 @@ class AdminActivity : Activity() {
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
+    private val partnerNames=listOf("Samosa King","Foodvexa Restaurant","Cake Tower","Ganpati Restaurant")
+    private val defaultCategories=listOf("Snacks","Chaat Special","Fast Food","Beverages","Sweets","Birthday Special","Meals","Special Sabji","Deals & Offers")
+    private var selectedPartner="Samosa King"
+    private var selectedMenuCategory="All Products"
+    private var menuCategoryListener:ListenerRegistration?=null
+    private val partnerCategories=linkedMapOf<String,MutableSet<String>>()
+
     private fun menuPage(){
-        addLine("Menu Management",22f,ink,true);addLine("Products saved here can appear in the customer app.",13f,Color.GRAY)
-        val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape()}
-        val name=EditText(this).apply{hint="Product name";isSingleLine=true}
-        val category=EditText(this).apply{hint="Category (Snacks, Chaat, Fast Food...)";isSingleLine=true}
-        val price=EditText(this).apply{hint="Price ₹";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true}
-        val image=EditText(this).apply{hint="Product image URL (https://...)";isSingleLine=true}
-        listOf(name,category,price,image).forEach{form.addView(it,LinearLayout.LayoutParams(-1,dp(49)).apply{bottomMargin=dp(7)})}
-        form.addView(button("SAVE PRODUCT",{
-            val n=name.text.toString().trim();val c=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val u=image.text.toString().trim()
-            if(n.isBlank()||c.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a product name, category, and valid price.",Toast.LENGTH_SHORT).show();return@button}
-            val data=hashMapOf<String,Any>("name" to n,"category" to c,"price" to p,"imageUrl" to u,"available" to true,"updatedAt" to FieldValue.serverTimestamp())
-            db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')).set(data).addOnSuccessListener{Toast.makeText(this,"Product saved successfully.",Toast.LENGTH_SHORT).show();name.text.clear();category.text.clear();price.text.clear();image.text.clear()}
-                .addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-        }),LinearLayout.LayoutParams(-1,-2))
-        body.addView(form,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(15)})
+        addLine("Menu Management",22f,ink,true)
+        addLine("Select a partner, then manage its categories and products.",13f,Color.GRAY)
+        addLine("PARTNERS",12f,Color.GRAY,true)
+        val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        partnerNames.forEach { partner ->
+            val count=products.count{(it.second["partnerName"]?.toString()?: "Samosa King")==partner}
+            val item=LinearLayout(this).apply{
+                orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+                setPadding(dp(12),dp(11),dp(12),dp(11))
+                background=shape(if(selectedPartner==partner)Color.rgb(255,239,241) else Color.WHITE,13)
+                elevation=dp(1).toFloat()
+            }
+            val details=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            details.addView(text(partner,15f,ink,true))
+            details.addView(text(if(partner=="Samosa King")"Nansa Gate, Nawalgarh" else "Restaurant partner",12f,Color.GRAY))
+            details.addView(text("Products: $count",12f,Color.DKGRAY))
+            item.addView(details,LinearLayout.LayoutParams(0,-2,1f))
+            item.addView(text(if(selectedPartner==partner)"✓" else "›",22f,if(selectedPartner==partner)red else ink,true))
+            item.setOnClickListener{selectedPartner=partner;selectedMenuCategory="All Products";showPage("Menu")}
+            partnerRow.addView(item,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+        }
+        body.addView(partnerRow,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+
+        addLine("CATEGORIES · $selectedPartner",16f,ink,true)
+        val partnerProducts=products.filter{(it.second["partnerName"]?.toString()?: "Samosa King")==selectedPartner}
+        val categoryNames=(defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
+        val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
+        val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        (listOf("All Products")+categoryNames).forEach{cat->
+            val count=if(cat=="All Products")partnerProducts.size else partnerProducts.count{it.second["category"]?.toString().equals(cat,true)}
+            val chip=TextView(this).apply{
+                text="$cat  ($count)";textSize=12f;setTextColor(if(selectedMenuCategory==cat)Color.WHITE else ink)
+                setTypeface(null,Typeface.BOLD);gravity=Gravity.CENTER
+                setPadding(dp(13),dp(12),dp(13),dp(12))
+                background=shape(if(selectedMenuCategory==cat)red else Color.WHITE,12)
+                setOnClickListener{selectedMenuCategory=cat;showPage("Menu")}
+            }
+            categoryRow.addView(chip,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(7)})
+        }
+        categoryScroll.addView(categoryRow);body.addView(categoryScroll,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+        val categoryActions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        categoryActions.addView(button("+ ADD CATEGORY",{categoryDialog()},Color.rgb(55,90,135)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
+        categoryActions.addView(button("MANAGE CATEGORIES",{manageCategoriesDialog(categoryNames)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f))
+        body.addView(categoryActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
+
+        val productHeader=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+        productHeader.addView(text(if(selectedMenuCategory=="All Products")"PRODUCTS" else selectedMenuCategory.uppercase(),16f,ink,true),LinearLayout.LayoutParams(0,-2,1f))
+        productHeader.addView(button("+ ADD PRODUCT",{productDialog(null,null)},red))
+        body.addView(productHeader,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+
+        val shown=partnerProducts.filter{selectedMenuCategory=="All Products"||it.second["category"]?.toString().equals(selectedMenuCategory,true)}
+        if(shown.isEmpty())addLine("No products in this category yet. Tap + ADD PRODUCT to add one.",13f,Color.GRAY)
+        shown.forEach{(id,p)->
+            val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape();elevation=dp(1).toFloat()}
+            card.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
+            card.addView(text((p["category"]?.toString()?: "Uncategorized")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
+            val available=p["available"]!=false
+            card.addView(text(if(available)"● AVAILABLE" else "● SOLD OUT",12f,if(available)green else red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
+                db.collection("menu").document(id).update(mapOf("available" to !available,"updatedAt" to FieldValue.serverTimestamp()))
+                    .addOnSuccessListener{Toast.makeText(this,if(available)"Product marked sold out." else "Product is available.",Toast.LENGTH_SHORT).show()}
+                    .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+            },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5)})
+            actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5)})
+            actions.addView(button("DELETE",{android.app.AlertDialog.Builder(this).setTitle("Delete product?").setMessage("Delete "+(p["name"]?.toString()?: "this product")+" permanently?").setNegativeButton("Cancel",null).setPositiveButton("Delete"){_,_->
+                db.collection("menu").document(id).delete().addOnSuccessListener{Toast.makeText(this,"Product deleted.",Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Delete failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+            }.show()},red),LinearLayout.LayoutParams(0,-2,0.8f))
+            card.addView(actions,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(9)})
+            body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+        }
+        menuListener?.remove()
         menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
             if(error!=null){Toast.makeText(this,"Menu loading error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
             products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
-            if(page=="Menu")renderMenuList()
+            if(page=="Menu")renderMenuPageFromListener()
         }
-        renderMenuList()
     }
-    private fun renderMenuList(){
-        val form=body.getChildAt(2)
-        while(body.childCount>3)body.removeViewAt(3)
-        addLine("Products · "+products.size,16f,ink,true)
-        products.forEach{(id,p)->
-            val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape()}
-            c.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
-            c.addView(text((p["category"]?.toString()?: "Category")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY))
-            c.addView(button(if(p["available"]==false)"RESTORE PRODUCT" else "HIDE FROM CUSTOMER MENU",{db.collection("menu").document(id).update(mapOf("available" to (p["available"]==false),"updatedAt" to FieldValue.serverTimestamp())).addOnFailureListener{Toast.makeText(this,"Update failed.",Toast.LENGTH_SHORT).show()}},Color.rgb(110,110,115)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
-            body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
-        }
+
+    private fun renderMenuPageFromListener(){
+        // Rebuild the management view so partner/category counts and availability stay live.
+        menuListener?.remove();menuListener=null
+        showPage("Menu")
+    }
+
+    private fun categoryDialog(){
+        val input=EditText(this).apply{hint="Category name";isSingleLine=true}
+        android.app.AlertDialog.Builder(this).setTitle("Add category · $selectedPartner").setView(input)
+            .setNegativeButton("Cancel",null).setPositiveButton("Add"){_,_->
+                val name=input.text.toString().trim()
+                if(name.isBlank()){Toast.makeText(this,"Enter a category name.",Toast.LENGTH_SHORT).show();return@setPositiveButton}
+                val set=partnerCategories.getOrPut(selectedPartner){mutableSetOf()}
+                if(set.add(name)){selectedMenuCategory=name;showPage("Menu")}
+            }.show()
+    }
+
+    private fun manageCategoriesDialog(categories:List<String>){
+        val options=categories.toTypedArray()
+        android.app.AlertDialog.Builder(this).setTitle("Manage categories · $selectedPartner")
+            .setItems(options){_,which->
+                val current=options[which]
+                if(current in defaultCategories){android.app.AlertDialog.Builder(this).setMessage("This is a standard category. You can select it or add another category.").setPositiveButton("OK",null).show()}
+                else android.app.AlertDialog.Builder(this).setTitle(current).setItems(arrayOf("Rename","Delete")){_,action->
+                    if(action==0){
+                        val input=EditText(this).apply{setText(current);isSingleLine=true}
+                        android.app.AlertDialog.Builder(this).setTitle("Rename category").setView(input).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
+                            val next=input.text.toString().trim()
+                            if(next.isNotBlank()){
+                                val affected=products.filter{(it.second["partnerName"]?.toString()?: "Samosa King")==selectedPartner&&it.second["category"]?.toString()==current}
+                                val batch=db.batch()
+                                affected.forEach{(id,_)->batch.update(db.collection("menu").document(id),"category",next)}
+                                batch.commit().addOnSuccessListener{partnerCategories[selectedPartner]?.remove(current);partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(next);selectedMenuCategory=next;showPage("Menu")}
+                                    .addOnFailureListener{Toast.makeText(this,"Category rename failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                            }
+                        }.show()
+                    }else{
+                        val hasProducts=products.any{(it.second["partnerName"]?.toString()?: "Samosa King")==selectedPartner&&it.second["category"]?.toString()==current}
+                        if(hasProducts)Toast.makeText(this,"Move or delete this category's products before deleting it.",Toast.LENGTH_LONG).show()
+                        else{partnerCategories[selectedPartner]?.remove(current);selectedMenuCategory="All Products";showPage("Menu")}
+                    }
+                }.show()
+            }.setNegativeButton("Close",null).show()
+    }
+
+    private fun productDialog(id:String?,product:Map<String,Any>?){
+        val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0)}
+        val name=EditText(this).apply{hint="Product name";isSingleLine=true;setText(product?.get("name")?.toString().orEmpty())}
+        val category=EditText(this).apply{hint="Category";isSingleLine=true;setText(product?.get("category")?.toString()?:if(selectedMenuCategory=="All Products")"" else selectedMenuCategory)}
+        val price=EditText(this).apply{hint="Price (₹)";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true;setText(product?.get("price")?.toString().orEmpty())}
+        val image=EditText(this).apply{hint="Product image URL (optional)";isSingleLine=true;setText(product?.get("imageUrl")?.toString().orEmpty())}
+        listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(5)})}
+        val available=CheckBox(this).apply{text="Available";isChecked=product?.get("available")!=false}
+        panel.addView(available)
+        android.app.AlertDialog.Builder(this).setTitle(if(id==null)"Add product · $selectedPartner" else "Edit product · $selectedPartner")
+            .setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
+                val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
+                if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
+                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to selectedPartner,"updatedAt" to FieldValue.serverTimestamp())
+                val ref=if(id==null)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
+                ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
+                    partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
+                    Toast.makeText(this,if(id==null)"Product added." else "Product updated.",Toast.LENGTH_SHORT).show()
+                    showPage("Menu")
+                }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+            }.show()
     }
     private fun deliveryPage(){
         addLine("Delivery Instructions",22f,ink,true)
