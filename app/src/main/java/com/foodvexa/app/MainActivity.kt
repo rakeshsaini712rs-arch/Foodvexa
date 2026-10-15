@@ -174,8 +174,12 @@ class MainActivity:AppCompatActivity(){
     }
     renderProducts()
     val scroll=(content.parent as? ScrollView)
-    val target=content.getChildAt(0)
-    if(target!=null)scroll?.post{scroll.smoothScrollTo(0,target.top)}
+    // Bring the selected category title and product cards into view, rather than
+    // returning to the top of the home screen where Add to Cart sits below the fold.
+    val productTitle=(0 until content.childCount)
+     .map{content.getChildAt(it)}
+     .firstOrNull{it is TextView && it.text.toString()==selectedCategory}
+    if(productTitle!=null)scroll?.post{scroll.smoothScrollTo(0,(productTitle.top-dp(6)).coerceAtLeast(0))}
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
