@@ -203,7 +203,7 @@ class AdminActivity : Activity() {
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
-    private val partnerNames=listOf("Samosa King","Foodvexa Restaurant","Cake Tower","Ganpati Restaurant")
+    private val partnerNames=listOf("Samosa King","FOODVEXA","Cake Tower","Ganpati Restaurant")
     private val defaultCategories=listOf("Snacks","Chaat Special","Fast Food","Beverages","Sweets","Birthday Special","Meals","Special Sabji","Deals & Offers")
     private var selectedPartner="Samosa King"
     private var selectedMenuCategory="All Products"
