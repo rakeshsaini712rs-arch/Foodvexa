@@ -528,24 +528,26 @@ filtered.forEachIndexed{index,p->
 private fun loadSharedMenu(){
  FirebaseFirestore.getInstance().collection("menu").addSnapshotListener(this){snapshot,error->
   if(error!=null||snapshot==null||snapshot.isEmpty)return@addSnapshotListener
-  val merged=products.toMutableList()
+  val base=products.toMutableList()
+  val liveProducts=mutableListOf<Product>()
   productAvailability.clear()
   snapshot.documents.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
    val available=doc.getBoolean("available")!=false
-   val idx=merged.indexOfFirst{it.name.equals(name,true)}
+   val idx=base.indexOfFirst{it.name.equals(name,true)}
    productAvailability[name]=available
-   // Keep sold-out products visible; availability controls ordering, not visibility.
-   {
-    val price=(doc.getLong("price")?:merged.getOrNull(idx)?.price?.toLong()?:0L).toInt()
-    val category=doc.getString("category")?:merged.getOrNull(idx)?.category?:"Snacks"
-    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:merged.getOrNull(idx)?.imageUrl.orEmpty()
-    val product=Product(name,price,category,image)
-    if(idx>=0)merged[idx]=product else merged.add(product)
-   }
+   val price=(doc.getLong("price")?:base.getOrNull(idx)?.price?.toLong()?:0L).toInt()
+   val category=doc.getString("category")?:base.getOrNull(idx)?.category?:"Snacks"
+   val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
+   liveProducts.add(Product(name,price,category,image))
   }
-  products.clear();products.addAll(merged)
+  // Firestore records override static fallback items with the same name, so edits
+  // to price/category are reflected consistently without stale duplicate cards.
+  val liveNames=liveProducts.map{it.name}.toSet()
+  products.clear()
+  products.addAll(base.filterNot{baseItem->liveNames.any{it.equals(baseItem.name,true)}})
+  products.addAll(liveProducts)
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
