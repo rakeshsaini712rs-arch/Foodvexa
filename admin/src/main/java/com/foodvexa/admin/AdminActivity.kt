@@ -480,7 +480,7 @@ class AdminActivity : Activity() {
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
                 val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to selectedPartner,"updatedAt" to FieldValue.serverTimestamp())
-                val ref=if(id==null||id.startsWith("fallback:"))db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
+                val ref=if(id?.startsWith("fallback:")==true)db.collection("menu").document(id.removePrefix("fallback:")) else if(id==null)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
                 ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
                     partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
                     Toast.makeText(this,if(id==null||id.startsWith("fallback:"))"Product saved to live menu." else "Product updated.",Toast.LENGTH_SHORT).show()
