@@ -270,16 +270,16 @@ class AdminActivity : Activity() {
             card.addView(text((p["category"]?.toString()?: "Uncategorized")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
             val available=p["available"]!=false
             card.addView(text(if(available)"● AVAILABLE" else "● SOLD OUT",12f,if(available)green else red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-            val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            val actions=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
             actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
                 db.collection("menu").document(id).update(mapOf("available" to !available,"updatedAt" to FieldValue.serverTimestamp()))
                     .addOnSuccessListener{Toast.makeText(this,if(available)"Product marked sold out." else "Product is available.",Toast.LENGTH_SHORT).show()}
                     .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-            },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5)})
-            actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5)})
+            },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+            actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("DELETE",{android.app.AlertDialog.Builder(this).setTitle("Delete product?").setMessage("Delete "+(p["name"]?.toString()?: "this product")+" permanently?").setNegativeButton("Cancel",null).setPositiveButton("Delete"){_,_->
                 db.collection("menu").document(id).delete().addOnSuccessListener{Toast.makeText(this,"Product deleted.",Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Delete failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-            }.show()},red),LinearLayout.LayoutParams(0,-2,0.8f))
+            }.show()},red),LinearLayout.LayoutParams(-1,-2))
             card.addView(actions,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(9)})
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
         }
