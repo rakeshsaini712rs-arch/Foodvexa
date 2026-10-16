@@ -217,7 +217,7 @@ class AdminActivity : Activity() {
         addLine("PARTNERS",12f,Color.GRAY,true)
         val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         partnerNames.forEach { partner ->
-            val count=products.count{(it.second["partnerName"]?.toString()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA")==partner}
+            val count=products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
                 setPadding(dp(12),dp(11),dp(12),dp(11))
