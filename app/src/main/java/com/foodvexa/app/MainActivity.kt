@@ -264,7 +264,7 @@ class MainActivity:AppCompatActivity(){
   ShopCard("Bistro Nawalgarh","Cafe • Fast Food • Beverages","Near SBI Bank, opposite Podar College, Nawalgarh",R.drawable.img_02_bistro_nawalgarh),
   ShopCard("Brew & Bite","Cafe • Coffee • Snacks • Shakes","Nawalgarh, Rajasthan",R.drawable.img_07_brew_and_bite),
   ShopCard("Chotiya Ji Sweets","Mithai • Namkeen • Sweets","Ward 9, near Nagar Palika, Station Road, Nawalgarh",R.drawable.img_09_chotiya_ji_sweets),
-  ShopCard("Shree Rajaram Peda Bhandar","Peda • Sweets • Namkeen","Nansa Gate, near OBC Bank, Poddar College Road",R.drawable.img_05_shree_rajaram_peda_bhandar),
+  ShopCard("Shree Rajaram Peda Bhandar","Peda • Sweets • Namkeen","Nansa Gate, near OBC Bank, Poddar College Road",R.drawable.shree_rajaram_peda_bhandar),
   ShopCard("Royal Fast Food","Burger • Pizza • Fast Food","Rise Complex, Nawalgarh",R.drawable.img_10_royal_fast_food),
   ShopCard("Hotel Marwadi & Restaurant","Rajasthani Food • North Indian • Thali","Near Utsav Vatika, Nawalgarh",R.drawable.img_15_hotel_marwadi),
   ShopCard("Mayur Hotel & Restaurant","Hotel • Restaurant • Thali • Indian Food","Loharu–Sikar Road, Nawalgarh",R.drawable.img_11_mayur_hotel_restaurant),
@@ -288,7 +288,7 @@ class MainActivity:AppCompatActivity(){
  }
  var row:LinearLayout?=null
  shops.forEachIndexed{index,shop->
-  if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
+  if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
   val card=LinearLayout(this).apply{
    orientation=LinearLayout.VERTICAL
    setPadding(dp(4),dp(4),dp(4),dp(6))
@@ -320,13 +320,12 @@ class MainActivity:AppCompatActivity(){
    contentDescription=shop.name+" — "+shop.address
   }
   // Compact card; address is already printed inside the uploaded card artwork.
-  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(112)))
+  card.addView(artwork,LinearLayout.LayoutParams(-1,dp(92)))
   card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
-  if(shop.subtitle.isNotBlank() && shop.name!="FOODVEXA") card.addView(label(shop.subtitle,9f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),0,dp(3),dp(2))})
-  row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(5);leftMargin=dp(5);bottomMargin=dp(10)})
-  if(index%2==1)content.addView(row,LinearLayout.LayoutParams(-1,-2))
+  row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(4);leftMargin=dp(4);bottomMargin=dp(10)})
+  if(index%3==2)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
- if(shops.size%2!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
+ if(shops.size%3!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
 }
 private fun correctedImageUrl(p:Product):String {
     // Canonical product-name photo corrections. These override stale URLs from
