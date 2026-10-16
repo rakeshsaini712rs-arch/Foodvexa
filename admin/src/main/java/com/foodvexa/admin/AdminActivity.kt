@@ -236,7 +236,7 @@ class AdminActivity : Activity() {
         body.addView(partnerRow,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
-        val partnerProducts=products.filter{(it.second["partnerName"]?.toString()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA")==selectedPartner}
+        val partnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
         val categoryNames=(defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
         val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
         val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
