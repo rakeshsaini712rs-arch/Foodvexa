@@ -274,8 +274,10 @@ class AdminActivity : Activity() {
             card.addView(text(if(available)"● AVAILABLE" else "● SOLD OUT",12f,if(available)green else red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             val actions=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
             actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
-                db.collection("menu").document(id).update(mapOf("available" to !available,"updatedAt" to FieldValue.serverTimestamp()))
-                    .addOnSuccessListener{Toast.makeText(this,if(available)"Product marked sold out." else "Product is available.",Toast.LENGTH_SHORT).show()}
+                val data=HashMap(p).apply{put("available",!available);put("partnerName",selectedPartner);put("updatedAt",FieldValue.serverTimestamp())}
+                val ref=db.collection("menu").document(id.removePrefix("fallback:"))
+                val write=if(id.startsWith("fallback:"))ref.set(data) else ref.set(data,com.google.firebase.firestore.SetOptions.merge())
+                write.addOnSuccessListener{Toast.makeText(this,if(available)"Product marked sold out." else "Product is available.",Toast.LENGTH_SHORT).show();showPage("Menu")}
                     .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
             },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
@@ -478,10 +480,10 @@ class AdminActivity : Activity() {
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
                 val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to selectedPartner,"updatedAt" to FieldValue.serverTimestamp())
-                val ref=if(id==null)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
+                val ref=if(id==null||id.startsWith("fallback:"))db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
                 ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
                     partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
-                    Toast.makeText(this,if(id==null)"Product added." else "Product updated.",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,if(id==null||id.startsWith("fallback:"))"Product saved to live menu." else "Product updated.",Toast.LENGTH_SHORT).show()
                     showPage("Menu")
                 }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
             }.show()
