@@ -445,12 +445,12 @@ filtered.forEachIndexed{index,p->
         }
     }else{
         val controls=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-        val minus=primaryButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();updateCartBadge();renderProducts()}
-        val plus=primaryButton("+"){addToCart(p);renderProducts()}
+        val minus=quantityButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();updateCartBadge();renderProducts()}
+        val plus=quantityButton("+"){addToCart(p);renderProducts()}
         val count=label(qty.toString(),15f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
-        controls.addView(minus,LinearLayout.LayoutParams(dp(26),dp(30)))
-        controls.addView(count,LinearLayout.LayoutParams(dp(26),dp(30)))
-        controls.addView(plus,LinearLayout.LayoutParams(dp(26),dp(30)))
+        controls.addView(minus,LinearLayout.LayoutParams(dp(34),dp(34)))
+        controls.addView(count,LinearLayout.LayoutParams(dp(28),dp(34)))
+        controls.addView(plus,LinearLayout.LayoutParams(dp(34),dp(34)))
         bottom.addView(controls)
     }
     card.addView(bottom,margin(0,2,0,0))
@@ -626,7 +626,8 @@ private fun bannerGrid():HorizontalScrollView{
  carousel.postDelayed(slideTask,4500)
  return carousel
 }
-private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
+private fun quantityButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=20f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,22);setPadding(0,0,0,0);minimumWidth=0;minWidth=0;includeFontPadding=false;setOnClickListener{onClick()}}
+ private fun dp(v:Int)=((v*resources.displayMetrics.density)+.5f).toInt();private fun margin(l:Int,t:Int,r:Int,b:Int)=LinearLayout.LayoutParams(-1,-2).apply{setMargins(dp(l),dp(t),dp(r),dp(b))};private fun rounded(color:Int,r:Int)=GradientDrawable().apply{setColor(color);cornerRadius=dp(r).toFloat()};private fun label(t:String,size:Float,bold:Boolean,color:Int)=TextView(this).apply{text=t;textSize=size;setTextColor(color);typeface=if(bold)Typeface.DEFAULT_BOLD else Typeface.DEFAULT;gravity=Gravity.CENTER_VERTICAL};private fun primaryButton(t:String,onClick:()->Unit)=TextView(this).apply{text=t;textSize=15f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);typeface=Typeface.DEFAULT_BOLD;background=rounded(orange,16);setPadding(dp(14),dp(7),dp(14),dp(7));setOnClickListener{onClick()}}
  private fun restaurantHotelDialog(){
 showRestaurantHotelFlow(prefs){
  val selectedCity=prefs.getString("restaurant_city","").orEmpty().trim()
@@ -675,11 +676,11 @@ private fun showCart(){
    details.addView(label(p.name,16f,true,primaryText))
    details.addView(label("₹${p.price} each  •  ₹${p.price*qty}",13f,false,secondaryText),margin(0,4,0,0))
    card.addView(details,LinearLayout.LayoutParams(0,-2,1f))
-   val minus=primaryButton("−"){if((cart[name]?:0)>1)cart[name]=(cart[name]?:0)-1 else cart.remove(name);saveCart();updateCartBadge();showCart()}
-   card.addView(minus,LinearLayout.LayoutParams(dp(38),dp(38)))
+   val minus=quantityButton("−"){if((cart[name]?:0)>1)cart[name]=(cart[name]?:0)-1 else cart.remove(name);saveCart();updateCartBadge();showCart()}
+   card.addView(minus,LinearLayout.LayoutParams(dp(40),dp(40)))
    card.addView(label(qty.toString(),16f,true,primaryText).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(32),dp(38)))
-   val plus=primaryButton("+"){cart[name]=(cart[name]?:0)+1;saveCart();updateCartBadge();showCart()}
-   card.addView(plus,LinearLayout.LayoutParams(dp(38),dp(38)))
+   val plus=quantityButton("+"){cart[name]=(cart[name]?:0)+1;saveCart();updateCartBadge();showCart()}
+   card.addView(plus,LinearLayout.LayoutParams(dp(40),dp(40)))
    content.addView(card,margin(0,0,0,10))
   }
  }
