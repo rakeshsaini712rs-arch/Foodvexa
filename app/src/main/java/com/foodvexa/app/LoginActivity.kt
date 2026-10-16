@@ -127,7 +127,7 @@ class LoginActivity : AppCompatActivity() {
             setTextColor(iconFg)
             background = rounded(iconBg, dp(28).toFloat())
         }
-        row.addView(circle, LinearLayout.LayoutParams(dp(42), dp(42)))
+        row.addView(circle, android.widget.LinearLayout.LayoutParams(dp(42), dp(42)))
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
@@ -136,8 +136,8 @@ class LoginActivity : AppCompatActivity() {
         texts.addView(tv(title, 15f, Color.rgb(20,20,20), true))
         val sub = tv(subtitle, 11.5f, Color.rgb(105,105,105))
         sub.maxLines = 1
-        texts.addView(sub, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
-        row.addView(texts, LinearLayout.LayoutParams(0, dp(50), 1f))
+        texts.addView(sub, android.widget.LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(3) })
+        row.addView(texts, android.widget.LinearLayout.LayoutParams(0, dp(50), 1f))
         return row
     }
 
@@ -162,7 +162,7 @@ class LoginActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.CENTER_CROP
             adjustViewBounds = false
         }
-        root.addView(top, LinearLayout.LayoutParams(-1, 0, 0.38f))
+        root.addView(top, android.widget.LinearLayout.LayoutParams(-1, 0, 0.38f))
 
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -178,15 +178,15 @@ class LoginActivity : AppCompatActivity() {
         }
 
         val handle = View(this).apply { background = rounded(Color.rgb(205,205,208), dp(5).toFloat()) }
-        panel.addView(handle, LinearLayout.LayoutParams(dp(70), dp(5)).apply { bottomMargin = dp(10) })
+        panel.addView(handle, android.widget.LinearLayout.LayoutParams(dp(70), dp(5)).apply { bottomMargin = dp(10) })
 
         val title = tv("Welcome to FOODVEXA 👋", 20f, Color.rgb(18,18,18), true)
         title.gravity = Gravity.CENTER
-        panel.addView(title, LinearLayout.LayoutParams(-1, 0, 0.10f))
+        panel.addView(title, android.widget.LinearLayout.LayoutParams(-1, 0, 0.10f))
 
         val sub = tv("Login to order your favorite food", 12.5f, Color.rgb(115,115,120))
         sub.gravity = Gravity.CENTER
-        panel.addView(sub, LinearLayout.LayoutParams(-1, 0, 0.07f))
+        panel.addView(sub, android.widget.LinearLayout.LayoutParams(-1, 0, 0.07f))
 
         val features = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -195,7 +195,7 @@ class LoginActivity : AppCompatActivity() {
         features.addView(featureRow("🍽", "Wide Variety", "Explore snacks, meals, sweets & more", Color.rgb(228,246,236), Color.rgb(20,145,70)))
         features.addView(featureRow("★", "Best Quality", "Fresh and delicious food always", Color.rgb(255,241,210), Color.rgb(245,170,0)))
         features.addView(featureRow("✓", "Safe & Secure", "Your data is always protected", Color.rgb(221,241,255), Color.rgb(25,145,225)))
-        panel.addView(features, LinearLayout.LayoutParams(-1, 0, 0.43f))
+        panel.addView(features, android.widget.LinearLayout.LayoutParams(-1, 0, 0.43f))
 
         val google = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -221,23 +221,23 @@ class LoginActivity : AppCompatActivity() {
                 p.style = Paint.Style.STROKE
             }
         }
-        google.addView(g, LinearLayout.LayoutParams(dp(40), -1))
+        google.addView(g, android.widget.LinearLayout.LayoutParams(dp(40), -1))
         val gt = tv("Continue with Google", 14f, Color.rgb(25,25,25), true)
         gt.gravity = Gravity.CENTER
-        google.addView(gt, LinearLayout.LayoutParams(0, -1, 1f))
+        google.addView(gt, android.widget.LinearLayout.LayoutParams(0, -1, 1f))
         val arrow = tv("›", 27f, Color.rgb(55,55,60))
         arrow.gravity = Gravity.CENTER
-        google.addView(arrow, LinearLayout.LayoutParams(dp(28), -1))
-        panel.addView(google, LinearLayout.LayoutParams(-1, 0, 0.11f).apply { topMargin = dp(4) })
+        google.addView(arrow, android.widget.LinearLayout.LayoutParams(dp(28), -1))
+        panel.addView(google, android.widget.LinearLayout.LayoutParams(-1, 0, 0.11f).apply { topMargin = dp(4) })
 
         val divider = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         val l = View(this).apply { setBackgroundColor(Color.rgb(210,210,215)) }
         val or = tv("OR", 11f, Color.rgb(145,145,150)).apply { gravity = Gravity.CENTER }
         val rr = View(this).apply { setBackgroundColor(Color.rgb(210,210,215)) }
-        divider.addView(l, LinearLayout.LayoutParams(0, dp(1), 1f))
-        divider.addView(or, LinearLayout.LayoutParams(dp(42), -1))
-        divider.addView(rr, LinearLayout.LayoutParams(0, dp(1), 1f))
-        panel.addView(divider, LinearLayout.LayoutParams(-1, 0, 0.07f))
+        divider.addView(l, android.widget.LinearLayout.LayoutParams(0, dp(1), 1f))
+        divider.addView(or, android.widget.LinearLayout.LayoutParams(dp(42), -1))
+        divider.addView(rr, android.widget.LinearLayout.LayoutParams(0, dp(1), 1f))
+        panel.addView(divider, android.widget.LinearLayout.LayoutParams(-1, 0, 0.07f))
 
         val legal = "By continuing, you agree to our Terms of Service\nand Privacy Policy"
         val terms = tv(legal, 9.5f, Color.rgb(120,120,125))
@@ -249,9 +249,9 @@ class LoginActivity : AppCompatActivity() {
         sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), tosStart, tosStart + "Terms of Service".length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         sp.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(235,45,65)), ppStart, ppStart + "Privacy Policy".length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         terms.text = sp
-        panel.addView(terms, LinearLayout.LayoutParams(-1, 0, 0.10f))
+        panel.addView(terms, android.widget.LinearLayout.LayoutParams(-1, 0, 0.10f))
 
-        root.addView(panel, LinearLayout.LayoutParams(-1, 0, 0.62f))
+        root.addView(panel, android.widget.LinearLayout.LayoutParams(-1, 0, 0.62f))
         setContentView(root)
     }
 
