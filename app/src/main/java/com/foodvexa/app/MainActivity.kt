@@ -140,19 +140,17 @@ class MainActivity:AppCompatActivity(){
    })
   }
   searchBox=search
-  val searchWrap=FrameLayout(this)
-  val clearSearch=TextView(this).apply{text="×";textSize=25f;gravity=Gravity.CENTER;setTextColor(secondaryText);visibility=View.GONE;setPadding(dp(10),0,dp(12),0);contentDescription="Clear search"}
-  search.setPadding(dp(14),0,dp(46),0)
-  searchWrap.addView(search,FrameLayout.LayoutParams(-1,dp(36)))
-  searchWrap.addView(clearSearch,FrameLayout.LayoutParams(dp(44),-1,Gravity.END or Gravity.CENTER_VERTICAL))
-  search.setOnFocusChangeListener{_,hasFocus->if(hasFocus){(content.parent as? ScrollView)?.post{(content.parent as? ScrollView)?.requestLayout()}};clearSearch.visibility=if(hasFocus||search.text.isNotEmpty())View.VISIBLE else View.GONE}
-  search.addTextChangedListener(object:android.text.TextWatcher{
-   override fun beforeTextChanged(s:CharSequence?,st:Int,count:Int,after:Int){}
-   override fun onTextChanged(s:CharSequence?,st:Int,before:Int,count:Int){clearSearch.visibility=if(search.hasFocus()||!s.isNullOrEmpty())View.VISIBLE else View.GONE}
-   override fun afterTextChanged(e:android.text.Editable?){}
-  })
-  clearSearch.setOnClickListener{search.text.clear();search.clearFocus();hideKeyboard();clearSearch.visibility=View.GONE}
-  content.addView(searchWrap,margin(4,0,4,10))
+  search.setOnFocusChangeListener{_,hasFocus->if(hasFocus){(content.parent as? ScrollView)?.post{(content.parent as? ScrollView)?.requestLayout()}}}
+  search.setOnKeyListener{_,keyCode,event->
+   if(keyCode==android.view.KeyEvent.KEYCODE_DEL && event.action==android.view.KeyEvent.ACTION_UP && search.text.isEmpty() && search.hasFocus()){
+    search.clearFocus()
+    hideKeyboard()
+    query=""
+    renderProducts()
+    true
+   }else false
+  }
+  content.addView(search,margin(4,0,4,10))
   content.addView(bannerGrid(),margin(0,0,0,8))
   val categoryTitle=label("Categories",21f,true,primaryText)
   content.addView(categoryTitle,margin(8,4,8,4))
