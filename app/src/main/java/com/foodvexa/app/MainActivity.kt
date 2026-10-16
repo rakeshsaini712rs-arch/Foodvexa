@@ -473,10 +473,10 @@ filtered.forEachIndexed{index,p->
         val minus=quantityButton("−"){if((cart[p.name]?:0)>1){cart[p.name]=(cart[p.name]?:0)-1}else{cart.remove(p.name)};saveCart();updateCartBadge();renderProducts()}
         val plus=quantityButton("+"){addToCart(p);renderProducts()}
         val count=label(qty.toString(),15f,true,Color.WHITE).apply{gravity=Gravity.CENTER}
-        controls.addView(minus,LinearLayout.LayoutParams(dp(34),dp(34)))
-        controls.addView(count,LinearLayout.LayoutParams(dp(28),dp(34)))
-        controls.addView(plus,LinearLayout.LayoutParams(dp(34),dp(34)))
-        bottom.addView(controls)
+        controls.addView(minus,LinearLayout.LayoutParams(dp(28),dp(32)))
+        controls.addView(count,LinearLayout.LayoutParams(dp(24),dp(32)))
+        controls.addView(plus,LinearLayout.LayoutParams(dp(28),dp(32)))
+        bottom.addView(controls,LinearLayout.LayoutParams(0,dp(32),1.08f))
     }
     card.addView(bottom,margin(0,2,0,0))
     val favorite=primaryButton(if(p.name in savedFavoriteNames())"♥  Saved" else "♡  Save"){toggleFavorite(p)}
