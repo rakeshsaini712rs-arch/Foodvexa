@@ -49,7 +49,7 @@ class MainActivity:AppCompatActivity(){
   val frame=FrameLayout(this)
   val shell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
   val fixed=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0);setBackgroundColor(Color.TRANSPARENT)}
-  val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true}
+  val scroll=ScrollView(this).apply{clipToPadding=false;isFillViewport=true;isSmoothScrollingEnabled=true;isVerticalScrollBarEnabled=false;descendantFocusability=ViewGroup.FOCUS_AFTER_DESCENDANTS;overScrollMode=View.OVER_SCROLL_IF_CONTENT_SCROLLS;isNestedScrollingEnabled=true}
   content=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(4),dp(8),dp(4),dp(84));clipToPadding=false}
   scroll.addView(content,FrameLayout.LayoutParams(-1,-1))
   shell.addView(fixed,LinearLayout.LayoutParams(-1,-2))
@@ -140,6 +140,7 @@ class MainActivity:AppCompatActivity(){
    })
   }
   searchBox=search
+  search.setOnFocusChangeListener{_,hasFocus->if(hasFocus){(content.parent as? ScrollView)?.post{(content.parent as? ScrollView)?.requestLayout()}}}
   content.addView(search,margin(4,0,4,10))
   content.addView(bannerGrid(),margin(0,0,0,8))
   val categoryTitle=label("Categories",21f,true,primaryText)
