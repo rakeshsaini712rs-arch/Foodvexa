@@ -844,7 +844,7 @@ private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:
     "updatedAt" to FieldValue.serverTimestamp()
    )).addOnSuccessListener{Toast.makeText(this,"Delivery confirmed. Thank you!",Toast.LENGTH_LONG).show()}
     .addOnFailureListener{Toast.makeText(this,"Could not confirm delivery. Please try again.",Toast.LENGTH_LONG).show()}
-  },margin(0,0,0,10))
+  }),margin(0,0,0,10))
  }
  val normalized=statusValue.trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
  val terminal=normalized=="rejected"||normalized=="cancelled"||normalized=="canceled"
