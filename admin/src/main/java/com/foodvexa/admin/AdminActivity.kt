@@ -158,7 +158,35 @@ class AdminActivity : Activity() {
         }
         onLoaded()
     }
-    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
+    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)});listenOrders{renderOrders()}}
+    private fun createDeliveryBoyAccount(){
+        val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0)}
+        val name=EditText(this).apply{hint="Delivery boy name";isSingleLine=true}
+        val email=EditText(this).apply{hint="Login ID / email";isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS}
+        val password=EditText(this).apply{hint="Temporary password (6+ characters)";isSingleLine=true;inputType=129}
+        panel.addView(name);panel.addView(email);panel.addView(password)
+        android.app.AlertDialog.Builder(this).setTitle("Create delivery boy account").setMessage("Admin creates the login ID and password. Share the credentials privately with the delivery partner.").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Create",null).create().also{dialog->
+            dialog.setOnShowListener{dialog.getButton(-1).setOnClickListener{
+                val n=name.text.toString().trim();val e=email.text.toString().trim();val p=password.text.toString()
+                if(n.isBlank()||e.isBlank()||p.length<6){Toast.makeText(this,"Enter name, email and password of at least 6 characters.",Toast.LENGTH_LONG).show();return@setOnClickListener}
+                val appName="foodvexaDeliveryAccountCreator"
+                val secondary=try{com.google.firebase.FirebaseApp.getApps(this).firstOrNull{it.name==appName}?:com.google.firebase.FirebaseApp.initializeApp(this,com.google.firebase.FirebaseApp.getInstance().options,appName)}catch(ex:Exception){null}
+                if(secondary==null){Toast.makeText(this,"Could not initialize account creator.",Toast.LENGTH_LONG).show();return@setOnClickListener}
+                val creator=com.google.firebase.auth.FirebaseAuth.getInstance(secondary)
+                dialog.getButton(-1).isEnabled=false
+                creator.createUserWithEmailAndPassword(e,p).addOnSuccessListener{result->
+                    val uid=result.user?.uid
+                    if(uid.isNullOrBlank()){creator.signOut();Toast.makeText(this,"Account created but UID missing.",Toast.LENGTH_LONG).show();dialog.dismiss();return@addOnSuccessListener}
+                    db.collection("deliveryBoys").document(uid).set(mapOf("name" to n,"email" to e,"active" to true,"createdAt" to FieldValue.serverTimestamp())).addOnSuccessListener{
+                        creator.signOut()
+                        android.app.AlertDialog.Builder(this).setTitle("Delivery login created").setMessage("Name: $n\nLogin ID: $e\nPassword: $p\n\nFirebase UID:\n$uid\n\nKeep these details private.").setPositiveButton("OK",null).show()
+                        dialog.dismiss()
+                    }.addOnFailureListener{creator.signOut();Toast.makeText(this,"Auth account created, but Firestore profile failed: "+(it.localizedMessage?: ""),Toast.LENGTH_LONG).show();dialog.dismiss()}
+                }.addOnFailureListener{dialog.getButton(-1).isEnabled=true;Toast.makeText(this,"Could not create account: "+(it.localizedMessage?: "check email/password"),Toast.LENGTH_LONG).show()}
+            }}
+            dialog.show()
+        }
+    }
     private fun renderOrders(){
         body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true)
         if(orders.isEmpty()){addLine("No orders found yet.",14f,Color.GRAY);return}
@@ -171,12 +199,13 @@ class AdminActivity : Activity() {
             card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
             card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
             card.addView(button("ASSIGN DELIVERY BOY",{
-                val field=EditText(this).apply{hint="Delivery boy Firebase UID";setText(d["deliveryBoyUid"]?.toString().orEmpty())}
-                android.app.AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the delivery boy Firebase Auth UID. Account must exist and be active in deliveryBoys/{UID}.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
+                val field=EditText(this).apply{hint="Delivery boy login email";setText(d["deliveryBoyEmail"]?.toString().orEmpty())}
+                android.app.AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the delivery boy login email created in Admin App.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
                     val deliveryUid=field.text.toString().trim()
                     if(deliveryUid.isBlank())Toast.makeText(this,"Enter delivery boy UID",Toast.LENGTH_SHORT).show()
-                    else db.collection("deliveryBoys").document(deliveryUid).get().addOnSuccessListener{person->
-                        if(person.exists()&&person.getBoolean("active")==true)db.collection("orders").document(id).update(mapOf("deliveryBoyUid" to deliveryUid,"deliveryLocationActive" to false,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{Toast.makeText(this,"Delivery assigned",Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Assignment failed",Toast.LENGTH_LONG).show()}
+                    else db.collection("deliveryBoys").whereEqualTo("email",deliveryUid).limit(1).get().addOnSuccessListener{people->
+                        val person=people.documents.firstOrNull()
+                        if(person!=null&&person.getBoolean("active")==true)db.collection("orders").document(id).update(mapOf("deliveryBoyUid" to person.id,"deliveryBoyEmail" to deliveryUid,"deliveryLocationActive" to false,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{Toast.makeText(this,"Delivery assigned to "+(person.getString("name")?:deliveryUid),Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Assignment failed",Toast.LENGTH_LONG).show()}
                         else Toast.makeText(this,"Delivery account missing or inactive",Toast.LENGTH_LONG).show()
                     }.addOnFailureListener{Toast.makeText(this,"Could not verify delivery account",Toast.LENGTH_LONG).show()}
                 }.show()
