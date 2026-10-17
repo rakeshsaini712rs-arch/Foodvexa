@@ -459,13 +459,13 @@ filtered.forEachIndexed{index,p->
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
-    val soldOut=productAvailability[p.name]==false
+    val soldOut=productAvailability[p.name.lowercase(java.util.Locale.ROOT)]==false
     card.addView(label(if(soldOut)"• Sold Out" else "• Available",10.5f,true,if(soldOut)Color.rgb(230,55,65) else Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
-        if(productAvailability[p.name]==false){
+        if(productAvailability[p.name.lowercase(java.util.Locale.ROOT)]==false){
             val sold=TextView(this).apply{text="Sold Out";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
             bottom.addView(sold,LinearLayout.LayoutParams(0,dp(30),1.08f))
         }else{
@@ -527,7 +527,12 @@ filtered.forEachIndexed{index,p->
  private val productAvailability=mutableMapOf<String,Boolean>()
 private fun loadSharedMenu(){
  FirebaseFirestore.getInstance().collection("menu").addSnapshotListener(this){snapshot,error->
-  if(error!=null||snapshot==null)return@addSnapshotListener
+  if(error!=null){
+   android.util.Log.e("FoodvexaLiveMenu","Firestore menu listener failed",error)
+   if(!isFinishing)runOnUiThread{Toast.makeText(this,"Live menu sync failed: "+(error.localizedMessage?: "Check Firebase access"),Toast.LENGTH_LONG).show()}
+   return@addSnapshotListener
+  }
+  if(snapshot==null)return@addSnapshotListener
   val base=products.toList()
   val liveProducts=mutableListOf<Product>()
   productAvailability.clear()
@@ -536,7 +541,7 @@ private fun loadSharedMenu(){
    if(name.isBlank())return@forEach
    val available=doc.getBoolean("available")!=false
    val idx=base.indexOfFirst{it.name.equals(name,true)}
-   productAvailability[name]=available
+   productAvailability[name.lowercase(java.util.Locale.ROOT)]=available
    val rawPrice=doc.get("price") as? Number
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
