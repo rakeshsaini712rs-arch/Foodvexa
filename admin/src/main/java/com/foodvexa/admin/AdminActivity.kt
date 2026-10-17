@@ -170,6 +170,22 @@ class AdminActivity : Activity() {
             card.addView(text("Customer: "+(d["customerName"]?.toString()?: "Customer"),13f))
             card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
             card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
+            val customerAddress=d["address"]?.toString()?.trim().orEmpty()
+            val latitude=(d["latitude"] as? Number)?.toDouble() ?: (d["location"] as? Map<*,*>)?.get("latitude")?.toString()?.toDoubleOrNull()
+            val longitude=(d["longitude"] as? Number)?.toDouble() ?: (d["location"] as? Map<*,*>)?.get("longitude")?.toString()?.toDoubleOrNull()
+            if(customerAddress.isNotBlank() || (latitude!=null && longitude!=null)){
+                card.addView(button("📍 TRACK CUSTOMER / OPEN MAPS",{
+                    try{
+                        val query=if(latitude!=null&&longitude!=null) "$latitude,$longitude" else customerAddress
+                        val uri=android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(query))
+                        startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,uri))
+                    }catch(e:Exception){
+                        Toast.makeText(this,"Maps app not available. Please install Google Maps.",Toast.LENGTH_LONG).show()
+                    }
+                },Color.rgb(28,112,85)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            }else{
+                card.addView(text("Location not shared by customer yet.",12f,Color.GRAY))
+            }
             card.addView(text("Items: "+(d["itemsText"]?.toString()?: "—"),13f))
             val payment=(d["paymentMethod"]?.toString()?: "COD")
             val pStatus=(d["paymentStatus"]?.toString()?: "COD_DUE")
