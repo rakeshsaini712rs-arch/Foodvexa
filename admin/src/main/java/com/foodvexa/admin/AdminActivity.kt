@@ -158,7 +158,7 @@ class AdminActivity : Activity() {
         }
         onLoaded()
     }
-    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)});listenOrders{renderOrders()}}
+    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)});listenOrders{renderOrders()}}
     private fun createDeliveryBoyAccount(){
         val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0)}
         val name=EditText(this).apply{hint="Delivery boy name";isSingleLine=true}
