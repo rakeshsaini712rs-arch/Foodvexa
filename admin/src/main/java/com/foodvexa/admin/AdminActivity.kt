@@ -209,6 +209,7 @@ class AdminActivity : Activity() {
     private var selectedMenuCategory="All Products"
     private var menuCategoryListener:ListenerRegistration?=null
     private val partnerCategories=linkedMapOf<String,MutableSet<String>>()
+    private var foodvexaCatalogSeedAttempted=false
 
     private fun menuPage(){
         body.removeAllViews()
@@ -291,6 +292,19 @@ class AdminActivity : Activity() {
             menuListener=db.collection("menu").addSnapshotListener(this){snap,error->
                 if(error!=null){Toast.makeText(this,"Menu loading error: "+error.localizedMessage,Toast.LENGTH_LONG).show();return@addSnapshotListener}
                 products.clear();snap?.documents?.forEach{products.add(it.id to (it.data?:emptyMap()))}
+                if(!foodvexaCatalogSeedAttempted){
+                    foodvexaCatalogSeedAttempted=true
+                    val existing=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals("FOODVEXA",true)}
+                    val missing=foodvexaFallbackProducts().filter{f->existing.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true&&it.second["category"]?.toString()?.equals(f.second["category"]?.toString(),true)==true}}
+                    if(missing.isNotEmpty()){
+                        val batch=db.batch()
+                        missing.forEach{(fallbackId,data)->
+                            val docId=fallbackId.removePrefix("fallback:")
+                            batch.set(db.collection("menu").document(docId),HashMap(data).apply{put("partnerName","FOODVEXA");put("updatedAt",FieldValue.serverTimestamp())},com.google.firebase.firestore.SetOptions.merge())
+                        }
+                        batch.commit().addOnFailureListener{foodvexaCatalogSeedAttempted=false;Toast.makeText(this,"Catalog sync failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                    }
+                }
                 if(page=="Menu"){body.removeAllViews();menuPage()}
             }
         }
