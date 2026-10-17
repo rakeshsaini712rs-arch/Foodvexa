@@ -832,6 +832,20 @@ private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:
  val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(16));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),18);elevation=dp(2).toFloat()}
  card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,10))
  card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,14))
+ if(statusValue.equals("Awaiting customer confirmation",true) && !orderId.isNullOrBlank()){
+  card.addView(label("Delivery boy has reached you. Confirm only after you receive your order.",13f,true,secondaryText),margin(0,0,0,8))
+  card.addView(primaryButton("✓  CONFIRM DELIVERY",{
+   val user=FirebaseAuth.getInstance().currentUser
+   if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_SHORT).show()}
+   else FirebaseFirestore.getInstance().collection("orders").document(orderId).update(mapOf(
+    "status" to "Delivered",
+    "customerConfirmedDelivery" to true,
+    "customerConfirmedAt" to FieldValue.serverTimestamp(),
+    "updatedAt" to FieldValue.serverTimestamp()
+   )).addOnSuccessListener{Toast.makeText(this,"Delivery confirmed. Thank you!",Toast.LENGTH_LONG).show()}
+    .addOnFailureListener{Toast.makeText(this,"Could not confirm delivery. Please try again.",Toast.LENGTH_LONG).show()}
+  },margin(0,0,0,10))
+ }
  val normalized=statusValue.trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
  val terminal=normalized=="rejected"||normalized=="cancelled"||normalized=="canceled"
  card.addView(label("ORDER TRACKING",11f,true,secondaryText),margin(0,0,0,10))
