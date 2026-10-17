@@ -29,7 +29,10 @@ service cloud.firestore {
         && request.resource.data.status == 'New'
         && request.resource.data.paymentMethod in ['COD', 'UPI'];
       allow read: if isAdmin() ||
-        (signedIn() && resource.data.customerUid == request.auth.uid);
+        (signedIn() && resource.data.customerUid == request.auth.uid) ||
+        (signedIn() && resource.data.deliveryBoyUid == request.auth.uid &&
+          exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true);
       allow update: if isAdmin() ||
         (signedIn() &&
           resource.data.deliveryBoyUid == request.auth.uid &&
