@@ -34,12 +34,19 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true);
       allow update: if isAdmin() ||
+        (signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status == 'Awaiting customer confirmation'
+          && request.resource.data.status == 'Delivered'
+          && request.resource.data.customerConfirmedDelivery == true
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'customerConfirmedDelivery', 'customerConfirmedAt', 'updatedAt'])) ||
         (signedIn() &&
           resource.data.deliveryBoyUid == request.auth.uid &&
           exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'deliveryLatitude', 'deliveryLongitude', 'deliveryLocationUpdatedAt', 'deliveryLocationActive', 'deliveryLocationEndedAt']) &&
-          request.resource.data.status in ['Accepted', 'Preparing', 'Ready', 'Out for delivery', 'Delivered']) ||
+          request.resource.data.status in ['Accepted', 'Preparing', 'Ready', 'Out for delivery', 'Awaiting customer confirmation']) ||
         (signedIn()
           && resource.data.customerUid == request.auth.uid
           && resource.data.status in ['New', 'new', 'Pending', 'pending', 'Accepted', 'accepted', 'Accept', 'accept']
