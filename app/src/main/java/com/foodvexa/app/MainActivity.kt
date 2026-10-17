@@ -542,6 +542,10 @@ private fun loadSharedMenu(){
   snapshot.documents.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
+   // The home menu is Foodvexa's own menu. Do not let same-named products
+   // from Cake Tower or other partners override its live availability.
+   val partner=doc.getString("partnerName")?.trim().orEmpty()
+   if(partner.isNotBlank() && !partner.equals("FOODVEXA",true))return@forEach
    val key=name.lowercase(java.util.Locale.ROOT)
    val previous=latestByName[key]
    val currentTime=doc.getTimestamp("updatedAt")?.toDate()?.time?:0L
