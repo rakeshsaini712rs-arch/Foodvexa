@@ -275,11 +275,29 @@ class AdminActivity : Activity() {
             card.addView(text(if(available)"● AVAILABLE" else "● SOLD OUT",12f,if(available)green else red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             val actions=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
             actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
-                val data=HashMap(p).apply{put("available",!available);put("partnerName",selectedPartner);put("updatedAt",FieldValue.serverTimestamp())}
+                val productName=p["name"]?.toString()?.trim().orEmpty()
+                val nextAvailable=!available
                 val ref=db.collection("menu").document(id.removePrefix("fallback:"))
-                val write=if(id.startsWith("fallback:"))ref.set(data) else ref.set(data,com.google.firebase.firestore.SetOptions.merge())
-                write.addOnSuccessListener{Toast.makeText(this,if(available)"Product marked sold out." else "Product is available.",Toast.LENGTH_SHORT).show();showPage("Menu")}
-                    .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                val data=HashMap(p).apply{put("available",nextAvailable);put("partnerName",selectedPartner);put("updatedAt",FieldValue.serverTimestamp())}
+                // Keep duplicate documents for the same product in sync. The customer app
+                // listens to the whole menu collection and otherwise may read a stale duplicate.
+                db.collection("menu").get()
+                    .addOnSuccessListener{snapshot->
+                        val matches=snapshot.documents.filter{it.getString("name")?.trim().equals(productName,true)}
+                        val batch=db.batch()
+                        if(matches.isEmpty()){
+                            if(id.startsWith("fallback:"))batch.set(ref,data)
+                            else batch.set(ref,data,com.google.firebase.firestore.SetOptions.merge())
+                        }else{
+                            matches.forEach{doc->
+                                batch.update(doc.reference,mapOf("available" to nextAvailable,"updatedAt" to FieldValue.serverTimestamp()))
+                            }
+                        }
+                        batch.commit()
+                            .addOnSuccessListener{Toast.makeText(this,if(nextAvailable)"Product is available." else "Product marked sold out.",Toast.LENGTH_SHORT).show();showPage("Menu")}
+                            .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                    }
+                    .addOnFailureListener{Toast.makeText(this,"Could not check menu records: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
             },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("DELETE",{android.app.AlertDialog.Builder(this).setTitle("Delete product?").setMessage("Delete "+(p["name"]?.toString()?: "this product")+" permanently?").setNegativeButton("Cancel",null).setPositiveButton("Delete"){_,_->
