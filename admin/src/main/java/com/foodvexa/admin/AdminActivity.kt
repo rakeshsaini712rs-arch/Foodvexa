@@ -158,7 +158,7 @@ class AdminActivity : Activity() {
         }
         onLoaded()
     }
-    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)});listenOrders{renderOrders()}}
+    private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
     private fun createDeliveryBoyAccount(){
         val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),0)}
         val name=EditText(this).apply{hint="Delivery boy name";isSingleLine=true}
@@ -188,7 +188,7 @@ class AdminActivity : Activity() {
         }
     }
     private fun renderOrders(){
-        body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true)
+        body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true);body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)})
         if(orders.isEmpty()){addLine("No orders found yet.",14f,Color.GRAY);return}
         orders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
