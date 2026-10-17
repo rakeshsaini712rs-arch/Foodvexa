@@ -283,7 +283,12 @@ class AdminActivity : Activity() {
                 // listens to the whole menu collection and otherwise may read a stale duplicate.
                 db.collection("menu").get()
                     .addOnSuccessListener{snapshot->
-                        val matches=snapshot.documents.filter{it.getString("name")?.trim().equals(productName,true)}
+                        val partnerKey=(p["partnerName"]?.toString()?.takeIf{it.isNotBlank()}?:selectedPartner).trim()
+                        val matches=snapshot.documents.filter{doc->
+                            doc.getString("name")?.trim().equals(productName,true) &&
+                            (doc.getString("partnerName")?.trim().equals(partnerKey,true) ||
+                             doc.getString("partnerName")?.trim().equals(selectedPartner,true))
+                        }
                         val batch=db.batch()
                         if(matches.isEmpty()){
                             if(id.startsWith("fallback:"))batch.set(ref,data)
