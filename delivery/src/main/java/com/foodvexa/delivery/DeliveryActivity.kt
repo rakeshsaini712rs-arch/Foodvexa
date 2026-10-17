@@ -83,10 +83,10 @@ class DeliveryActivity : Activity() {
                 card.addView(label("Items: "+(doc.getString("itemsText")?: "—"),13f,Color.DKGRAY))
                 card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 card.addView(button("OPEN GOOGLE MAPS",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
-                val choices=listOf("Accepted","Preparing","Ready","Out for delivery","Delivered")
+                val choices=listOf("Accepted","Preparing","Ready","Out for delivery","Awaiting customer confirmation")
                 val spinner=Spinner(this);spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,choices);spinner.setSelection(choices.indexOf(status).coerceAtLeast(0))
                 card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(6)})
-                card.addView(button("UPDATE DELIVERY STATUS",{val next=spinner.selectedItem.toString();doc.reference.update(mapOf("status" to next,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{if(next=="Out for delivery")startLocationUpdates(uid,doc.id) else if(next=="Delivered")stopOrderLocation(uid,doc.id)}.addOnFailureListener{Toast.makeText(this,"Status update failed",Toast.LENGTH_LONG).show()}},red),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("UPDATE DELIVERY STATUS",{val next=spinner.selectedItem.toString();doc.reference.update(mapOf("status" to next,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{if(next=="Out for delivery")startLocationUpdates(uid,doc.id) else if(next=="Awaiting customer confirmation")stopOrderLocation(uid,doc.id)}.addOnFailureListener{Toast.makeText(this,"Status update failed",Toast.LENGTH_LONG).show()}},red),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 root.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
             }
         }
