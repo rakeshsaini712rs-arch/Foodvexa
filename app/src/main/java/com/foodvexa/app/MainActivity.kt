@@ -527,8 +527,8 @@ filtered.forEachIndexed{index,p->
  private val productAvailability=mutableMapOf<String,Boolean>()
 private fun loadSharedMenu(){
  FirebaseFirestore.getInstance().collection("menu").addSnapshotListener(this){snapshot,error->
-  if(error!=null||snapshot==null||snapshot.isEmpty)return@addSnapshotListener
-  val base=products.toMutableList()
+  if(error!=null||snapshot==null)return@addSnapshotListener
+  val base=products.toList()
   val liveProducts=mutableListOf<Product>()
   productAvailability.clear()
   snapshot.documents.forEach{doc->
@@ -537,13 +537,13 @@ private fun loadSharedMenu(){
    val available=doc.getBoolean("available")!=false
    val idx=base.indexOfFirst{it.name.equals(name,true)}
    productAvailability[name]=available
-   val price=(doc.getLong("price")?:base.getOrNull(idx)?.price?.toLong()?:0L).toInt()
-   val category=doc.getString("category")?:base.getOrNull(idx)?.category?:"Snacks"
+   val rawPrice=doc.get("price") as? Number
+   val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
+   val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
    liveProducts.add(Product(name,price,category,image))
   }
-  // Firestore records override static fallback items with the same name, so edits
-  // to price/category are reflected consistently without stale duplicate cards.
+  // Replace static products by live Firestore records using case-insensitive names.
   val liveNames=liveProducts.map{it.name}.toSet()
   products.clear()
   products.addAll(base.filterNot{baseItem->liveNames.any{it.equals(baseItem.name,true)}})
