@@ -431,7 +431,8 @@ if(selectedCategory=="Deals & Offers" || selectedCategory=="Restaurants & Hotels
  renderPartnerShopCards()
  return
 }
-val filtered=products.filter{(selectedCategory=="All"||it.category==selectedCategory)&&(query.isBlank()||it.name.contains(query,true))}
+// Normalize legacy category casing ("snacks" vs "Snacks") so these products remain visible.
+val filtered=products.filter{(selectedCategory=="All"||it.category.trim().equals(selectedCategory.trim(),ignoreCase=true))&&(query.isBlank()||it.name.contains(query,true))}
 var row:LinearLayout?=null
 filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
