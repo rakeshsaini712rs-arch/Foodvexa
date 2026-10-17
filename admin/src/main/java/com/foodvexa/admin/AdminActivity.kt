@@ -210,8 +210,8 @@ class AdminActivity : Activity() {
         <style>
         *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
         .sheet{width:100%;margin:0 auto;border:1px solid #eee}
-        .head{background:#050505;color:white;padding:24px 22px;text-align:center;border-bottom:5px solid #ffd500}
-        .logo{display:block;width:150px;height:150px;object-fit:contain;border-radius:50%;background:#050505;margin:0 auto 12px;padding:0;border:2px solid #fff;}
+        .head{background:#050505;color:white;padding:18px 22px;text-align:center;border-bottom:5px solid #ffd500}.brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px;max-width:100%}.brandcopy{text-align:left;min-width:0}.wordmark{font-size:clamp(22px,5vw,34px);font-weight:900;letter-spacing:-1px;white-space:nowrap}.wordmark span{color:#fff}.wordmark b{color:#ffdf00}.tagline{font-size:clamp(7px,1.7vw,11px);letter-spacing:2px;color:#fff;margin-top:5px;white-space:nowrap}
+        .logo{display:block;width:82px;height:82px;object-fit:contain;border-radius:50%;background:#050505;margin:0;padding:0;border:2px solid #fff;flex-shrink:0;}
         .receipt{font-size:20px;font-weight:bold;margin-top:8px;letter-spacing:1px}
         .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:10px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
         .label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.value{font-size:13px;font-weight:bold;overflow-wrap:anywhere}
@@ -223,7 +223,7 @@ class AdminActivity : Activity() {
         @page{size:A4;margin:10mm}
         @media print{body{padding:0}.sheet{border:0}.head,.totalbox,.meta{print-color-adjust:exact;-webkit-print-color-adjust:exact}thead{display:table-header-group}}
         </style></head><body><div class="sheet">
-        <div class="head"><img class="logo" src="https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable-nodpi/foodvexa_exact_logo.jpg" alt="Official Foodvexa Logo"><div class="receipt">CUSTOMER BILL</div></div>
+        <div class="head"><div class="brand"><img class="logo" src="https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable-nodpi/foodvexa_exact_logo.jpg" alt="Foodvexa logo"><div class="brandcopy"><div class="wordmark"><span>FOOD</span><b>VEXA</b></div><div class="tagline">FOOD ORDERING MADE EASY</div></div></div><div class="receipt">CUSTOMER BILL</div></div>
         <div class="content"><div class="meta"><div><div class="label">Order ID</div><div class="value">#${esc(orderId.takeLast(7).uppercase())}</div></div><div><div class="label">Payment</div><div class="value">${esc(payment)}</div></div><div><div class="label">Status</div><div class="value">${esc(status)}</div></div></div>
         <div class="section">CUSTOMER DETAILS</div><div class="info"><div><div class="label">Name</div><div class="value">${esc(customer)}</div></div><div><div class="label">Phone</div><div class="value">${esc(phone)}</div></div><div class="wide"><div class="label">Delivery address</div><div class="value">${esc(address)}</div></div></div>
         <div class="section">ORDER SUMMARY</div><table>$itemRows</table>
