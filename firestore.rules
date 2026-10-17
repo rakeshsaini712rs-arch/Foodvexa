@@ -18,7 +18,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /deliveryBoys/{uid} {\n      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);\n      allow create, update, delete: if isAdmin();\n    }\n\n    match /orders/{orderId} {
+    match /deliveryBoys/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
       allow create: if signedIn()
         && request.resource.data.customerUid == request.auth.uid
         && request.resource.data.status == 'New'
