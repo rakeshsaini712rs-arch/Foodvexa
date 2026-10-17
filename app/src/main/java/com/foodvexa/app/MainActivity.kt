@@ -536,7 +536,19 @@ private fun loadSharedMenu(){
   val base=products.toList()
   val liveProducts=mutableListOf<Product>()
   productAvailability.clear()
+  // If older duplicate menu documents share a product name, use the most recently
+  // updated document so an old "available" record cannot override the admin change.
+  val latestByName=linkedMapOf<String,com.google.firebase.firestore.DocumentSnapshot>()
   snapshot.documents.forEach{doc->
+   val name=doc.getString("name")?.trim().orEmpty()
+   if(name.isBlank())return@forEach
+   val key=name.lowercase(java.util.Locale.ROOT)
+   val previous=latestByName[key]
+   val currentTime=doc.getTimestamp("updatedAt")?.toDate()?.time?:0L
+   val previousTime=previous?.getTimestamp("updatedAt")?.toDate()?.time?:0L
+   if(previous==null || currentTime>=previousTime)latestByName[key]=doc
+  }
+  latestByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
    val available=doc.getBoolean("available")!=false
