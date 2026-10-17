@@ -170,6 +170,17 @@ class AdminActivity : Activity() {
             card.addView(text("Customer: "+(d["customerName"]?.toString()?: "Customer"),13f))
             card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
             card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
+            card.addView(button("ASSIGN DELIVERY BOY",{
+                val field=EditText(this).apply{hint="Delivery boy Firebase UID";setText(d["deliveryBoyUid"]?.toString().orEmpty())}
+                android.app.AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the delivery boy Firebase Auth UID. Account must exist and be active in deliveryBoys/{UID}.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
+                    val deliveryUid=field.text.toString().trim()
+                    if(deliveryUid.isBlank())Toast.makeText(this,"Enter delivery boy UID",Toast.LENGTH_SHORT).show()
+                    else db.collection("deliveryBoys").document(deliveryUid).get().addOnSuccessListener{person->
+                        if(person.exists()&&person.getBoolean("active")==true)db.collection("orders").document(id).update(mapOf("deliveryBoyUid" to deliveryUid,"deliveryLocationActive" to false,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{Toast.makeText(this,"Delivery assigned",Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Assignment failed",Toast.LENGTH_LONG).show()}
+                        else Toast.makeText(this,"Delivery account missing or inactive",Toast.LENGTH_LONG).show()
+                    }.addOnFailureListener{Toast.makeText(this,"Could not verify delivery account",Toast.LENGTH_LONG).show()}
+                }.show()
+            },Color.rgb(35,105,135)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
             val customerAddress=d["address"]?.toString()?.trim().orEmpty()
             val latitude=(d["latitude"] as? Number)?.toDouble() ?: (d["location"] as? Map<*,*>)?.get("latitude")?.toString()?.toDoubleOrNull()
             val longitude=(d["longitude"] as? Number)?.toDouble() ?: (d["location"] as? Map<*,*>)?.get("longitude")?.toString()?.toDoubleOrNull()
