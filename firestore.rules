@@ -18,7 +18,7 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /orders/{orderId} {
+    match /deliveryBoys/{uid} {\n      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);\n      allow create, update, delete: if isAdmin();\n    }\n\n    match /orders/{orderId} {
       allow create: if signedIn()
         && request.resource.data.customerUid == request.auth.uid
         && request.resource.data.status == 'New'
@@ -26,6 +26,12 @@ service cloud.firestore {
       allow read: if isAdmin() ||
         (signedIn() && resource.data.customerUid == request.auth.uid);
       allow update: if isAdmin() ||
+        (signedIn() &&
+          resource.data.deliveryBoyUid == request.auth.uid &&
+          exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'deliveryLatitude', 'deliveryLongitude', 'deliveryLocationUpdatedAt', 'deliveryLocationActive', 'deliveryLocationEndedAt']) &&
+          request.resource.data.status in ['Accepted', 'Preparing', 'Ready', 'Out for delivery', 'Delivered']) ||
         (signedIn()
           && resource.data.customerUid == request.auth.uid
           && resource.data.status in ['New', 'new', 'Pending', 'pending', 'Accepted', 'accepted', 'Accept', 'accept']
