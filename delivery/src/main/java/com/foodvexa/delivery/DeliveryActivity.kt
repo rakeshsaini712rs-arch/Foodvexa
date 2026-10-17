@@ -49,7 +49,7 @@ class DeliveryActivity : Activity() {
         val pass=EditText(this).apply{hint="Password";isSingleLine=true;inputType=129;setTextColor(ink);background=rounded(Color.WHITE);setPadding(dp(12),dp(10),dp(12),dp(10))}
         root.addView(pass,LinearLayout.LayoutParams(-1,dp(52)))
         val msg=label("",13f,red)
-        root.addView(button("LOGIN"){val e=email.text.toString().trim();val p=pass.text.toString();if(e.isBlank()||p.isBlank()){msg.text="Enter login ID and password";return@button};auth.signInWithEmailAndPassword(e,p).addOnSuccessListener{u->u.user?.uid?.let{authorize(it){err->msg.text=err}}}.addOnFailureListener{msg.text="Login failed. Check ID/password."}.also{} })
+        root.addView(button("LOGIN", { val e=email.text.toString().trim(); val p=pass.text.toString(); if(e.isBlank()||p.isBlank()){msg.text="Enter login ID and password";return@button}; auth.signInWithEmailAndPassword(e,p).addOnSuccessListener{u->u.user?.uid?.let{authorize(it){err->msg.text=err}}}.addOnFailureListener{msg.text="Login failed. Check ID/password."} }))
         root.addView(msg)
         root.addView(label("Your account must be created and activated by Foodvexa Admin.",12f,Color.GRAY))
     }
