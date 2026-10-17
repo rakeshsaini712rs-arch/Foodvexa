@@ -285,9 +285,11 @@ class AdminActivity : Activity() {
                     .addOnSuccessListener{snapshot->
                         val partnerKey=(p["partnerName"]?.toString()?.takeIf{it.isNotBlank()}?:selectedPartner).trim()
                         val matches=snapshot.documents.filter{doc->
-                            doc.getString("name")?.trim().equals(productName,true) &&
-                            (doc.getString("partnerName")?.trim().equals(partnerKey,true) ||
-                             doc.getString("partnerName")?.trim().equals(selectedPartner,true))
+                            val storedPartner=doc.getString("partnerName")?.trim().orEmpty()
+                            val samePartner=storedPartner.equals(partnerKey,true) ||
+                                storedPartner.equals(selectedPartner,true) ||
+                                (storedPartner.isBlank() && selectedPartner.equals("FOODVEXA",true))
+                            doc.getString("name")?.trim().equals(productName,true) && samePartner
                         }
                         val batch=db.batch()
                         if(matches.isEmpty()){
