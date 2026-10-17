@@ -201,21 +201,27 @@ class AdminActivity : Activity() {
         val payment=d["paymentMethod"]?.toString()?: "COD"
         val status=d["status"]?.toString()?: "New"
         fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;")
-        val itemRows=items.split("\\n").filter{it.isNotBlank()}.joinToString(""){line -> "<tr><td class='item'>${esc(line)}</td></tr>"}.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
-        val html="""<!doctype html><html><head><meta charset="utf-8"><style>
-        *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:18px;background:#fff}
-        .sheet{max-width:720px;margin:auto;border:1px solid #eee;overflow:hidden}
+        val itemLines=items.split(Regex("\\r?\\n|\\s(?=[^\\n]+ × \\d+\\s*=)")).filter{it.isNotBlank()}
+        val itemRows=itemLines.joinToString(""){line ->
+            val clean=line.trim()
+            "<tr><td class='item'>${esc(clean)}</td></tr>"
+        }.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
+        val html="""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
+        .sheet{width:100%;margin:0 auto;border:1px solid #eee}
         .head{background:#c9152b;color:white;padding:22px;text-align:center;border-bottom:5px solid #ffd500}
-        .logo{display:block;width:128px;height:128px;object-fit:contain;border-radius:50%;background:#fff;margin:0 auto 12px;padding:2px}
-        .receipt{font-size:18px;font-weight:bold;margin-top:8px;letter-spacing:1px}
-        .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:12px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
+        .logo{display:block;width:118px;height:118px;object-fit:contain;border-radius:50%;background:#fff;margin:0 auto 10px;padding:2px}
+        .receipt{font-size:20px;font-weight:bold;margin-top:8px;letter-spacing:1px}
+        .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:10px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
         .label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.value{font-size:13px;font-weight:bold;overflow-wrap:anywhere}
-        .section{font-size:13px;font-weight:bold;color:#c9152b;border-bottom:1px solid #eee;padding-bottom:8px;margin:18px 0 10px}
+        .section{font-size:14px;font-weight:bold;color:#c9152b;border-bottom:1px solid #eee;padding-bottom:8px;margin:18px 0 10px;break-after:avoid}
         .info{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}
-        table{width:100%;border-collapse:collapse}td.item{padding:12px 10px;border-bottom:1px solid #eee;font-size:13px}
-        .totalbox{background:#fff8e5;border:1px solid #f0df9b;padding:15px;margin-top:18px;display:flex;justify-content:space-between;align-items:center}
-        .totalbox strong{font-size:21px;color:#c9152b}.footer{text-align:center;padding:18px;color:#777;font-size:11px;border-top:1px dashed #ddd}
-        @media print{body{padding:0}.sheet{border:0}.head,.totalbox{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+        table{width:100%;border-collapse:collapse;table-layout:fixed}tr{break-inside:avoid}td.item{padding:11px 9px;border-bottom:1px solid #eee;font-size:13px;overflow-wrap:anywhere}
+        .totalbox{background:#fff8e5;border:1px solid #f0df9b;padding:15px;margin-top:18px;display:flex;justify-content:space-between;align-items:center;break-inside:avoid}
+        .totalbox strong{font-size:22px;color:#c9152b}.footer{text-align:center;padding:18px;color:#777;font-size:11px;border-top:1px dashed #ddd}
+        @page{size:A4;margin:10mm}
+        @media print{body{padding:0}.sheet{border:0}.head,.totalbox,.meta{print-color-adjust:exact;-webkit-print-color-adjust:exact}thead{display:table-header-group}}
         </style></head><body><div class="sheet">
         <div class="head"><img class="logo" src="https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable-nodpi/foodvexa_exact_logo.jpg" alt="Official Foodvexa Logo"><div class="receipt">CUSTOMER BILL</div></div>
         <div class="content"><div class="meta"><div><div class="label">Order ID</div><div class="value">#${esc(orderId.takeLast(7).uppercase())}</div></div><div><div class="label">Payment</div><div class="value">${esc(payment)}</div></div><div><div class="label">Status</div><div class="value">${esc(status)}</div></div></div>
@@ -230,7 +236,8 @@ class AdminActivity : Activity() {
                 try{
                     val manager=getSystemService(PRINT_SERVICE) as PrintManager
                     val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
-                    manager.print("Foodvexa-Bill-${orderId.takeLast(7)}",adapter,PrintAttributes.Builder().build())
+                    manager.print("Foodvexa-Bill-${orderId.takeLast(7)}",adapter,PrintAttributes.Builder()
+                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build())
                 }catch(e:Exception){
                     Toast.makeText(this@AdminActivity,"Could not open print preview: ${e.localizedMessage}",Toast.LENGTH_LONG).show()
                 }
