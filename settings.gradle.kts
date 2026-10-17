@@ -3,3 +3,4 @@ dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_P
 rootProject.name = "Foodvexa"
 include(":app")
 include(":admin")
+include(":delivery")
