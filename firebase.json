@@ -2,3 +2,4 @@
   "firestore": {
     "rules": "firestore.rules"
   }
+}
