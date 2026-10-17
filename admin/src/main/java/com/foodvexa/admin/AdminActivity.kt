@@ -201,7 +201,7 @@ class AdminActivity : Activity() {
         val payment=d["paymentMethod"]?.toString()?: "COD"
         val status=d["status"]?.toString()?: "New"
         fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-        val itemRows=items.split("\\n").filter{it.isNotBlank()}.joinToString(""){line ->
+        val itemRows=items.split("\n").filter{it.isNotBlank()}.joinToString(""){line ->
             "<tr><td style='padding:8px;border-bottom:1px solid #ddd'>${esc(line)}</td></tr>"
         }.ifBlank{"<tr><td style='padding:8px'>${esc(items)}</td></tr>"}
         val html="""<!doctype html><html><head><meta charset="utf-8"><style>
