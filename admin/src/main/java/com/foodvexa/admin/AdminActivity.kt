@@ -200,23 +200,29 @@ class AdminActivity : Activity() {
         val total=d["total"]?.toString()?: "—"
         val payment=d["paymentMethod"]?.toString()?: "COD"
         val status=d["status"]?.toString()?: "New"
-        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-        val itemRows=items.split("\n").filter{it.isNotBlank()}.joinToString(""){line ->
-            "<tr><td style='padding:8px;border-bottom:1px solid #ddd'>${esc(line)}</td></tr>"
-        }.ifBlank{"<tr><td style='padding:8px'>${esc(items)}</td></tr>"}
+        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;")
+        val itemRows=items.split("\\n").filter{it.isNotBlank()}.joinToString(""){line -> "<tr><td class='item'>${esc(line)}</td></tr>"}.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
         val html="""<!doctype html><html><head><meta charset="utf-8"><style>
-            body{font-family:sans-serif;color:#222;padding:20px}h1{text-align:center;margin-bottom:2px}
-            .sub{text-align:center;color:#666;margin-bottom:22px}.row{margin:7px 0}
-            table{width:100%;border-collapse:collapse;margin-top:16px}td{font-size:14px}
-            .total{font-size:20px;font-weight:bold;text-align:right;margin-top:18px;border-top:2px solid #222;padding-top:12px}
-            .thanks{text-align:center;margin-top:28px;color:#555}
-            </style></head><body><h1>FOODVEXA</h1><div class="sub">Customer Bill / Receipt</div>
-            <div class="row"><b>Order:</b> #${esc(orderId.takeLast(7))}</div>
-            <div class="row"><b>Customer:</b> ${esc(customer)}</div><div class="row"><b>Phone:</b> ${esc(phone)}</div>
-            <div class="row"><b>Address:</b> ${esc(address)}</div><div class="row"><b>Order status:</b> ${esc(status)}</div>
-            <div class="row"><b>Payment:</b> ${esc(payment)}</div><table>$itemRows</table>
-            <div class="total">Total: ₹${esc(total)}</div><div class="thanks">Thank you for ordering with Foodvexa!</div>
-            </body></html>"""
+        *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:18px;background:#fff}
+        .sheet{max-width:720px;margin:auto;border:1px solid #eee;overflow:hidden}
+        .head{background:#c9152b;color:white;padding:22px;text-align:center;border-bottom:5px solid #ffd500}
+        .logo{display:block;width:128px;height:128px;object-fit:contain;border-radius:50%;background:#fff;margin:0 auto 12px;padding:2px}
+        .receipt{font-size:18px;font-weight:bold;margin-top:8px;letter-spacing:1px}
+        .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:12px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
+        .label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.value{font-size:13px;font-weight:bold;overflow-wrap:anywhere}
+        .section{font-size:13px;font-weight:bold;color:#c9152b;border-bottom:1px solid #eee;padding-bottom:8px;margin:18px 0 10px}
+        .info{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}
+        table{width:100%;border-collapse:collapse}td.item{padding:12px 10px;border-bottom:1px solid #eee;font-size:13px}
+        .totalbox{background:#fff8e5;border:1px solid #f0df9b;padding:15px;margin-top:18px;display:flex;justify-content:space-between;align-items:center}
+        .totalbox strong{font-size:21px;color:#c9152b}.footer{text-align:center;padding:18px;color:#777;font-size:11px;border-top:1px dashed #ddd}
+        @media print{body{padding:0}.sheet{border:0}.head,.totalbox{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+        </style></head><body><div class="sheet">
+        <div class="head"><img class="logo" src="https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable-nodpi/foodvexa_exact_logo.jpg" alt="Official Foodvexa Logo"><div class="receipt">CUSTOMER BILL</div></div>
+        <div class="content"><div class="meta"><div><div class="label">Order ID</div><div class="value">#${esc(orderId.takeLast(7).uppercase())}</div></div><div><div class="label">Payment</div><div class="value">${esc(payment)}</div></div><div><div class="label">Status</div><div class="value">${esc(status)}</div></div></div>
+        <div class="section">CUSTOMER DETAILS</div><div class="info"><div><div class="label">Name</div><div class="value">${esc(customer)}</div></div><div><div class="label">Phone</div><div class="value">${esc(phone)}</div></div><div class="wide"><div class="label">Delivery address</div><div class="value">${esc(address)}</div></div></div>
+        <div class="section">ORDER SUMMARY</div><table>$itemRows</table>
+        <div class="totalbox"><span>Total amount</span><strong>₹ ${esc(total)}</strong></div></div>
+        <div class="footer">Thank you for choosing Foodvexa!<br>Food Ordering Made Easy</div></div></body></html>"""
         val webView=WebView(this)
         webView.settings.javaScriptEnabled=false
         webView.webViewClient=object:WebViewClient(){
@@ -230,7 +236,7 @@ class AdminActivity : Activity() {
                 }
             }
         }
-        webView.loadDataWithBaseURL(null,html,"text/HTML","UTF-8",null)
+        webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
     }
     private fun paymentsPage(){addLine("Payments",22f,ink,true);addLine("Cash-on-delivery collection and UPI verification",13f,Color.GRAY);listenOrders{renderPayments()}}
     private fun renderPayments(){
