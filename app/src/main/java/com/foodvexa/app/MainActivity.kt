@@ -821,20 +821,26 @@ private fun showCart(){
        if(total.isNotBlank())append("\nTotal: ₹").append(total)
       }
       val status=doc.getString("status").orEmpty().ifBlank{"New"}
-      addOrderHistoryCard("Order #"+(index+1),details,status,doc.id)
+      addOrderHistoryCard("Order #"+(index+1),details,status,doc.id,doc.getDouble("deliveryLatitude"),doc.getDouble("deliveryLongitude"),doc.getBoolean("deliveryLocationActive")==true)
      }
     }
    }
  }
  content.addView(primaryButton("🛒  ORDER AGAIN"){showCart()},margin(0,6,0,10))
 }
-private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String,orderId:String?=null){
+private fun addOrderHistoryCard(titleText:String,detailsText:String,statusValue:String,orderId:String?=null,deliveryLat:Double?=null,deliveryLng:Double?=null,locationActive:Boolean=false){
  val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(16));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(28,27,32),18);elevation=dp(2).toFloat()}
  card.addView(label(titleText,20f,true,primaryText),margin(0,0,0,10))
  card.addView(label(detailsText,16f,false,primaryText),margin(0,0,0,14))
  val normalized=statusValue.trim().lowercase(java.util.Locale.ROOT).replace("_"," ").replace("-"," ")
  val terminal=normalized=="rejected"||normalized=="cancelled"||normalized=="canceled"
  card.addView(label("ORDER TRACKING",11f,true,secondaryText),margin(0,0,0,10))
+ if(deliveryLat!=null&&deliveryLng!=null&&statusValue.equals("Out for delivery",true)){
+  card.addView(primaryButton(if(locationActive)"📍  VIEW DELIVERY LOCATION" else "📍  VIEW LAST DELIVERY LOCATION"){
+   val uri=android.net.Uri.parse("https://www.google.com/maps/search/?api=1&query=$deliveryLat,$deliveryLng")
+   try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,uri))}catch(_:Exception){Toast.makeText(this,"Could not open Maps",Toast.LENGTH_SHORT).show()}
+  },margin(0,0,0,10))
+ }
  val steps=listOf("Accepted","Preparing","Ready","Out for delivery","Delivered")
  val current=when(normalized){
   "accepted","accept"->0
