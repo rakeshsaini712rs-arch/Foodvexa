@@ -550,7 +550,14 @@ private fun loadSharedMenu(){
    val previous=latestByName[key]
    val currentTime=doc.getTimestamp("updatedAt")?.toDate()?.time?:0L
    val previousTime=previous?.getTimestamp("updatedAt")?.toDate()?.time?:0L
-   if(previous==null || currentTime>=previousTime)latestByName[key]=doc
+   val currentPartner=doc.getString("partnerName")?.trim().orEmpty()
+   val previousPartner=previous?.getString("partnerName")?.trim().orEmpty()
+   // Prefer the explicitly-owned Foodvexa record when timestamps tie; older legacy
+   // blank-partner duplicates must never override the canonical record's availability.
+   val currentIsCanonical=currentPartner.equals("FOODVEXA",true)
+   val previousIsCanonical=previousPartner.equals("FOODVEXA",true)
+   if(previous==null || currentTime>previousTime ||
+      (currentTime==previousTime && currentIsCanonical && !previousIsCanonical))latestByName[key]=doc
   }
   latestByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
