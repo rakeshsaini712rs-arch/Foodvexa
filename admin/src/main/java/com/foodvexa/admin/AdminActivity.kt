@@ -210,8 +210,8 @@ class AdminActivity : Activity() {
         <style>
         *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
         .sheet{width:100%;margin:0 auto;border:1px solid #eee}
-        .head{background:#c9152b;color:white;padding:22px;text-align:center;border-bottom:5px solid #ffd500}
-        .logo{display:block;width:118px;height:118px;object-fit:contain;border-radius:50%;background:#fff;margin:0 auto 10px;padding:2px}
+        .head{background:#050505;color:white;padding:24px 22px;text-align:center;border-bottom:5px solid #ffd500}
+        .logo{display:block;width:150px;height:150px;object-fit:contain;border-radius:50%;background:#050505;margin:0 auto 12px;padding:0;border:2px solid #fff;}
         .receipt{font-size:20px;font-weight:bold;margin-top:8px;letter-spacing:1px}
         .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:10px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
         .label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.value{font-size:13px;font-weight:bold;overflow-wrap:anywhere}
