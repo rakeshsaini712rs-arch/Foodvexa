@@ -75,6 +75,14 @@
           }
         },
         {
+          "client_id": "775682824585-me4okoqasb950jv79t7tvol0kn4ub6kc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.foodvexa.app",
+            "certificate_hash": "828bfe193c0c2ce84112078830497f5e2851fbfb"
+          }
+        },
+        {
           "client_id": "775682824585-tbakliavajbfk2a5dvoakl4on0a198v3.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -82,6 +90,35 @@
             "certificate_hash": "7edeb788ceba3b55858f35ad972f6561b7eca888"
           }
         },
+        {
+          "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-doTIDcp8CiuvmkMv-As2iVvrkdhb-fU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775682824585:android:ca2c44c02f7b787b1be958",
+        "android_client_info": {
+          "package_name": "com.foodvexa.delivery"
+        }
+      },
+      "oauth_client": [
         {
           "client_id": "775682824585-2g4o60lu3hc7b90uobkhk7aj1633ageo.apps.googleusercontent.com",
           "client_type": 3
