@@ -5,6 +5,10 @@ import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.print.PrintAttributes
+import android.print.PrintManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -170,6 +174,8 @@ class AdminActivity : Activity() {
             val payment=(d["paymentMethod"]?.toString()?: "COD")
             val pStatus=(d["paymentStatus"]?.toString()?: "COD_DUE")
             card.addView(text("Payment: $payment · $pStatus",13f,if(pStatus=="VERIFIED")green else Color.rgb(145,90,0),true))
+            card.addView(button("PRINT CUSTOMER BILL", { printCustomerBill(id,d) }, Color.rgb(35,105,75)),
+                LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(9)})
             val statuses=listOf("New","Accepted","Preparing","Ready","Out for delivery","Delivered","Cancelled")
             val spinner=Spinner(this)
             spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,statuses)
@@ -185,6 +191,46 @@ class AdminActivity : Activity() {
             },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
+    }
+    private fun printCustomerBill(orderId:String, d:Map<String,Any>){
+        val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
+        val phone=d["phone"]?.toString()?: "—"
+        val address=d["address"]?.toString()?: "—"
+        val items=d["itemsText"]?.toString()?: "—"
+        val total=d["total"]?.toString()?: "—"
+        val payment=d["paymentMethod"]?.toString()?: "COD"
+        val status=d["status"]?.toString()?: "New"
+        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+        val itemRows=items.split("\\n").filter{it.isNotBlank()}.joinToString(""){line ->
+            "<tr><td style='padding:8px;border-bottom:1px solid #ddd'>${esc(line)}</td></tr>"
+        }.ifBlank{"<tr><td style='padding:8px'>${esc(items)}</td></tr>"}
+        val html="""<!doctype html><html><head><meta charset="utf-8"><style>
+            body{font-family:sans-serif;color:#222;padding:20px}h1{text-align:center;margin-bottom:2px}
+            .sub{text-align:center;color:#666;margin-bottom:22px}.row{margin:7px 0}
+            table{width:100%;border-collapse:collapse;margin-top:16px}td{font-size:14px}
+            .total{font-size:20px;font-weight:bold;text-align:right;margin-top:18px;border-top:2px solid #222;padding-top:12px}
+            .thanks{text-align:center;margin-top:28px;color:#555}
+            </style></head><body><h1>FOODVEXA</h1><div class="sub">Customer Bill / Receipt</div>
+            <div class="row"><b>Order:</b> #${esc(orderId.takeLast(7))}</div>
+            <div class="row"><b>Customer:</b> ${esc(customer)}</div><div class="row"><b>Phone:</b> ${esc(phone)}</div>
+            <div class="row"><b>Address:</b> ${esc(address)}</div><div class="row"><b>Order status:</b> ${esc(status)}</div>
+            <div class="row"><b>Payment:</b> ${esc(payment)}</div><table>$itemRows</table>
+            <div class="total">Total: ₹${esc(total)}</div><div class="thanks">Thank you for ordering with Foodvexa!</div>
+            </body></html>"""
+        val webView=WebView(this)
+        webView.settings.javaScriptEnabled=false
+        webView.webViewClient=object:WebViewClient(){
+            override fun onPageFinished(view:WebView, url:String){
+                try{
+                    val manager=getSystemService(PRINT_SERVICE) as PrintManager
+                    val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
+                    manager.print("Foodvexa-Bill-${orderId.takeLast(7)}",adapter,PrintAttributes.Builder().build())
+                }catch(e:Exception){
+                    Toast.makeText(this@AdminActivity,"Could not open print preview: ${e.localizedMessage}",Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        webView.loadDataWithBaseURL(null,html,"text/HTML","UTF-8",null)
     }
     private fun paymentsPage(){addLine("Payments",22f,ink,true);addLine("Cash-on-delivery collection and UPI verification",13f,Color.GRAY);listenOrders{renderPayments()}}
     private fun renderPayments(){
