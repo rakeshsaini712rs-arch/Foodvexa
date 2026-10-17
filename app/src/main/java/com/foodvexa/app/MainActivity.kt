@@ -422,7 +422,7 @@ val title=if(selectedCategory=="All")"Popular near you" else selectedCategory
 var ti=-1
 for(i in 0 until content.childCount){
     val v=content.getChildAt(i)
-    if(v is TextView && (v.text.toString()=="Popular near you" || categories.any{it.name==v.text.toString()})){ti=i;break}
+    if(v is TextView && (v.text.toString()=="Popular near you" || categories.any{it.name==v.text.toString()})){ti=i}
 }
 if(ti<0)return
 (content.getChildAt(ti) as TextView).text=title
