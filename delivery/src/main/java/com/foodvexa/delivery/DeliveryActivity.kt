@@ -62,7 +62,7 @@ class DeliveryActivity : Activity() {
     private fun showOrders(uid:String,name:String){
         ordersListener?.remove()
         base("Welcome, $name")
-        root.addView(button("SIGN OUT"){stopLocationUpdates();auth.signOut();showLogin()},Color.DKGRAY,LinearLayout.LayoutParams(-1,-2))
+        root.addView(button("SIGN OUT",{stopLocationUpdates();auth.signOut();showLogin()},Color.DKGRAY),LinearLayout.LayoutParams(-1,-2))
         root.addView(label("Your assigned deliveries",18f,ink,true))
         root.addView(label("Keep this screen open during delivery to share location. Location permission is required.",12f,Color.GRAY))
         ordersListener=db.collection("orders").whereEqualTo("deliveryBoyUid",uid).addSnapshotListener{snap,error->
@@ -81,8 +81,8 @@ class DeliveryActivity : Activity() {
                 val address=doc.getString("address")?: ""
                 card.addView(label("Address: "+address,14f))
                 card.addView(label("Items: "+(doc.getString("itemsText")?: "—"),13f,Color.DKGRAY))
-                card.addView(button("CALL CUSTOMER"){val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
-                card.addView(button("OPEN GOOGLE MAPS"){if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("OPEN GOOGLE MAPS",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 val choices=listOf("Accepted","Preparing","Ready","Out for delivery","Delivered")
                 val spinner=Spinner(this);spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,choices);spinner.setSelection(choices.indexOf(status).coerceAtLeast(0))
                 card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(6)})
