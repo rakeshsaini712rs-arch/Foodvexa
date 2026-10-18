@@ -92,7 +92,7 @@ class MainActivity:AppCompatActivity(){
   fixed.removeAllViews()
   val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),0)}
   val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(68)).apply{rightMargin=dp(7)})}
+  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(82)).apply{rightMargin=dp(8)})}
   stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
   fixed.addView(stickyCategories)
 
@@ -157,7 +157,7 @@ class MainActivity:AppCompatActivity(){
   val categoryTitle=label("Categories",21f,true,primaryText)
   content.addView(categoryTitle,margin(8,4,8,4))
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(92),dp(80)).apply{rightMargin=dp(9)})}
+  categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(92)).apply{rightMargin=dp(8)})}
   val categoryScroller=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)}
   content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(82)))
   val scrollView=content.parent as ScrollView
@@ -175,7 +175,7 @@ class MainActivity:AppCompatActivity(){
  private fun categoryCard(c:Category):LinearLayout{
   val selected=c.name==selectedCategory
   val box=LinearLayout(this).apply{
-   orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(3),dp(3),dp(3),dp(3));background=categoryBackground(selected);isClickable=true;isFocusable=true
+   orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(4),dp(4),dp(4),dp(4));background=categoryBackground(selected);isClickable=true;isFocusable=true;elevation=dp(if(selected)3 else 1).toFloat();clipToPadding=false
    setOnClickListener{
     if(c.name=="Restaurant / Hotel"){restaurantHotelDialog();return@setOnClickListener}
     selectedCategory=c.name
@@ -195,9 +195,9 @@ class MainActivity:AppCompatActivity(){
     if(productTitle!=null)scroll?.post{scroll.smoothScrollTo(0,(productTitle.top-dp(6)).coerceAtLeast(0))}
    }
   }
-  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP}
-  box.addView(image,LinearLayout.LayoutParams(-1,dp(43)).apply{bottomMargin=dp(2)})
-  box.addView(label(c.name,10f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false})
+  val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
+  box.addView(image,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(4)})
+  box.addView(label(c.name,10.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false;letterSpacing=0.01f})
   if(c.name=="Restaurant / Hotel")image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)
   return box
  }
