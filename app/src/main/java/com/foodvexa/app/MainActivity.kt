@@ -979,7 +979,7 @@ private fun showProfile(){
  item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
  item("⭐  Feedback","Share your feedback"){showFeedback()}
  item("ℹ️  About","About Foodvexa"){
-  AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Foodvexa — Taste the Happiness. Food ordering and delivery app.").setPositiveButton("OK",null).show()
+  AlertDialog.Builder(this).setTitle("About Foodvexa").setMessage("Foodvexa — Taste the Happiness.\n\nYour gateway to a world of delicious food. Discover amazing flavours, explore diverse cuisines, enjoy exciting offers, and get your favourite meals delivered right to your doorstep.\n\nOur vision is to make great food accessible to everyone across Rajasthan through a seamless and delightful ordering experience.\n\nFrom everyday meals to special celebrations, Foodvexa brings more taste, more choices, and more happiness to every moment.\n\nMore Flavours. More Choices. More Happiness.").setPositiveButton("OK",null).show()
  }
  item("🗑️  Delete Account","Request permanent account deletion"){
   showAccountDeletionDialog()
