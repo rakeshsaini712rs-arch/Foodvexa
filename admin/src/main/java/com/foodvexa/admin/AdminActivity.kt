@@ -333,7 +333,7 @@ class AdminActivity : Activity() {
         addLine("PARTNERS",12f,Color.GRAY,true)
         val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         partnerNames.forEach { partner ->
-            val count=products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
+            val count=if(partner=="Ganpati Restaurant") products.count{(it.second["partnerName"]?.toString()?.trim().orEmpty().let{v->v.isBlank()||v.equals("FOODVEXA",true)}) && (it.second["category"]?.toString().equals("Snacks",true)||it.second["category"]?.toString().equals("Sweets",true))} else products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
                 setPadding(dp(12),dp(11),dp(12),dp(11))
@@ -352,10 +352,18 @@ class AdminActivity : Activity() {
         body.addView(partnerRow,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
-        val firestorePartnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
-        val fallback=if(selectedPartner.equals("FOODVEXA",true))foodvexaFallbackProducts().filter{f->firestorePartnerProducts.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true}} else emptyList()
+        val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
+        val firestorePartnerProducts=if(isGanpatiSharedMenu) products.filter{
+            val partner=it.second["partnerName"]?.toString()?.trim().orEmpty()
+            (partner.isBlank()||partner.equals("FOODVEXA",true)) &&
+            (it.second["category"]?.toString().equals("Snacks",true)||it.second["category"]?.toString().equals("Sweets",true))
+        } else products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
+        val fallback=if(selectedPartner.equals("FOODVEXA",true)||isGanpatiSharedMenu)foodvexaFallbackProducts().filter{f->
+            (!isGanpatiSharedMenu || f.second["category"]?.toString().equals("Snacks",true)||f.second["category"]?.toString().equals("Sweets",true)) &&
+            firestorePartnerProducts.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true}
+        } else emptyList()
         val partnerProducts=firestorePartnerProducts+fallback
-        val categoryNames=(defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
+        val categoryNames=if(isGanpatiSharedMenu) listOf("Snacks","Sweets") else (defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
         val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
         val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         (listOf("All Products")+categoryNames).forEach{cat->
@@ -370,10 +378,14 @@ class AdminActivity : Activity() {
             categoryRow.addView(chip,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(7)})
         }
         categoryScroll.addView(categoryRow);body.addView(categoryScroll,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
-        val categoryActions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-        categoryActions.addView(button("+ ADD CATEGORY",{categoryDialog()},Color.rgb(55,90,135)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
-        categoryActions.addView(button("MANAGE CATEGORIES",{manageCategoriesDialog(categoryNames)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f))
-        body.addView(categoryActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
+        if(!isGanpatiSharedMenu){
+            val categoryActions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            categoryActions.addView(button("+ ADD CATEGORY",{categoryDialog()},Color.rgb(55,90,135)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
+            categoryActions.addView(button("MANAGE CATEGORIES",{manageCategoriesDialog(categoryNames)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f))
+            body.addView(categoryActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
+        } else {
+            addLine("Ganpati menu uses Foodvexa's existing Snacks & Sweets products for now.",12f,Color.GRAY)
+        }
 
         val productHeader=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         productHeader.addView(text(if(selectedMenuCategory=="All Products")"PRODUCTS" else selectedMenuCategory.uppercase(),16f,ink,true),LinearLayout.LayoutParams(0,-2,1f))
@@ -393,7 +405,8 @@ class AdminActivity : Activity() {
                 val productName=p["name"]?.toString()?.trim().orEmpty()
                 val nextAvailable=!available
                 val ref=db.collection("menu").document(id.removePrefix("fallback:"))
-                val data=HashMap(p).apply{put("available",nextAvailable);put("partnerName",selectedPartner);put("updatedAt",FieldValue.serverTimestamp())}
+                val effectivePartner=p["partnerName"]?.toString()?.trim()?.takeIf{it.isNotBlank()}?:if(selectedPartner=="Ganpati Restaurant")"FOODVEXA" else selectedPartner
+                val data=HashMap(p).apply{put("available",nextAvailable);put("partnerName",effectivePartner);put("updatedAt",FieldValue.serverTimestamp())}
                 // Keep duplicate documents for the same product in sync. The customer app
                 // listens to the whole menu collection and otherwise may read a stale duplicate.
                 db.collection("menu").get()
@@ -403,7 +416,7 @@ class AdminActivity : Activity() {
                             val storedPartner=doc.getString("partnerName")?.trim().orEmpty()
                             val samePartner=storedPartner.equals(partnerKey,true) ||
                                 storedPartner.equals(selectedPartner,true) ||
-                                (storedPartner.isBlank() && selectedPartner.equals("FOODVEXA",true))
+                                (storedPartner.isBlank() && (selectedPartner.equals("FOODVEXA",true)||selectedPartner.equals("Ganpati Restaurant",true)))
                             doc.getString("name")?.trim().equals(productName,true) && samePartner
                         }
                         val batch=db.batch()
@@ -633,7 +646,8 @@ class AdminActivity : Activity() {
             .setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
-                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to selectedPartner,"updatedAt" to FieldValue.serverTimestamp())
+                val savePartner=product?.get("partnerName")?.toString()?.trim()?.takeIf{it.isNotBlank()}?:if(id!=null&&selectedPartner=="Ganpati Restaurant")"FOODVEXA" else selectedPartner
+                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
                 val ref=if(id?.startsWith("fallback:")==true)db.collection("menu").document(id.removePrefix("fallback:")) else if(id==null)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
                 if(id==null){
                     ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
