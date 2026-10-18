@@ -451,14 +451,24 @@ filtered.forEachIndexed{index,p->
         setSingleLine(true)
         ellipsize=android.text.TextUtils.TruncateAt.MARQUEE
         marqueeRepeatLimit=-1
-        isFocusable=false
+        isFocusable=true
         isFocusableInTouchMode=false
         isSelected=true
         gravity=Gravity.CENTER_VERTICAL
         setPadding(dp(4),0,dp(4),0)
         background=rounded(Color.rgb(48,35,25),6)
-        // Keep marquee selected without stealing focus from other product cards.
-        post { isSelected=true }
+        // Start marquee automatically after the product card is measured and attached.
+        post {
+            isSelected=true
+            requestLayout()
+            invalidate()
+        }
+        addOnAttachStateChangeListener(object:View.OnAttachStateChangeListener{
+            override fun onViewAttachedToWindow(v:View){
+                v.post { (v as? TextView)?.isSelected=true }
+            }
+            override fun onViewDetachedFromWindow(v:View){}
+        })
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
