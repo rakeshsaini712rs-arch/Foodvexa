@@ -976,9 +976,6 @@ private fun showProfile(){
   supportDialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply{text="Call";textSize=14f;contentDescription="Call";setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_call_brand,0,0,0);compoundDrawablePadding=dp(6)}
   supportDialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply{text="CANCEL";textSize=14f;contentDescription="Cancel"}
  }
- item("🗺️  Navigate to Shop","Open shop location"){
-  try{startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("geo:0,0?q="+android.net.Uri.encode(SHOP_LOCATION))))}catch(_:Exception){Toast.makeText(this,"Maps app not available",Toast.LENGTH_SHORT).show()}
- }
  item("🎨  Appearance","Dark • Light • Use device theme"){showAppearanceSelector()}
  item("⭐  Feedback","Share your feedback"){showFeedback()}
  item("ℹ️  About","About Foodvexa"){
