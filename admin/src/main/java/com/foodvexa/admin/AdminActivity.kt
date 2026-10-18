@@ -2,6 +2,8 @@ package com.foodvexa.admin
 
 import android.app.Activity
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -16,6 +18,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.messaging.FirebaseMessaging
 
 class AdminActivity : Activity() {
     private val bg=Color.rgb(246,247,249)
@@ -54,7 +57,25 @@ class AdminActivity : Activity() {
         body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(11)})
     }
     override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState)
-        if(auth.currentUser==null){goLogin();return};showPage("Dashboard")
+        val user=auth.currentUser
+        if(user==null){goLogin();return}
+        registerAdminPushToken(user.uid)
+        showPage("Dashboard")
+    }
+    private fun registerAdminPushToken(uid:String) {
+        if(android.os.Build.VERSION.SDK_INT>=33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7201)
+        }
+        db.collection("admins").document(uid).get().addOnSuccessListener { admin ->
+            if(!admin.exists() || admin.getBoolean("active")!=true) return@addOnSuccessListener
+            FirebaseMessaging.getInstance().token.addOnSuccessListener tokenListener@{ token ->
+                if(token.isNullOrBlank()) return@tokenListener
+                db.collection("notificationTokens").document(uid).set(
+                    mapOf("token" to token, "role" to "admin", "updatedAt" to FieldValue.serverTimestamp())
+                )
+            }
+        }
     }
     override fun onDestroy(){dashboardOrdersListener?.remove();ordersListener?.remove();menuListener?.remove();super.onDestroy()}
     private fun goLogin(){getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();auth.signOut();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()}
