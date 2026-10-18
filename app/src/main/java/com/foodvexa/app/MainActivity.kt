@@ -93,7 +93,7 @@ class MainActivity:AppCompatActivity(){
   val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),0)}
   val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(82)).apply{rightMargin=dp(8)})}
-  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(70)))
+  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow)},LinearLayout.LayoutParams(-1,dp(100)))
   fixed.addView(stickyCategories)
 
   // Real app header and controls sit ABOVE the clean promotional banner.
@@ -159,7 +159,7 @@ class MainActivity:AppCompatActivity(){
   categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   categories.forEach{c->categoryRow!!.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(92)).apply{rightMargin=dp(8)})}
   val categoryScroller=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)}
-  content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(82)))
+  content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(100)))
   val scrollView=content.parent as ScrollView
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
    // Show the fixed category strip only after the original category row has fully scrolled away.
@@ -198,7 +198,7 @@ class MainActivity:AppCompatActivity(){
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
   box.addView(image,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(4)})
   box.addView(label(c.name,10.5f,true,if(selected)Color.WHITE else ink).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;includeFontPadding=false;letterSpacing=0.01f})
-  if(c.name=="Restaurant / Hotel")image.setImageResource(R.drawable.restaurant_hotel_logo) else loadImage(image,c.imageUrl)
+  loadImage(image,c.imageUrl)
   return box
  }
  private fun categoryBackground(selected:Boolean)=GradientDrawable().apply{setColor(if(selected)orange else Color.WHITE);cornerRadius=dp(18).toFloat();setStroke(dp(1),if(selected)orange else Color.rgb(225,225,230))}
