@@ -353,10 +353,14 @@ class AdminActivity : Activity() {
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
+        val ganpatiProductNames=if(isGanpatiSharedMenu) products.filter{it.second["partnerName"]?.toString()?.trim().equals("Ganpati Restaurant",true)}.mapNotNull{it.second["name"]?.toString()?.trim()?.lowercase()}.toSet() else emptySet()
         val firestorePartnerProducts=if(isGanpatiSharedMenu) products.filter{
             val partner=it.second["partnerName"]?.toString()?.trim().orEmpty()
-            (partner.isBlank()||partner.equals("FOODVEXA",true)) &&
-            (it.second["category"]?.toString().equals("Snacks",true)||it.second["category"]?.toString().equals("Sweets",true))
+            val category=it.second["category"]?.toString().orEmpty()
+            val isSnackOrSweet=category.equals("Snacks",true)||category.equals("Sweets",true)
+            partner.equals("Ganpati Restaurant",true) ||
+                ((partner.isBlank()||partner.equals("FOODVEXA",true)) && isSnackOrSweet &&
+                 it.second["name"]?.toString()?.trim()?.lowercase() !in ganpatiProductNames)
         } else products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
         val fallback=if(selectedPartner.equals("FOODVEXA",true)||isGanpatiSharedMenu)foodvexaFallbackProducts().filter{f->
             (!isGanpatiSharedMenu || f.second["category"]?.toString().equals("Snacks",true)||f.second["category"]?.toString().equals("Sweets",true)) &&
@@ -404,19 +408,24 @@ class AdminActivity : Activity() {
             actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
                 val productName=p["name"]?.toString()?.trim().orEmpty()
                 val nextAvailable=!available
+                val sourcePartner=p["partnerName"]?.toString()?.trim().orEmpty()
                 val ref=db.collection("menu").document(id.removePrefix("fallback:"))
-                val effectivePartner=p["partnerName"]?.toString()?.trim()?.takeIf{it.isNotBlank()}?:if(selectedPartner=="Ganpati Restaurant")"FOODVEXA" else selectedPartner
+                val effectivePartner=if(selectedPartner.equals("Ganpati Restaurant",true))"Ganpati Restaurant" else sourcePartner.takeIf{it.isNotBlank()}?:selectedPartner
                 val data=HashMap(p).apply{put("available",nextAvailable);put("partnerName",effectivePartner);put("updatedAt",FieldValue.serverTimestamp())}
-                // Keep duplicate documents for the same product in sync. The customer app
-                // listens to the whole menu collection and otherwise may read a stale duplicate.
+                if(selectedPartner.equals("Ganpati Restaurant",true) && !sourcePartner.equals("Ganpati Restaurant",true)){
+                    val copyRef=db.collection("menu").document(productName.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()+"-ganpati")
+                    copyRef.set(data).addOnSuccessListener{Toast.makeText(this,"Ganpati availability changed separately; Foodvexa unchanged.",Toast.LENGTH_SHORT).show();showPage("Menu")}
+                        .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                    return@button
+                }
+                // Update only the selected partner's matching products.
                 db.collection("menu").get()
                     .addOnSuccessListener{snapshot->
                         val partnerKey=(p["partnerName"]?.toString()?.takeIf{it.isNotBlank()}?:selectedPartner).trim()
                         val matches=snapshot.documents.filter{doc->
                             val storedPartner=doc.getString("partnerName")?.trim().orEmpty()
                             val samePartner=storedPartner.equals(partnerKey,true) ||
-                                storedPartner.equals(selectedPartner,true) ||
-                                (storedPartner.isBlank() && (selectedPartner.equals("FOODVEXA",true)||selectedPartner.equals("Ganpati Restaurant",true)))
+                                (storedPartner.isBlank() && selectedPartner.equals("FOODVEXA",true))
                             doc.getString("name")?.trim().equals(productName,true) && samePartner
                         }
                         val batch=db.batch()
@@ -646,13 +655,15 @@ class AdminActivity : Activity() {
             .setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
-                val savePartner=product?.get("partnerName")?.toString()?.trim()?.takeIf{it.isNotBlank()}?:if(id!=null&&selectedPartner=="Ganpati Restaurant")"FOODVEXA" else selectedPartner
+                val existingPartner=product?.get("partnerName")?.toString()?.trim().orEmpty()
+                val createGanpatiCopy=selectedPartner.equals("Ganpati Restaurant",true) && id!=null && !existingPartner.equals("Ganpati Restaurant",true)
+                val savePartner=if(selectedPartner.equals("Ganpati Restaurant",true)) "Ganpati Restaurant" else existingPartner.takeIf{it.isNotBlank()}?:selectedPartner
                 val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
-                val ref=if(id?.startsWith("fallback:")==true)db.collection("menu").document(id.removePrefix("fallback:")) else if(id==null)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()) else db.collection("menu").document(id)
-                if(id==null){
+                val ref=if(id?.startsWith("fallback:")==true && !createGanpatiCopy)db.collection("menu").document(id.removePrefix("fallback:")) else if(id==null||createGanpatiCopy)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()+"-"+savePartner.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')) else db.collection("menu").document(id)
+                if(id==null||createGanpatiCopy){
                     ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
                         partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
-                        Toast.makeText(this,"Product saved to live menu.",Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this,if(createGanpatiCopy)"Ganpati price saved separately; Foodvexa price unchanged." else "Product saved to live menu.",Toast.LENGTH_SHORT).show()
                         showPage("Menu")
                     }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
                 }else{
