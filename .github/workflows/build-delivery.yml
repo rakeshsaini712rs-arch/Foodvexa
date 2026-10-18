@@ -2,7 +2,7 @@ name: Build Foodvexa Delivery APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/order-push-notifications]
     paths:
       - "delivery/**"
       - "settings.gradle.kts"
