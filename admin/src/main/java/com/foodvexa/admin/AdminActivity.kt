@@ -655,38 +655,18 @@ class AdminActivity : Activity() {
             .setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
-                val existingPartner=product?.get("partnerName")?.toString()?.trim().orEmpty()
-                val createGanpatiCopy=selectedPartner.equals("Ganpati Restaurant",true) && id!=null && !existingPartner.equals("Ganpati Restaurant",true)
-                val savePartner=if(selectedPartner.equals("Ganpati Restaurant",true)) "Ganpati Restaurant" else existingPartner.takeIf{it.isNotBlank()}?:selectedPartner
+                val savePartner=if(selectedPartner.equals("Ganpati Restaurant",true)) "Ganpati Restaurant" else "FOODVEXA"
                 val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
-                val ref=if(id?.startsWith("fallback:")==true && !createGanpatiCopy)db.collection("menu").document(id.removePrefix("fallback:")) else if(id==null||createGanpatiCopy)db.collection("menu").document(n.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()+"-"+savePartner.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')) else db.collection("menu").document(id)
-                if(id==null||createGanpatiCopy){
-                    ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
-                        partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
-                        Toast.makeText(this,if(createGanpatiCopy)"Ganpati price saved separately; Foodvexa price unchanged." else "Product saved to live menu.",Toast.LENGTH_SHORT).show()
-                        showPage("Menu")
-                    }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-                }else{
-                    // A legacy menu can contain duplicate documents with the same product name.
-                    // Update every Foodvexa/legacy-blank match so the customer listener cannot
-                    // select an old price or availability value from another duplicate.
-                    db.collection("menu").get().addOnSuccessListener{snapshot->
-                        val matches=snapshot.documents.filter{doc->
-                            val storedPartner=doc.getString("partnerName")?.trim().orEmpty()
-                            val samePartner=storedPartner.equals(selectedPartner,true) ||
-                                (storedPartner.isBlank() && selectedPartner.equals("FOODVEXA",true))
-                            doc.getString("name")?.trim().equals(n,true) && samePartner
-                        }
-                        val batch=db.batch()
-                        if(matches.isEmpty()) batch.set(ref,data,com.google.firebase.firestore.SetOptions.merge())
-                        else matches.forEach{doc->batch.set(doc.reference,data,com.google.firebase.firestore.SetOptions.merge())}
-                        batch.commit().addOnSuccessListener{
-                            partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
-                            Toast.makeText(this,"Product updated.",Toast.LENGTH_SHORT).show()
-                            showPage("Menu")
-                        }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-                    }.addOnFailureListener{Toast.makeText(this,"Could not check menu records: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-                }
+                // Keep each partner's product in its own stable Firestore document.
+                // Never write a Ganpati edit into the shared Foodvexa/fallback record.
+                val productKey=n.lowercase(java.util.Locale.ROOT).replace(Regex("[^a-z0-9]+"),"-").trim('-')
+                val partnerKey=savePartner.lowercase(java.util.Locale.ROOT).replace(Regex("[^a-z0-9]+"),"-").trim('-')
+                val ref=db.collection("menu").document("$productKey-$partnerKey")
+                ref.set(data,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
+                    partnerCategories.getOrPut(selectedPartner){mutableSetOf()}.add(cat);selectedMenuCategory=cat
+                    Toast.makeText(this,if(savePartner.equals("Ganpati Restaurant",true))"Ganpati price saved separately; Foodvexa price unchanged." else "Product saved to Foodvexa menu.",Toast.LENGTH_SHORT).show()
+                    showPage("Menu")
+                }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
             }.show()
     }
     private fun deliveryPage(){
