@@ -466,7 +466,7 @@ if(selectedPartnerShop=="Ganpati Restaurant"){
  return
 }
 // Normalize legacy category casing ("snacks" vs "Snacks") so these products remain visible.
-val filtered=products.filter{
+val filtered=currentMenuProducts().filter{
  (if(selectedPartnerShop=="Ganpati Restaurant") it.category.trim().equals("Snacks",true)||it.category.trim().equals("Sweets",true) else true) &&
  (selectedCategory=="All"||it.category.trim().equals(selectedCategory.trim(),ignoreCase=true))&&
  (query.isBlank()||it.name.contains(query,true))
@@ -508,13 +508,13 @@ filtered.forEachIndexed{index,p->
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
-    val soldOut=productAvailability[p.name.lowercase(java.util.Locale.ROOT)]==false
+    val soldOut=isProductSoldOut(p)
     card.addView(label(if(soldOut)"• Sold Out" else "• Available",10.5f,true,if(soldOut)Color.rgb(230,55,65) else Color.rgb(50,205,120)),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
-        if(productAvailability[p.name.lowercase(java.util.Locale.ROOT)]==false){
+        if(isProductSoldOut(p)){
             val sold=TextView(this).apply{text="Sold Out";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
             bottom.addView(sold,LinearLayout.LayoutParams(0,dp(30),1.08f))
         }else{
@@ -574,6 +574,13 @@ filtered.forEachIndexed{index,p->
  }
  private fun saveLocation(value:String,label:String,landmark:String=""){val v=value.trim();if(v.isBlank()||v.length<10||!v.contains(Regex("[,0-9]"))){Toast.makeText(this,"Please enter your complete address, including house/shop number, street or area, and city.",Toast.LENGTH_LONG).show();return};val full=if(landmark.trim().isBlank())v else "$v\nLandmark: ${landmark.trim()}";val e=prefs.edit().putString("location",full).putString("location_label",label).putString("delivery_landmark",landmark.trim());when(label){"Home"->e.putString("home_address",full);"Work"->e.putString("work_address",full);"Delivery"->e.putString("delivery_address",full)};e.apply();showHome()}
  private val productAvailability=mutableMapOf<String,Boolean>()
+ private val ganpatiAvailability=mutableMapOf<String,Boolean>()
+ private var ganpatiMenuProducts:List<Product> = emptyList()
+ private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
+ private fun isProductSoldOut(p:Product):Boolean {
+  val key=p.name.lowercase(java.util.Locale.ROOT)
+  return if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailability[key]==false else productAvailability[key]==false
+ }
 private fun loadSharedMenu(){
  menuListener?.remove();menuListener=FirebaseFirestore.getInstance().collection("menu").addSnapshotListener{snapshot,error->
   if(error!=null){
@@ -583,32 +590,28 @@ private fun loadSharedMenu(){
   }
   if(snapshot==null)return@addSnapshotListener
   val base=products.toList()
-  val liveProducts=mutableListOf<Product>()
-  productAvailability.clear()
-  // If older duplicate menu documents share a product name, use the most recently
-  // updated document so an old "available" record cannot override the admin change.
-  val latestByName=linkedMapOf<String,com.google.firebase.firestore.DocumentSnapshot>()
+  val foodvexaByName=linkedMapOf<String,com.google.firebase.firestore.DocumentSnapshot>()
+  val ganpatiByName=linkedMapOf<String,com.google.firebase.firestore.DocumentSnapshot>()
+  fun chooseLatest(target:MutableMap<String,com.google.firebase.firestore.DocumentSnapshot>,doc:com.google.firebase.firestore.DocumentSnapshot,name:String){
+   val key=name.lowercase(java.util.Locale.ROOT)
+   val old=target[key]
+   val now=doc.getTimestamp("updatedAt")?.toDate()?.time?:0L
+   val oldTime=old?.getTimestamp("updatedAt")?.toDate()?.time?:0L
+   val partner=doc.getString("partnerName")?.trim().orEmpty()
+   val oldPartner=old?.getString("partnerName")?.trim().orEmpty()
+   if(old==null||now>oldTime||(now==oldTime&&partner.equals("FOODVEXA",true)&&!oldPartner.equals("FOODVEXA",true)))target[key]=doc
+  }
   snapshot.documents.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
-   // The home menu is Foodvexa's own menu. Do not let same-named products
-   // from Cake Tower or other partners override its live availability.
-   val partner=doc.getString("partnerName")?.trim().orEmpty()
-   if(partner.isNotBlank() && !partner.equals("FOODVEXA",true))return@forEach
-   val key=name.lowercase(java.util.Locale.ROOT)
-   val previous=latestByName[key]
-   val currentTime=doc.getTimestamp("updatedAt")?.toDate()?.time?:0L
-   val previousTime=previous?.getTimestamp("updatedAt")?.toDate()?.time?:0L
-   val currentPartner=doc.getString("partnerName")?.trim().orEmpty()
-   val previousPartner=previous?.getString("partnerName")?.trim().orEmpty()
-   // Prefer the explicitly-owned Foodvexa record when timestamps tie; older legacy
-   // blank-partner duplicates must never override the canonical record's availability.
-   val currentIsCanonical=currentPartner.equals("FOODVEXA",true)
-   val previousIsCanonical=previousPartner.equals("FOODVEXA",true)
-   if(previous==null || currentTime>previousTime ||
-      (currentTime==previousTime && currentIsCanonical && !previousIsCanonical))latestByName[key]=doc
+   when(doc.getString("partnerName")?.trim().orEmpty().lowercase(java.util.Locale.ROOT)){
+    "", "foodvexa" -> chooseLatest(foodvexaByName,doc,name)
+    "ganpati restaurant" -> chooseLatest(ganpatiByName,doc,name)
+   }
   }
-  latestByName.values.forEach{doc->
+  productAvailability.clear()
+  val foodvexaLive=mutableListOf<Product>()
+  foodvexaByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
    val available=doc.getBoolean("available")!=false
@@ -618,18 +621,37 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   liveProducts.add(Product(name,price,category,image))
+   foodvexaLive.add(Product(name,price,category,image))
   }
-  // Replace static products by live Firestore records using case-insensitive names.
-  val liveNames=liveProducts.map{it.name}.toSet()
+  val foodvexaNames=foodvexaLive.map{it.name}
   products.clear()
-  products.addAll(base.filterNot{baseItem->liveNames.any{it.equals(baseItem.name,true)}})
-  products.addAll(liveProducts)
+  products.addAll(base.filterNot{item->foodvexaNames.any{it.equals(item.name,true)}})
+  products.addAll(foodvexaLive)
+
+  // Ganpati shares the existing Snacks & Sweets menu for products not yet copied.
+  // Once an Admin edit creates a Ganpati-owned record, that record takes precedence
+  // only inside Ganpati's page; it never overwrites Foodvexa's product.
+  ganpatiAvailability.clear()
+  val ganpatiLive=mutableListOf<Product>()
+  ganpatiByName.values.forEach{doc->
+   val name=doc.getString("name")?.trim().orEmpty()
+   if(name.isBlank())return@forEach
+   val available=doc.getBoolean("available")!=false
+   val idx=base.indexOfFirst{it.name.equals(name,true)}
+   ganpatiAvailability[name.lowercase(java.util.Locale.ROOT)]=available
+   val rawPrice=doc.get("price") as? Number
+   val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
+   val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
+   val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
+   ganpatiLive.add(Product(name,price,category,image))
+  }
+  val sharedFallback=products.filter{it.category.equals("Snacks",true)||it.category.equals("Sweets",true)}
+  ganpatiMenuProducts=sharedFallback.filterNot{item->ganpatiLive.any{it.name.equals(item.name,true)}}+ganpatiLive
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
 private fun placeOrderAndShowOrders(){
- val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
+ val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
  if(FirebaseAuth.getInstance().currentUser==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
