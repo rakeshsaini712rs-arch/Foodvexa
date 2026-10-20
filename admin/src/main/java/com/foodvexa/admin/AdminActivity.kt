@@ -333,7 +333,7 @@ class AdminActivity : Activity() {
         addLine("PARTNERS",12f,Color.GRAY,true)
         val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         partnerNames.forEach { partner ->
-            val count=if(partner=="Ganpati Restaurant") products.count{(it.second["partnerName"]?.toString()?.trim().orEmpty().let{v->v.isBlank()||v.equals("FOODVEXA",true)}) && (it.second["category"]?.toString().equals("Snacks",true)||it.second["category"]?.toString().equals("Sweets",true))} else products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
+            val count=products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
                 setPadding(dp(12),dp(11),dp(12),dp(11))
@@ -354,21 +354,12 @@ class AdminActivity : Activity() {
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
         val ganpatiProductNames=if(isGanpatiSharedMenu) products.filter{it.second["partnerName"]?.toString()?.trim().equals("Ganpati Restaurant",true)}.mapNotNull{it.second["name"]?.toString()?.trim()?.lowercase()}.toSet() else emptySet()
-        val firestorePartnerProducts=if(isGanpatiSharedMenu) products.filter{
-            val partner=it.second["partnerName"]?.toString()?.trim().orEmpty()
-            val category=it.second["category"]?.toString().orEmpty()
-            val isSnackOrSweet=category.equals("Snacks",true)||category.equals("Sweets",true)
-            partner.equals("Ganpati Restaurant",true) ||
-                ((partner.isBlank()||partner.equals("FOODVEXA",true)) && isSnackOrSweet &&
-                 it.second["name"]?.toString()?.trim()?.lowercase() !in ganpatiProductNames)
-        } else products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
-        val fallback=if(selectedPartner.equals("FOODVEXA",true)||isGanpatiSharedMenu)foodvexaFallbackProducts().filter{f->
-            (!isGanpatiSharedMenu || f.second["category"]?.toString().equals("Snacks",true)||f.second["category"]?.toString().equals("Sweets",true)) &&
+        val firestorePartnerProducts=i        val firestorePartnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
+        val fallback=if(selectedPartner.equals("FOODVEXA",true))foodvexaFallbackProducts().filter{f->
             firestorePartnerProducts.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true}
         } else emptyList()
         val partnerProducts=firestorePartnerProducts+fallback
-        val categoryNames=if(isGanpatiSharedMenu) listOf("Snacks","Sweets") else (defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
-        val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
+tegoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
         val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         (listOf("All Products")+categoryNames).forEach{cat->
             val count=if(cat=="All Products")partnerProducts.size else partnerProducts.count{it.second["category"]?.toString().equals(cat,true)}
@@ -388,7 +379,7 @@ class AdminActivity : Activity() {
             categoryActions.addView(button("MANAGE CATEGORIES",{manageCategoriesDialog(categoryNames)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f))
             body.addView(categoryActions,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(14)})
         } else {
-            addLine("Ganpati menu uses Foodvexa's existing Snacks & Sweets products for now.",12f,Color.GRAY)
+            addLine("Ganpati menu is empty until you add Ganpati-specific products.",12f,Color.GRAY)
         }
 
         val productHeader=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
