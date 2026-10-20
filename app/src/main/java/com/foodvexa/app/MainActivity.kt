@@ -306,6 +306,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   ShopCard("Hotel Nawalgarh Plaza","Hotel • Rooms • Restaurant","Near Roadways Bus Depot, Sikar–Jhunjhunu Road",R.drawable.img_12_hotel_nawalgarh),
   ShopCard("Vivaana Museum Hotel","Heritage Hotel • Stay • Restaurant","Mandi Gate, Nawalgarh, Rajasthan 333042",R.drawable.img_16_vivaana_museum_hotel),
   ShopCard("Bungli Restaurant","Indian Food • Thali • Family Dining","Nawalgarh, Rajasthan",R.drawable.img_14_bungli_restaurant),
+  ShopCard("Ganpati Restaurant","Sweets","Nansa Gate, Nawalgarh",R.drawable.ganpati_restaurant_sweets_nawalgarh),
  )
  val shops=if(!restaurantMode)allShops else if(selectedCity.equals("Nawalgarh",true))allShops.filter{it.name!="FOODVEXA"} else emptyList()
  if(restaurantMode && shops.isEmpty()){
