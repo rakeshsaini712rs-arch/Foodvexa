@@ -330,12 +330,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    isClickable=true;isFocusable=true
    setOnClickListener{
     if(shop.name=="Ganpati Restaurant"){
-     selectedPartnerShop="Ganpati Restaurant"
-     updatePartnerCategoryVisibility()
-     selectedCategory="All"
-     renderProducts()
-     val scroll=(content.parent as? ScrollView)
-     scroll?.post{scroll.smoothScrollTo(0,0)}
+     return@setOnClickListener
     }else if(shop.name=="FOODVEXA" || shop.name=="Cake Tower"){
      selectedPartnerShop=""
      updatePartnerCategoryVisibility()
