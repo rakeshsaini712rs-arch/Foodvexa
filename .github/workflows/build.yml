@@ -3,7 +3,7 @@ name: Build Foodvexa APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, base-881-867]
   workflow_dispatch:
 
 permissions:
