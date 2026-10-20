@@ -648,7 +648,7 @@ private fun loadSharedMenu(){
   }
   // Ganpati is a new partner card only. Do not show Foodvexa fallback products here.
   // Its menu remains empty until Ganpati-specific products are added in Admin.
-  ganpatiMenuProducts=ganpatiLive
+  ganpatiMenuProducts=emptyList()
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
