@@ -646,8 +646,9 @@ private fun loadSharedMenu(){
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
    ganpatiLive.add(Product(name,price,category,image))
   }
-  val sharedFallback=products.filter{it.category.equals("Snacks",true)||it.category.equals("Sweets",true)}
-  ganpatiMenuProducts=sharedFallback.filterNot{item->ganpatiLive.any{it.name.equals(item.name,true)}}+ganpatiLive
+  // Ganpati is a new partner card only. Do not show Foodvexa fallback products here.
+  // Its menu remains empty until Ganpati-specific products are added in Admin.
+  ganpatiMenuProducts=ganpatiLive
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
