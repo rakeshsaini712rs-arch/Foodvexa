@@ -353,13 +353,14 @@ class AdminActivity : Activity() {
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
-        val ganpatiProductNames=if(isGanpatiSharedMenu) products.filter{it.second["partnerName"]?.toString()?.trim().equals("Ganpati Restaurant",true)}.mapNotNull{it.second["name"]?.toString()?.trim()?.lowercase()}.toSet() else emptySet()
-        val firestorePartnerProducts=i        val firestorePartnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
+        val firestorePartnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
         val fallback=if(selectedPartner.equals("FOODVEXA",true))foodvexaFallbackProducts().filter{f->
             firestorePartnerProducts.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true}
         } else emptyList()
         val partnerProducts=firestorePartnerProducts+fallback
-tegoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
+        val categoryNames=if(isGanpatiSharedMenu) listOf("Snacks","Sweets") else (defaultCategories+partnerProducts.mapNotNull{it.second["category"]?.toString()?.takeIf{v->v.isNotBlank()}}+ (partnerCategories[selectedPartner]?.toList()?: emptyList())).distinct()
+        val categoryScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false}
+
         val categoryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
         (listOf("All Products")+categoryNames).forEach{cat->
             val count=if(cat=="All Products")partnerProducts.size else partnerProducts.count{it.second["category"]?.toString().equals(cat,true)}
