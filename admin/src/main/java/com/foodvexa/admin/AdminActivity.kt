@@ -318,7 +318,7 @@ class AdminActivity : Activity() {
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
-    private val partnerNames=listOf("FOODVEXA","Cake Tower","Santa Banta Bakery","Kanha Bakery & Fast Food","Sadafal Cafe & Dining","Bistro Nawalgarh","Brew & Bite","Chotiya Ji Sweets","Shree Rajaram Peda Bhandar","Royal Fast Food","Hotel Marwadi & Restaurant","Mayur Hotel & Restaurant","La Veg Pizza","Hotel Nawalgarh Plaza","Vivaana Museum Hotel","Bungli Restaurant","Ganpati Restaurant")
+    private val partnerNames=listOf("FOODVEXA","Cake Tower","Santa Banta Bakery","Kanha Bakery & Fast Food","Sadafal Cafe & Dining","Bistro Nawalgarh","Brew & Bite","Chotiya Ji Sweets","Shree Rajaram Peda Bhandar","Royal Fast Food","Hotel Marwadi & Restaurant","Mayur Hotel & Restaurant","La Veg Pizza","Hotel Nawalgarh Plaza","Vivaana Museum Hotel","Bungli Restaurant")
     private val defaultCategories=listOf("Snacks","Chaat Special","Fast Food","Beverages","Sweets","Birthday Special","Meals","Special Sabji","Deals & Offers")
     private var selectedPartner="FOODVEXA"
     private var selectedMenuCategory="All Products"
