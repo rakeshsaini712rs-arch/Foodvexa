@@ -185,14 +185,8 @@ class MainActivity:AppCompatActivity(){
      card.background=categoryBackground(cat.name==selectedCategory)
      if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
     }
-    renderProducts()
-    val scroll=(content.parent as? ScrollView)
-    // Bring the selected category title and product cards into view, rather than
-    // returning to the top of the home screen where Add to Cart sits below the fold.
-    val productTitle=(0 until content.childCount)
-     .map{content.getChildAt(it)}
-     .firstOrNull{it is TextView && it.text.toString()==selectedCategory}
-    if(productTitle!=null)scroll?.post{scroll.smoothScrollTo(0,(productTitle.top-dp(6)).coerceAtLeast(0))}
+    // Keep the current scroll position when a category is tapped.
+    // Only update the selected category and product list; do not auto-scroll.
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
