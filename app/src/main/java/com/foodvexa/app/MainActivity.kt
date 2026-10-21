@@ -595,7 +595,8 @@ private fun placeOrderAndShowOrders(){
  if(FirebaseAuth.getInstance().currentUser==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{FirebaseAuth.getInstance().currentUser?.displayName.orEmpty()}
  val savedMobile=prefs.getString("profile_mobile","").orEmpty()
- val savedAddress=prefs.getString("profile_address","").orEmpty().ifBlank{prefs.getString("delivery_address","").orEmpty().ifBlank{prefs.getString("location","").orEmpty()}}
+ val gpsAddress=if(prefs.getBoolean("location_is_gps",false))prefs.getString("location","").orEmpty() else ""
+ val savedAddress=gpsAddress.ifBlank{prefs.getString("profile_address","").orEmpty().ifBlank{prefs.getString("delivery_address","").orEmpty().ifBlank{prefs.getString("location","").orEmpty()}}}
  val form=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(8),dp(20),dp(4))}
  val name=EditText(this).apply{hint="Customer name";setText(savedName);setSingleLine(true);setTextColor(primaryText);setHintTextColor(secondaryText);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
  val mobile=EditText(this).apply{hint="10-digit mobile number";setText(savedMobile);inputType=android.text.InputType.TYPE_CLASS_PHONE;setSingleLine(true);setTextColor(primaryText);setHintTextColor(secondaryText);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10);setSelectAllOnFocus(false)}
