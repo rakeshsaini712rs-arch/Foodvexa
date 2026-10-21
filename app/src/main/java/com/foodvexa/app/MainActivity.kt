@@ -601,7 +601,23 @@ private fun placeOrderAndShowOrders(){
  form.addView(label("Confirm customer details",20f,true,primaryText),margin(0,0,0,12))
  form.addView(label("Name",13f,true,secondaryText),margin(0,0,0,4));form.addView(name,margin(0,0,0,10))
  form.addView(label("Mobile number",13f,true,secondaryText),margin(0,0,0,4));form.addView(mobile,margin(0,0,0,10))
- form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4));form.addView(address,margin(0,0,0,8))
+ form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4))
+ var scheduledDate="";var scheduledTime=""
+ val scheduleLabel=label("Delivery: ASAP",14f,true,orange)
+ form.addView(primaryButton("🗓  Schedule Order"){
+  val now=java.util.Calendar.getInstance()
+  DatePickerDialog(this,{_,year,month,day->
+   val chosen=java.util.Calendar.getInstance().apply{set(year,month,day,0,0,0);set(java.util.Calendar.MILLISECOND,0)}
+   val today=java.util.Calendar.getInstance().apply{set(java.util.Calendar.HOUR_OF_DAY,0);set(java.util.Calendar.MINUTE,0);set(java.util.Calendar.SECOND,0);set(java.util.Calendar.MILLISECOND,0)}
+   if(chosen.before(today)){Toast.makeText(this,"Please choose today or a future date",Toast.LENGTH_LONG).show();return@DatePickerDialog}
+   scheduledDate=String.format(java.util.Locale.US,"%04d-%02d-%02d",year,month+1,day)
+   TimePickerDialog(this,{_,hour,minute->
+    scheduledTime=String.format(java.util.Locale.US,"%02d:%02d",hour,minute)
+    scheduleLabel.text="Scheduled delivery: $scheduledDate at $scheduledTime"
+   },now.get(java.util.Calendar.HOUR_OF_DAY),now.get(java.util.Calendar.MINUTE),false).show()
+  },now.get(java.util.Calendar.YEAR),now.get(java.util.Calendar.MONTH),now.get(java.util.Calendar.DAY_OF_MONTH)).show()
+ },margin(0,4,0,4))
+ form.addView(scheduleLabel,margin(0,0,0,8))
  val dialog=AlertDialog.Builder(this).setTitle("Customer Details").setView(form).setNegativeButton("CANCEL",null).setPositiveButton("CONFIRM ORDER",null).create()
  dialog.setOnShowListener{
   name.clearFocus();mobile.clearFocus();address.clearFocus()
@@ -612,12 +628,12 @@ private fun placeOrderAndShowOrders(){
    if(m.filter{it.isDigit()}.length!=10){mobile.error="Enter a valid 10-digit mobile number";return@setOnClickListener}
    if(a.length<10){address.error="Enter complete delivery address";return@setOnClickListener}
    prefs.edit().putString("profile_name",n).putString("profile_mobile",m).putString("profile_address",a).putString("delivery_address",a).putString("location",a).putString("location_label","Delivery").apply()
-   dialog.dismiss();submitOrder(n,m,a)
+   dialog.dismiss();submitOrder(n,m,a,scheduledDate,scheduledTime)
   }
  }
  dialog.show()
 }
-private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String){
+private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledDate:String="",scheduledTime:String=""){
  val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
@@ -627,7 +643,7 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val deliveryFee=if(subtotal>500) 0 else 30
  val total=subtotal+deliveryFee
- val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nPayment: Cash on Delivery\nTotal: ₹"+total
+ val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nPayment: Cash on Delivery"+(if(scheduledDate.isBlank()) "" else "\nScheduled delivery: "+scheduledDate+" at "+scheduledTime)+"\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)}}
  val data=hashMapOf<String,Any>(
   "customerUid" to user.uid,
@@ -641,6 +657,9 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
   "total" to total,
   "paymentMethod" to (if(paymentMethod.contains("UPI", ignoreCase=true)) "UPI" else "COD"),
   "paymentStatus" to paymentStatus,
+  "orderType" to (if(scheduledDate.isBlank()) "Standard" else "Scheduled"),
+  "scheduledDeliveryDate" to scheduledDate,
+  "scheduledDeliveryTime" to scheduledTime,
   "status" to "New",
   "createdAt" to FieldValue.serverTimestamp(),
   "updatedAt" to FieldValue.serverTimestamp()
