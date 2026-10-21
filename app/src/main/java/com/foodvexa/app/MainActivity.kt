@@ -185,8 +185,8 @@ class MainActivity:AppCompatActivity(){
      card.background=categoryBackground(cat.name==selectedCategory)
      if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
     }
-    // Keep the current scroll position when a category is tapped.
-    // Only update the selected category and product list; do not auto-scroll.
+    // Refresh the visible products for this category without changing scroll position.
+    renderProducts()
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
