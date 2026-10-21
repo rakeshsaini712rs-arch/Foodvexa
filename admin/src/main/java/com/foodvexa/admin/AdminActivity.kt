@@ -198,6 +198,9 @@ class AdminActivity : Activity() {
             card.addView(text("Customer: "+(d["customerName"]?.toString()?: "Customer"),13f))
             card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
             card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
+            val scheduledDate=d["scheduledDeliveryDate"]?.toString().orEmpty()
+            val scheduledTime=d["scheduledDeliveryTime"]?.toString().orEmpty()
+            if(scheduledDate.isNotBlank())card.addView(text("SCHEDULED DELIVERY: $scheduledDate at $scheduledTime",14f,Color.rgb(0,112,82),true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             card.addView(button("ASSIGN DELIVERY BOY",{
                 val field=EditText(this).apply{hint="Delivery boy login email";setText(d["deliveryBoyEmail"]?.toString().orEmpty())}
                 android.app.AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the delivery boy login email created in Admin App.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
