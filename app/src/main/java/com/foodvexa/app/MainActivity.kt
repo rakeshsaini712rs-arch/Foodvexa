@@ -210,9 +210,15 @@ class MainActivity:AppCompatActivity(){
     renderProducts()
     searchBox?.clearFocus()
     hideKeyboard()
-    homeScrollView?.post{
-     homeScrollView?.scrollTo(0,0)
-     homeScrollView?.post{homeScrollView?.scrollTo(0,0)}
+    // Reset the vertical page after products/layout are refreshed.
+    homeScrollView?.apply{
+     clearFocus()
+     scrollTo(0,0)
+     post{
+      fullScroll(View.FOCUS_UP)
+      scrollTo(0,0)
+      post{scrollTo(0,0)}
+     }
     }
    }
   }
