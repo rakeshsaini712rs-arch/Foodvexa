@@ -603,7 +603,7 @@ private fun placeOrderAndShowOrders(){
  form.addView(label("Confirm customer details",20f,true,primaryText),margin(0,0,0,12))
  form.addView(label("Name",13f,true,secondaryText),margin(0,0,0,4));form.addView(name,margin(0,0,0,10))
  form.addView(label("Mobile number",13f,true,secondaryText),margin(0,0,0,4));form.addView(mobile,margin(0,0,0,10))
- form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4))
+ form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4));form.addView(address,LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,dp(76)).apply{bottomMargin=dp(8)})
  var scheduledDate="";var scheduledTime=""
  val scheduleLabel=label("Delivery: ASAP",14f,true,orange)
  form.addView(primaryButton("🗓  Schedule Order"){
