@@ -82,7 +82,7 @@ class DeliveryActivity : Activity() {
                 card.addView(label("Address: "+address,14f))
                 val scheduledDate=doc.getString("scheduledDeliveryDate").orEmpty()
                 val scheduledTime=doc.getString("scheduledDeliveryTime").orEmpty()
-                if(scheduledDate.isNotBlank())card.addView(label("SCHEDULED DELIVERY: $scheduledDate at $scheduledTime",14f,green,true))
+                if(scheduledDate.isNotBlank())card.addView(label("SCHEDULED DELIVERY: $scheduledDate at $scheduledTime",14f,Color.rgb(0,112,82),true))
                 card.addView(label("Items: "+(doc.getString("itemsText")?: "—"),13f,Color.DKGRAY))
                 card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 card.addView(button("OPEN GOOGLE MAPS",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
