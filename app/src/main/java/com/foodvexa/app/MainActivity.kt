@@ -203,9 +203,8 @@ class MainActivity:AppCompatActivity(){
     stickyCategoryScroller?.smoothScrollTo(0,0)
     renderProducts()
     content.post{
-     val heading=productHeading
-     val scroll=content.parent as? ScrollView
-     if(heading!=null && scroll!=null)scroll.smoothScrollTo(0,heading.top)
+     // Return to the original home top so banner and category row are visible again.
+     (content.parent as? ScrollView)?.smoothScrollTo(0,0)
     }
    }
   }
