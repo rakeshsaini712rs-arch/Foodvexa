@@ -210,7 +210,7 @@ class MainActivity:AppCompatActivity(){
     hideKeyboard()
     homeScrollView?.post{
      homeScrollView?.scrollTo(0,0)
-     stickyCategories.visibility=View.GONE
+
     }
    }
   }
