@@ -203,8 +203,14 @@ class MainActivity:AppCompatActivity(){
     stickyCategoryScroller?.smoothScrollTo(0,0)
     renderProducts()
     content.post{
-     // Return to the original home top so banner and category row are visible again.
-     (content.parent as? ScrollView)?.smoothScrollTo(0,0)
+     // Hide the pinned strip immediately, then force the main page back to its true top.
+     stickyCategories.visibility=View.GONE
+     val pageScroll=content.parent as? ScrollView
+     pageScroll?.post{
+      pageScroll.scrollTo(0,0)
+      pageScroll.fullScroll(View.FOCUS_UP)
+      pageScroll.scrollTo(0,0)
+     }
     }
    }
   }
