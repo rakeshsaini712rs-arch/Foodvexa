@@ -134,7 +134,9 @@ class MainActivity:AppCompatActivity(){
   content.addView(header,LinearLayout.LayoutParams(-1,-2))
   content.addView(locationHeader(),margin(4,2,4,8))
   val search=EditText(this).apply{
-   isFocusableInTouchMode=true
+   isFocusable=false
+   isFocusableInTouchMode=false
+   setOnClickListener{isFocusable=true;isFocusableInTouchMode=true;requestFocus();(getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(this,android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)}
    hint="Search food, sweets, fast food..."
    setHintTextColor(if(isLightTheme)Color.GRAY else Color.LTGRAY)
    setTextColor(primaryText);setSingleLine(true);textSize=16f
@@ -210,7 +212,7 @@ class MainActivity:AppCompatActivity(){
     hideKeyboard()
     homeScrollView?.post{
      homeScrollView?.scrollTo(0,0)
-
+     homeScrollView?.post{homeScrollView?.scrollTo(0,0)}
     }
    }
   }
