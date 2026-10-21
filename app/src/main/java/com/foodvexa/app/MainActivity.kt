@@ -204,7 +204,6 @@ class MainActivity:AppCompatActivity(){
     renderProducts()
     content.post{
      // Hide the pinned strip immediately, then force the main page back to its true top.
-     stickyCategories.visibility=View.GONE
      val pageScroll=content.parent as? ScrollView
      pageScroll?.post{
       pageScroll.scrollTo(0,0)
