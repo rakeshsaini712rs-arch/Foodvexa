@@ -664,6 +664,23 @@ private fun placeOrderAndShowOrders(){
  form.addView(label("Name",13f,true,secondaryText),margin(0,0,0,4));form.addView(name,margin(0,0,0,10))
  form.addView(label("Mobile number",13f,true,secondaryText),margin(0,0,0,4));form.addView(mobile,margin(0,0,0,10))
  form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4));form.addView(address,margin(0,0,0,8))
+ var scheduledFor=""
+ val scheduleButton=primaryButton("🗓  Schedule Delivery  •  Choose date & time"){
+  val now=java.util.Calendar.getInstance()
+  android.app.DatePickerDialog(this,{_,year,month,day->
+   val chosen=java.util.Calendar.getInstance().apply{set(year,month,day)}
+   android.app.TimePickerDialog(this,{_,hour,minute->
+    chosen.set(java.util.Calendar.HOUR_OF_DAY,hour);chosen.set(java.util.Calendar.MINUTE,minute);chosen.set(java.util.Calendar.SECOND,0)
+    if(chosen.timeInMillis<System.currentTimeMillis()){
+     Toast.makeText(this,"Please choose a future delivery time",Toast.LENGTH_LONG).show()
+    }else{
+     scheduledFor=java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a",java.util.Locale.getDefault()).format(chosen.time)
+     scheduleButton.text="🗓  Scheduled: $scheduledFor"
+    }
+   },now.get(java.util.Calendar.HOUR_OF_DAY),now.get(java.util.Calendar.MINUTE),false).show()
+  },now.get(java.util.Calendar.YEAR),now.get(java.util.Calendar.MONTH),now.get(java.util.Calendar.DAY_OF_MONTH)).apply{datePicker.minDate=System.currentTimeMillis()}.show()
+ }
+ form.addView(scheduleButton,margin(0,4,0,8))
  val dialog=AlertDialog.Builder(this).setTitle("Customer Details").setView(form).setNegativeButton("CANCEL",null).setPositiveButton("CONFIRM ORDER",null).create()
  dialog.setOnShowListener{
   name.clearFocus();mobile.clearFocus();address.clearFocus()
@@ -674,12 +691,12 @@ private fun placeOrderAndShowOrders(){
    if(m.filter{it.isDigit()}.length!=10){mobile.error="Enter a valid 10-digit mobile number";return@setOnClickListener}
    if(a.length<10){address.error="Enter complete delivery address";return@setOnClickListener}
    prefs.edit().putString("profile_name",n).putString("profile_mobile",m).putString("profile_address",a).putString("delivery_address",a).putString("location",a).putString("location_label","Delivery").apply()
-   dialog.dismiss();submitOrder(n,m,a)
+   dialog.dismiss();submitOrder(n,m,a,scheduledFor)
   }
  }
  dialog.show()
 }
-private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String){
+private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
  val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
@@ -689,13 +706,13 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val deliveryFee=if(subtotal>500) 0 else 30
  val total=subtotal+deliveryFee
- val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nPayment: Cash on Delivery\nTotal: ₹"+total
+ val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)}}
  val data=hashMapOf<String,Any>(
   "customerUid" to user.uid,
   "customerName" to customerName,
   "phone" to customerMobile,
-  "address" to address,
+  "address" to address,\n  "scheduledDelivery" to scheduledFor,
   "items" to items,
   "itemsText" to summary,
   "subtotal" to subtotal,
