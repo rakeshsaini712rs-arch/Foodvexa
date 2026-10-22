@@ -225,7 +225,20 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      }
     }
     renderProducts()
-    // Keep vertical scroll where the user was when changing from the sticky row.
+    // On category change, start that category's product list from its first row.
+    // The sticky category strip remains available for switching categories.
+    content.post {
+     val scrollView=content.parent as? ScrollView
+     val headingIndex=(0 until content.childCount).firstOrNull { i ->
+      val v=content.getChildAt(i)
+      v is TextView && v.text.toString()==(if(selectedCategory=="All")"Popular near you" else selectedCategory)
+     }
+     val heading=headingIndex?.let{content.getChildAt(it)}
+     if(scrollView!=null && heading!=null){
+      val stickyOffset=if(stickyCategoryRow?.parent?.visibility==View.VISIBLE) dp(54) else dp(8)
+      scrollView.smoothScrollTo(0,(heading.top-stickyOffset).coerceAtLeast(0))
+     }
+    }
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
@@ -473,11 +486,16 @@ if(selectedPartnerShop=="Ganpati Restaurant"){
  return
 }
 // Normalize legacy category casing ("snacks" vs "Snacks") so these products remain visible.
-val filtered=currentMenuProducts().filter{
+val categoryOrder=listOf("Fast Food","Snacks","Chaat Special","Meals","Birthday Special","Beverages","Sweets","Special Sabji")
+val filteredBase=currentMenuProducts().filter{
  (if(selectedPartnerShop=="Ganpati Restaurant") it.category.trim().equals("Snacks",true)||it.category.trim().equals("Sweets",true) else true) &&
  (selectedCategory=="All"||it.category.trim().equals(selectedCategory.trim(),ignoreCase=true))&&
  (query.isBlank()||it.name.contains(query,true))
 }
+val filtered=if(selectedCategory=="All") filteredBase.sortedBy { p ->
+ val index=categoryOrder.indexOfFirst{it.equals(p.category.trim(),ignoreCase=true)}
+ if(index<0) Int.MAX_VALUE else index
+} else filteredBase
 var row:LinearLayout?=null
 filtered.forEachIndexed{index,p->
     if(index%2==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
