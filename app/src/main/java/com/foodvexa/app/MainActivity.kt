@@ -235,7 +235,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      }
      val heading=headingIndex?.let{content.getChildAt(it)}
      if(scrollView!=null && heading!=null){
-      val stickyOffset=if(stickyCategories.visibility==View.VISIBLE) dp(54) else dp(8)
+      val stickyOffset=dp(8)
       scrollView.smoothScrollTo(0,(heading.top-stickyOffset).coerceAtLeast(0))
      }
     }
