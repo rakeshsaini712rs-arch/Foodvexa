@@ -208,9 +208,14 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
     }
     renderProducts()
-    // Do not auto-scroll when a category is tapped.
-    // Keep the category row in its normal position; only the user's manual scroll
-    // should move it off-screen and activate the sticky category strip.
+    // If the user changes category from the sticky strip after scrolling,
+    // bring the original category row back into view (as on the home screen).
+    // Taps on the original row do not trigger any extra scroll.
+    val fromSticky = box.parent?.parent?.parent === stickyCategories
+    val scroll=(content.parent as? ScrollView)
+    if(fromSticky) scroll?.post {
+     scroll.smoothScrollTo(0, categoryScroller.top.coerceAtLeast(0))
+    }
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
