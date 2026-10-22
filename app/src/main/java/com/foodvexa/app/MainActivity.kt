@@ -219,11 +219,16 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
       (row.parent as? HorizontalScrollView)?.post {
        val hsv=row.parent as? HorizontalScrollView
        if(hsv!=null){
-        // Align the selected category to a card boundary. The narrower sticky
-        // cards allow four complete buttons to fit on common phone widths.
-        val maxScroll=(row.width-hsv.width).coerceAtLeast(0)
-        val target=selectedCard.left.coerceIn(0,maxScroll)
-        hsv.smoothScrollTo(target,0)
+        // Preserve the current horizontal position if the selected card is
+        // already visible. Otherwise scroll only enough to reveal the full card.
+        val visibleLeft=hsv.scrollX
+        val visibleRight=visibleLeft+hsv.width
+        val target=when {
+         selectedCard.left < visibleLeft -> selectedCard.left
+         selectedCard.right > visibleRight -> selectedCard.right-hsv.width
+         else -> visibleLeft
+        }.coerceIn(0,(row.width-hsv.width).coerceAtLeast(0))
+        if(target!=visibleLeft) hsv.smoothScrollTo(target,0)
        }
       }
      }
