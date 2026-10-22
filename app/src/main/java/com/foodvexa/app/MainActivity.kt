@@ -113,7 +113,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),0)}
   val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   stickyCategoryRow=stickyRow
-  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(96),dp(82)).apply{rightMargin=dp(8)})}
+  categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(88),dp(82)).apply{rightMargin=dp(8)})}
   stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;isFillViewport=true;clipToPadding=true;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow,ViewGroup.LayoutParams(-2,-1))},LinearLayout.LayoutParams(-1,dp(100)))
   fixed.addView(stickyCategories,LinearLayout.LayoutParams(-1,dp(100)))
 
@@ -219,14 +219,10 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
       (row.parent as? HorizontalScrollView)?.post {
        val hsv=row.parent as? HorizontalScrollView
        if(hsv!=null){
-        // Keep the selected card fully visible while snapping the strip to
-        // a nearby card boundary. Avoid aligning the selected card's left edge,
-        // which leaves the previous card clipped at the viewport edge.
+        // Align the selected category to a card boundary. The narrower sticky
+        // cards allow four complete buttons to fit on common phone widths.
         val maxScroll=(row.width-hsv.width).coerceAtLeast(0)
-        val centeredTarget=(selectedCard.left-(hsv.width-selectedCard.width)/2)
-          .coerceIn(0,maxScroll)
-        val starts=(0 until row.childCount).map{row.getChildAt(it).left}.filter{it<=centeredTarget}
-        val target=(starts.lastOrNull()?:0).coerceIn(0,maxScroll)
+        val target=selectedCard.left.coerceIn(0,maxScroll)
         hsv.smoothScrollTo(target,0)
        }
       }
