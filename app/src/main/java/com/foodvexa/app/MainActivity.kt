@@ -182,9 +182,21 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val categoryScroller=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(categoryRow)}
   content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(100)))
   val scrollView=content.parent as ScrollView
+  var stickyWasVisible=false
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
-   // Show the fixed category strip only after the original category row has fully scrolled away.
-   stickyCategories.visibility=if(categoryScroller.top-scrollY<=dp(8))View.VISIBLE else View.GONE
+   // Keep the content viewport aligned when the fixed category strip appears or disappears.
+   // Without compensating for the fixed header's height, the first product/shop row
+   // can be clipped at the top edge when the sticky strip takes up screen space.
+   val shouldShow=categoryScroller.top-scrollY<=dp(8)
+   if(shouldShow!=stickyWasVisible){
+    stickyWasVisible=shouldShow
+    stickyCategories.visibility=if(shouldShow)View.VISIBLE else View.GONE
+    stickyCategories.post{
+     val current=scrollView.scrollY
+     val delta=if(shouldShow)stickyCategories.height else -stickyCategories.height
+     scrollView.scrollTo(0,(current+delta).coerceAtLeast(0))
+    }
+   }
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
   renderProducts()
