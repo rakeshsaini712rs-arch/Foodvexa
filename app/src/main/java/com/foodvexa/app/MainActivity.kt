@@ -219,10 +219,14 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
       (row.parent as? HorizontalScrollView)?.post {
        val hsv=row.parent as? HorizontalScrollView
        if(hsv!=null){
-        // Snap to a card boundary instead of centering it. This prevents
-        // neighboring category buttons from being visibly cut at both edges.
+        // Keep the selected card fully visible while snapping the strip to
+        // a nearby card boundary. Avoid aligning the selected card's left edge,
+        // which leaves the previous card clipped at the viewport edge.
         val maxScroll=(row.width-hsv.width).coerceAtLeast(0)
-        val target=selectedCard.left.coerceIn(0,maxScroll)
+        val centeredTarget=(selectedCard.left-(hsv.width-selectedCard.width)/2)
+          .coerceIn(0,maxScroll)
+        val starts=(0 until row.childCount).map{row.getChildAt(it).left}.filter{it<=centeredTarget}
+        val target=(starts.lastOrNull()?:0).coerceIn(0,maxScroll)
         hsv.smoothScrollTo(target,0)
        }
       }
