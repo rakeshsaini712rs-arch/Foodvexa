@@ -219,8 +219,11 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
       (row.parent as? HorizontalScrollView)?.post {
        val hsv=row.parent as? HorizontalScrollView
        if(hsv!=null){
-        val target=selectedCard.left-(hsv.width-selectedCard.width)/2
-        hsv.smoothScrollTo(target.coerceAtLeast(0),0)
+        // Snap to a card boundary instead of centering it. This prevents
+        // neighboring category buttons from being visibly cut at both edges.
+        val maxScroll=(row.width-hsv.width).coerceAtLeast(0)
+        val target=selectedCard.left.coerceIn(0,maxScroll)
+        hsv.smoothScrollTo(target,0)
        }
       }
      }
