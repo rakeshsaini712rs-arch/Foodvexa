@@ -208,14 +208,8 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      if(card.childCount>1)(card.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
     }
     renderProducts()
-    // If the user changes category from the sticky strip after scrolling,
-    // bring the original category row back into view (as on the home screen).
-    // Taps on the original row do not trigger any extra scroll.
-    val fromSticky = box.parent?.parent?.parent === stickyCategories
-    val scroll=(content.parent as? ScrollView)
-    if(fromSticky) scroll?.post {
-     scroll.smoothScrollTo(0, categoryScroller.top.coerceAtLeast(0))
-    }
+    // Category selection updates products without forcing the page to jump.
+    // The user's manual scroll controls the category row position.
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
@@ -713,7 +707,8 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
   "customerUid" to user.uid,
   "customerName" to customerName,
   "phone" to customerMobile,
-  "address" to address,\n  "scheduledDelivery" to scheduledFor,
+  "address" to address,
+  "scheduledDelivery" to scheduledFor,
   "items" to items,
   "itemsText" to summary,
   "subtotal" to subtotal,
