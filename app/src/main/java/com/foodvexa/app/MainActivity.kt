@@ -198,6 +198,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val box=LinearLayout(this).apply{
    orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(4),dp(4),dp(4),dp(4));background=categoryBackground(selected);isClickable=true;isFocusable=true;elevation=dp(if(selected)3 else 1).toFloat();clipToPadding=false
    setOnClickListener{
+    val selectedFromSticky=(box.parent as? ViewGroup)===stickyCategoryRow
     if(c.name=="Restaurant / Hotel"){restaurantHotelDialog();return@setOnClickListener}
     selectedPartnerShop=""
     updatePartnerCategoryVisibility()
@@ -225,8 +226,13 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      }
     }
     renderProducts()
-    // Keep the user's current vertical scroll position when switching categories.
-
+    // If a category was selected from the fixed top strip, restore the normal
+    // home layout so the category row returns to its original position.
+    if(selectedFromSticky){
+     (content.parent as? ScrollView)?.post {
+      (content.parent as? ScrollView)?.smoothScrollTo(0,0)
+     }
+    }
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
