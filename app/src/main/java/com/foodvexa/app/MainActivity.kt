@@ -183,7 +183,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val scrollView=content.parent as ScrollView
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
    // Show the fixed category strip only after the original category row has fully scrolled away.
-   stickyCategories.visibility=if(categoryScroller.bottom-scrollY<=0)View.VISIBLE else View.GONE
+   stickyCategories.visibility=if(categoryScroller.top-scrollY<=dp(8))View.VISIBLE else View.GONE
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
   renderProducts()
