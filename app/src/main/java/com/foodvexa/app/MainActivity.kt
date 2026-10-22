@@ -211,15 +211,13 @@ class MainActivity:AppCompatActivity(){
     renderProducts()
     searchBox?.clearFocus()
     hideKeyboard()
-    // Reset the vertical page after products/layout are refreshed.
+    // Keep the category row at its normal position; do not jump to page top.
     stickyCategoryContainer?.visibility=View.GONE
     homeScrollView?.apply{
      clearFocus()
-     scrollTo(0,0)
      post{
-      fullScroll(View.FOCUS_UP)
-      scrollTo(0,0)
-      post{scrollTo(0,0)}
+      val target=categoryScroller?.top ?: 0
+      scrollTo(0,target)
      }
     }
    }
