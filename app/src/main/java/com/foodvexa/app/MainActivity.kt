@@ -110,12 +110,16 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val shell=(content.parent as ScrollView).parent as LinearLayout
   val fixed=shell.getChildAt(0) as LinearLayout
   fixed.removeAllViews()
-  val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),0)}
+  val stickyCategories=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;visibility=View.GONE;setBackgroundColor(pageBackground);setPadding(dp(8),dp(4),dp(8),dp(2))}
+  // Keep the section heading visible with the category cards when the original
+  // category row scrolls off-screen. This prevents the cards appearing cropped
+  // against the status bar and matches the normal "Categories" section layout.
+  stickyCategories.addView(label("Categories",21f,true,primaryText),LinearLayout.LayoutParams(-1,dp(28)).apply{leftMargin=dp(8);bottomMargin=dp(2)})
   val stickyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
   stickyCategoryRow=stickyRow
   categories.forEach{c->stickyRow.addView(categoryCard(c),LinearLayout.LayoutParams(dp(88),dp(82)).apply{rightMargin=dp(8)})}
-  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;isFillViewport=true;clipToPadding=true;descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow,ViewGroup.LayoutParams(-2,-1))},LinearLayout.LayoutParams(-1,dp(100)))
-  fixed.addView(stickyCategories,LinearLayout.LayoutParams(-1,dp(100)))
+  stickyCategories.addView(HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER;isFocusable=false;isFillViewport=true;clipToPadding=false;setPadding(0,0,dp(8),0);descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS;addView(stickyRow,ViewGroup.LayoutParams(-2,dp(92)))},LinearLayout.LayoutParams(-1,dp(92)))
+  fixed.addView(stickyCategories,LinearLayout.LayoutParams(-1,dp(126)))
 
   // Real app header and controls sit ABOVE the clean promotional banner.
   val header=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(8),dp(4),dp(8),dp(6))}
