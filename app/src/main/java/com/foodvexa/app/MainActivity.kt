@@ -665,7 +665,8 @@ private fun placeOrderAndShowOrders(){
  form.addView(label("Mobile number",13f,true,secondaryText),margin(0,0,0,4));form.addView(mobile,margin(0,0,0,10))
  form.addView(label("Delivery address",13f,true,secondaryText),margin(0,0,0,4));form.addView(address,margin(0,0,0,8))
  var scheduledFor=""
- val scheduleButton=primaryButton("🗓  Schedule Delivery  •  Choose date & time"){
+ lateinit var scheduleButton:TextView
+ scheduleButton=primaryButton("🗓  Schedule Delivery  •  Choose date & time"){
   val now=java.util.Calendar.getInstance()
   android.app.DatePickerDialog(this,{_,year,month,day->
    val chosen=java.util.Calendar.getInstance().apply{set(year,month,day)}
