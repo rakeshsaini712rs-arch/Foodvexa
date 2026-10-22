@@ -183,19 +183,20 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   content.addView(categoryScroller,LinearLayout.LayoutParams(-1,dp(100)))
   val scrollView=content.parent as ScrollView
   var stickyWasVisible=false
+  val originalFixedTopPadding=dp(12)
+  val statusBarInset=run{
+   val id=resources.getIdentifier("status_bar_height","dimen","android")
+   if(id>0)resources.getDimensionPixelSize(id) else dp(24)
+  }
   scrollView.setOnScrollChangeListener{_,_,scrollY,_,_->
-   // Keep the content viewport aligned when the fixed category strip appears or disappears.
-   // Without compensating for the fixed header's height, the first product/shop row
-   // can be clipped at the top edge when the sticky strip takes up screen space.
+   // Sticky categories live outside the ScrollView, so keep them below the
+   // system status bar. Do not modify scrollY when toggling visibility:
+   // that was making the product list jump and clipping the category row.
    val shouldShow=categoryScroller.top-scrollY<=dp(8)
    if(shouldShow!=stickyWasVisible){
     stickyWasVisible=shouldShow
     stickyCategories.visibility=if(shouldShow)View.VISIBLE else View.GONE
-    stickyCategories.post{
-     val current=scrollView.scrollY
-     val delta=if(shouldShow)stickyCategories.height else -stickyCategories.height
-     scrollView.scrollTo(0,(current+delta).coerceAtLeast(0))
-    }
+    fixed.setPadding(dp(16),if(shouldShow)statusBarInset+dp(4) else originalFixedTopPadding,dp(16),0)
    }
   }
   content.addView(label(if(selectedCategory=="All")"Popular near you" else selectedCategory,22f,true,primaryText),margin(8,2,8,5))
