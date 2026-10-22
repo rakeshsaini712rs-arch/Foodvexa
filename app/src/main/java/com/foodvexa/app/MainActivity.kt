@@ -225,20 +225,8 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      }
     }
     renderProducts()
-    // On category change, start that category's product list from its first row.
-    // The sticky category strip remains available for switching categories.
-    content.post {
-     val scrollView=content.parent as? ScrollView
-     val headingIndex=(0 until content.childCount).firstOrNull { i ->
-      val v=content.getChildAt(i)
-      v is TextView && v.text.toString()==(if(selectedCategory=="All")"Popular near you" else selectedCategory)
-     }
-     val heading=headingIndex?.let{content.getChildAt(it)}
-     if(scrollView!=null && heading!=null){
-      val stickyOffset=dp(8)
-      scrollView.smoothScrollTo(0,(heading.top-stickyOffset).coerceAtLeast(0))
-     }
-    }
+    // Keep the user's current vertical scroll position when switching categories.
+
    }
   }
   val image=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP;background=GradientDrawable().apply{setColor(Color.rgb(245,242,238));cornerRadius=dp(12).toFloat()};clipToOutline=true;contentDescription=c.name}
