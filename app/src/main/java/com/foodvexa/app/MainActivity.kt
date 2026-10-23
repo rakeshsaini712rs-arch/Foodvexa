@@ -615,6 +615,23 @@ private fun correctedImageUrl(p:Product):String {
     return corrected
 }
 
+ private fun productSearchMatches(productName:String, rawQuery:String):Boolean{
+  val q=rawQuery.trim().lowercase(java.util.Locale.ROOT)
+  if(q.isBlank())return true
+  if(productName.contains(q,true))return true
+  // Voice typing often returns Hindi script while menu names are stored in English.
+  val hindiToEnglish=mapOf(
+   "समोसा" to "samosa","समोसे" to "samosa","कचौरी" to "kachori","मिर्ची बड़ा" to "mirchi bada",
+   "मिर्ची बड़ा" to "mirchi bada","बर्गर" to "burger","पिज्जा" to "pizza","पिज़्ज़ा" to "pizza",
+   "केक" to "cake","चाय" to "tea","मैगी" to "maggi","सैंडविच" to "sandwich","डोसा" to "dosa",
+   "इडली" to "idli","थाली" to "thali","छोले भटूरे" to "chole bhature","पाव भाजी" to "pav bhaji",
+   "जलेबी" to "jalebi","लड्डू" to "laddu","लड्डू" to "laddu","गुलाब जामुन" to "gulab jamun",
+   "रसगुल्ला" to "rasgulla","कोल्ड ड्रिंक" to "cold drink","जूस" to "juice","शेक" to "shake",
+   "पनीर" to "paneer","सब्जी" to "sabji","दाल" to "dal","नूडल्स" to "noodles","फ्राइड राइस" to "fried rice"
+  )
+  val mapped=hindiToEnglish.entries.firstOrNull{q.contains(it.key)}?.value
+  return mapped!=null && productName.contains(mapped,true)
+ }
  private fun renderProducts(){
 val title=if(selectedPartnerShop=="Ganpati Restaurant")"Ganpati Restaurant" else if(selectedCategory=="All")"Popular near you" else selectedCategory
 var ti=-1
@@ -636,7 +653,7 @@ val categoryOrder=listOf("Fast Food","Snacks","Chaat Special","Meals","Birthday 
 val filteredBase=currentMenuProducts().filter{
  (if(selectedPartnerShop=="Ganpati Restaurant") it.category.trim().equals("Snacks",true)||it.category.trim().equals("Sweets",true) else true) &&
  (selectedCategory=="All"||it.category.trim().equals(selectedCategory.trim(),ignoreCase=true))&&
- (query.isBlank()||it.name.contains(query,true))
+ (query.isBlank()||productSearchMatches(it.name,query))
 }
 val filtered=if(selectedCategory=="All") filteredBase.sortedBy { p ->
  val index=categoryOrder.indexOfFirst{it.equals(p.category.trim(),ignoreCase=true)}
