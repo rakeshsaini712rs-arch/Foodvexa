@@ -691,7 +691,15 @@ private fun loadSharedMenu(){
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
+private fun isShopOpenNow():Boolean{
+ val indiaNow=java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"))
+ return !indiaNow.isBefore(java.time.LocalTime.of(9,0)) && indiaNow.isBefore(java.time.LocalTime.of(21,0))
+}
+private fun showShopClosedMessage(){
+ Toast.makeText(this,"Foodvexa abhi band hai. Order subah 9:00 AM se raat 9:00 PM tak hi kiye ja sakte hain.",Toast.LENGTH_LONG).show()
+}
 private fun placeOrderAndShowOrders(){
+ if(!isShopOpenNow()){showShopClosedMessage();return}
  val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
@@ -741,6 +749,7 @@ private fun placeOrderAndShowOrders(){
  dialog.show()
 }
 private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
+ if(!isShopOpenNow()){showShopClosedMessage();return}
  val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
