@@ -1,6 +1,8 @@
 package com.foodvexa.app
 
 import android.content.Intent
+import android.speech.RecognizerIntent
+import android.app.Activity
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -66,6 +68,19 @@ private fun updatePartnerCategoryVisibility(){
  }
 }
 private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false};private val pageBackground:Int get()=if(isLightTheme)Color.rgb(248,248,250) else Color.rgb(17,17,20);private val primaryText:Int get()=if(isLightTheme)Color.rgb(35,35,42) else Color.WHITE;private val secondaryText:Int get()=if(isLightTheme)Color.rgb(100,100,110) else Color.LTGRAY;private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper());private val shopGeoExecutor=Executors.newSingleThreadExecutor();private val shopDistanceViews=mutableMapOf<String,TextView>();private val shopGeoCache=mutableMapOf<String,Location>();private val shopLocationPermissionRequest=7412
+ companion object { private const val VOICE_SEARCH_REQUEST=8642 }
+ override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+  super.onActivityResult(requestCode,resultCode,data)
+  if(requestCode==VOICE_SEARCH_REQUEST && resultCode==Activity.RESULT_OK){
+   val spoken=data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+   if(spoken.isNotBlank()){
+    searchBox?.setText(spoken)
+    searchBox?.setSelection(spoken.length)
+    query=spoken
+    renderProducts()
+   }
+  }
+ }
  override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();preloadCategoryImages();showHome()}
  override fun onStart(){super.onStart();if(::root.isInitialized)loadSharedMenu()}
  override fun onStop(){menuListener?.remove();menuListener=null;super.onStop()}
@@ -180,7 +195,33 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     true
    }else false
   }
-  content.addView(search,margin(4,0,4,10))
+  val searchRow=LinearLayout(this).apply{
+   orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+  }
+  searchRow.addView(search,LinearLayout.LayoutParams(0,dp(48),1f))
+  val voiceSearch=TextView(this).apply{
+   text="🎤";textSize=21f;gravity=Gravity.CENTER
+   contentDescription="Voice search"
+   background=GradientDrawable().apply{setColor(orange);cornerRadius=dp(24).toFloat()}
+   isClickable=true;isFocusable=true
+   setOnClickListener{
+    try{
+     val voiceIntent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN")
+      putExtra(RecognizerIntent.EXTRA_PROMPT,"Foodvexa में क्या ढूँढना है?")
+      putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1)
+     }
+     startActivityForResult(voiceIntent,VOICE_SEARCH_REQUEST)
+    }catch(_:android.content.ActivityNotFoundException){
+     Toast.makeText(this@MainActivity,"Voice search इस फ़ोन पर उपलब्ध नहीं है",Toast.LENGTH_LONG).show()
+    }catch(_:Exception){
+     Toast.makeText(this@MainActivity,"Voice search शुरू नहीं हो पाया",Toast.LENGTH_SHORT).show()
+    }
+   }
+  }
+  searchRow.addView(voiceSearch,LinearLayout.LayoutParams(dp(48),dp(48)).apply{leftMargin=dp(8)})
+  content.addView(searchRow,margin(4,0,4,10))
   content.addView(bannerGrid(),margin(0,0,0,8))
   val categoryTitle=label("Categories",21f,true,primaryText)
   content.addView(categoryTitle,margin(8,4,8,4))
