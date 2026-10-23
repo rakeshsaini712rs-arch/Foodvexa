@@ -5,6 +5,8 @@ import android.speech.RecognizerIntent
 import android.app.Activity
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -73,10 +75,11 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   if(requestCode==VOICE_SEARCH_REQUEST && resultCode==Activity.RESULT_OK){
    val spoken=data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
    if(spoken.isNotBlank()){
-    searchBox?.setText(spoken)
-    searchBox?.setSelection(spoken.length)
+    selectedCategory="All"
+    selectedPartnerShop=""
     query=spoken
-    renderProducts()
+    showHome(0)
+    content.post{searchBox?.setText(spoken);searchBox?.setSelection(spoken.length)}
    }
   }
  }
@@ -198,28 +201,40 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
   }
   searchRow.addView(search,LinearLayout.LayoutParams(0,dp(48),1f))
-  val voiceSearch=TextView(this).apply{
-   text="🎤";textSize=21f;gravity=Gravity.CENTER
-   contentDescription="Voice search"
-   background=GradientDrawable().apply{setColor(orange);cornerRadius=dp(24).toFloat()}
-   isClickable=true;isFocusable=true
-   setOnClickListener{
-    try{
-     val voiceIntent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE,"hi-IN")
-      putExtra(RecognizerIntent.EXTRA_PROMPT,"Foodvexa में क्या ढूँढना है?")
-      putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,1)
+  val voiceSearch=object:View(this){
+    init{
+     contentDescription="Voice search microphone"
+     background=GradientDrawable().apply{shape=GradientDrawable.OVAL;setColor(if(isLightTheme)Color.rgb(255,242,237) else Color.rgb(42,34,32));setStroke(dp(1),orange)}
+     isClickable=true;isFocusable=true
+     setOnClickListener{
+      try{
+       val voiceIntent=Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply{
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE,"en-IN")
+        putExtra(RecognizerIntent.EXTRA_PROMPT,"Speak food name in English")
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS,3)
+       }
+       startActivityForResult(voiceIntent,VOICE_SEARCH_REQUEST)
+      }catch(_:android.content.ActivityNotFoundException){
+       Toast.makeText(this@MainActivity,"Please update Google app or Speech Services",Toast.LENGTH_LONG).show()
+      }catch(_:Exception){
+       Toast.makeText(this@MainActivity,"Voice search could not start",Toast.LENGTH_SHORT).show()
+      }
      }
-     startActivityForResult(voiceIntent,VOICE_SEARCH_REQUEST)
-    }catch(_:android.content.ActivityNotFoundException){
-     Toast.makeText(this@MainActivity,"Voice search इस फ़ोन पर उपलब्ध नहीं है",Toast.LENGTH_LONG).show()
-    }catch(_:Exception){
-     Toast.makeText(this@MainActivity,"Voice search शुरू नहीं हो पाया",Toast.LENGTH_SHORT).show()
+    }
+    override fun onDraw(canvas:Canvas){
+     super.onDraw(canvas)
+     val p=Paint(Paint.ANTI_ALIAS_FLAG).apply{color=orange;style=Paint.Style.STROKE;strokeWidth=dp(2).toFloat();strokeCap=Paint.Cap.ROUND;strokeJoin=Paint.Join.ROUND}
+     val cx=width/2f;val cy=height/2f;val top=cy-dp(10);val bottom=cy+dp(3)
+     p.style=Paint.Style.FILL
+     canvas.drawRoundRect(cx-dp(4).toFloat(),top,cx+dp(4).toFloat(),bottom,dp(4).toFloat(),dp(4).toFloat(),p)
+     p.style=Paint.Style.STROKE
+     canvas.drawArc(cx-dp(8).toFloat(),cy-dp(3).toFloat(),cx+dp(8).toFloat(),cy+dp(8).toFloat(),0f,180f,false,p)
+     canvas.drawLine(cx,cy+dp(8).toFloat(),cx,cy+dp(12).toFloat(),p)
+     canvas.drawLine(cx-dp(4).toFloat(),cy+dp(12).toFloat(),cx+dp(4).toFloat(),cy+dp(12).toFloat(),p)
     }
    }
-  }
-  searchRow.addView(voiceSearch,LinearLayout.LayoutParams(dp(48),dp(48)).apply{leftMargin=dp(8)})
+  searchRow.addView(voiceSearch,LinearLayout.LayoutParams(dp(42),dp(42)).apply{leftMargin=dp(8)})
   content.addView(searchRow,margin(4,0,4,10))
   content.addView(bannerGrid(),margin(0,0,0,8))
   val categoryTitle=label("Categories",21f,true,primaryText)
