@@ -462,7 +462,8 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   card.addView(artwork,LinearLayout.LayoutParams(-1,dp(92)))
   card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
   if(shop.name!="FOODVEXA"){
-   val distanceLabel=label("📍 दूरी पता की जा रही है…",10f,false,secondaryText).apply{
+   val distanceLabel=TextView(this).apply{
+    text="📍 दूरी पता की जा रही है…";textSize=10f;setTextColor(secondaryText)
     gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=1
     setPadding(dp(8),dp(5),dp(8),dp(5))
     background=GradientDrawable().apply{setColor(if(isLightTheme)Color.rgb(245,245,248) else Color.rgb(48,48,55));cornerRadius=dp(12).toFloat()}
@@ -535,7 +536,12 @@ private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,S
    val km=shopLoc?.let{current.distanceTo(it)/1000.0}
    mainHandler.post{
     if(!isFinishing && target.parent!=null){
-     target.text=if(km!=null) "📍 %.1f km".format(java.util.Locale.US,km) else "📍 दूरी उपलब्ध नहीं"
+     val distanceText=if(km!=null) "%.1f km".format(java.util.Locale.US,km) else "दूरी उपलब्ध नहीं"
+     val fullText="●  "+distanceText
+     val styled=android.text.SpannableString(fullText)
+     styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(20,150,85)),0,1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+     styled.setSpan(android.text.style.ForegroundColorSpan(if(km!=null)Color.rgb(255,76,76) else secondaryText),3,fullText.length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+     target.text=styled
     }
    }
   }
