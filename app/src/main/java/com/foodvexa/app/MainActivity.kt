@@ -28,6 +28,13 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.Executors
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min")
 data class Category(val name:String,val imageUrl:String)
@@ -58,7 +65,7 @@ private fun updatePartnerCategoryVisibility(){
   stickyRow.getChildAt(i).visibility=if(selectedPartnerShop=="Ganpati Restaurant" && name !in keep)View.GONE else View.VISIBLE
  }
 }
-private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false};private val pageBackground:Int get()=if(isLightTheme)Color.rgb(248,248,250) else Color.rgb(17,17,20);private val primaryText:Int get()=if(isLightTheme)Color.rgb(35,35,42) else Color.WHITE;private val secondaryText:Int get()=if(isLightTheme)Color.rgb(100,100,110) else Color.LTGRAY;private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper())
+private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false};private val pageBackground:Int get()=if(isLightTheme)Color.rgb(248,248,250) else Color.rgb(17,17,20);private val primaryText:Int get()=if(isLightTheme)Color.rgb(35,35,42) else Color.WHITE;private val secondaryText:Int get()=if(isLightTheme)Color.rgb(100,100,110) else Color.LTGRAY;private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper());private val shopGeoExecutor=Executors.newSingleThreadExecutor();private val shopDistanceViews=mutableMapOf<String,TextView>();private val shopGeoCache=mutableMapOf<String,Location>();private val shopLocationPermissionRequest=7412
  override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();preloadCategoryImages();showHome()}
  override fun onStart(){super.onStart();if(::root.isInitialized)loadSharedMenu()}
  override fun onStop(){menuListener?.remove();menuListener=null;super.onStop()}
@@ -399,10 +406,61 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   // Compact card; address is already printed inside the uploaded card artwork.
   card.addView(artwork,LinearLayout.LayoutParams(-1,dp(92)))
   card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
+  if(shop.name!="FOODVEXA"){
+   val distanceLabel=label("📍 दूरी पता की जा रही है…",10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2}
+   shopDistanceViews[shop.name]=distanceLabel
+   card.addView(distanceLabel,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)})
+  }
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(4);leftMargin=dp(4);bottomMargin=dp(10)})
   if(index%3==2)content.addView(row,LinearLayout.LayoutParams(-1,-2))
  }
  if(shops.size%3!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
+ updateDistancesForShopCards(shops.map{it.name to it.address}.filter{it.first!="FOODVEXA"})
+}
+private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
+ if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
+  shopDistanceViews.values.forEach{it.text="📍 दूरी देखने के लिए लोकेशन अनुमति दें"}
+  if(!isFinishing)ActivityCompat.requestPermissions(this,arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),shopLocationPermissionRequest)
+  return
+ }
+ val lm=getSystemService(LOCATION_SERVICE) as LocationManager
+ val current=try{
+  val providers=lm.getProviders(true)
+  providers.mapNotNull{provider->try{lm.getLastKnownLocation(provider)}catch(_:SecurityException){null}}.maxByOrNull{it.time}
+ }catch(_:Exception){null}
+ if(current==null){shopDistanceViews.values.forEach{it.text="📍 लोकेशन चालू करें"};return}
+ shops.forEach{(name,address)->
+  val target=shopDistanceViews[name] ?: return@forEach
+  target.text="📍 दूरी पता की जा रही है…"
+  shopGeoExecutor.execute{
+   var shopLoc=synchronized(shopGeoCache){shopGeoCache[name]}
+   if(shopLoc==null){
+    try{
+     if(!Geocoder.isPresent()) throw IllegalStateException("Geocoder unavailable")
+     @Suppress("DEPRECATION")
+     val found=Geocoder(this,java.util.Locale("en","IN")).getFromLocationName("$address, Nawalgarh, Rajasthan, India",1)
+     val first=found?.firstOrNull()
+     if(first!=null)shopLoc=Location("geocoder").apply{latitude=first.latitude;longitude=first.longitude}
+     if(shopLoc!=null)synchronized(shopGeoCache){shopGeoCache[name]=shopLoc!!}
+    }catch(_:Exception){}
+   }
+   val km=shopLoc?.let{current.distanceTo(it)/1000.0}
+   mainHandler.post{
+    if(!isFinishing && target.parent!=null){
+     target.text=if(km!=null) "📍 आपसे %.1f km दूर".format(java.util.Locale.US,km) else "📍 दूरी उपलब्ध नहीं"
+    }
+   }
+  }
+ }
+}
+override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
+ super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+ if(requestCode==shopLocationPermissionRequest){
+  if(grantResults.any{it==PackageManager.PERMISSION_GRANTED}){
+   // Refresh the current page so the shop cards can calculate distances with permission.
+   showHome()
+  }else shopDistanceViews.values.forEach{it.text="📍 दूरी के लिए लोकेशन अनुमति जरूरी है"}
+ }
 }
 private fun correctedImageUrl(p:Product):String {
     // Canonical product-name photo corrections. These override stale URLs from
