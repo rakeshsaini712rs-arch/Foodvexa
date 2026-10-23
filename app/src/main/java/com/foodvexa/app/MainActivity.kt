@@ -407,9 +407,13 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   card.addView(artwork,LinearLayout.LayoutParams(-1,dp(92)))
   card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
   if(shop.name!="FOODVEXA"){
-   val distanceLabel=label("📍 दूरी पता की जा रही है…",10f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2}
+   val distanceLabel=label("📍 दूरी पता की जा रही है…",10f,false,secondaryText).apply{
+    gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=1
+    setPadding(dp(8),dp(5),dp(8),dp(5))
+    background=GradientDrawable().apply{setColor(if(isLightTheme)Color.rgb(245,245,248) else Color.rgb(48,48,55));cornerRadius=dp(12).toFloat()}
+   }
    shopDistanceViews[shop.name]=distanceLabel
-   card.addView(distanceLabel,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2)})
+   card.addView(distanceLabel,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);leftMargin=dp(2);rightMargin=dp(2)})
   }
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(4);leftMargin=dp(4);bottomMargin=dp(10)})
   if(index%3==2)content.addView(row,LinearLayout.LayoutParams(-1,-2))
@@ -419,19 +423,48 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
 }
 private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
  if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-  shopDistanceViews.values.forEach{it.text="📍 दूरी देखने के लिए लोकेशन अनुमति दें"}
+  shopDistanceViews.values.forEach{it.text="📍 लोकेशन अनुमति दें"}
   if(!isFinishing)ActivityCompat.requestPermissions(this,arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),shopLocationPermissionRequest)
   return
  }
  val lm=getSystemService(LOCATION_SERVICE) as LocationManager
- val current=try{
-  val providers=lm.getProviders(true)
-  providers.mapNotNull{provider->try{lm.getLastKnownLocation(provider)}catch(_:SecurityException){null}}.maxByOrNull{it.time}
- }catch(_:Exception){null}
- if(current==null){shopDistanceViews.values.forEach{it.text="📍 लोकेशन चालू करें"};return}
+ val hasFine=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
+ val providers=try{lm.getProviders(true)}catch(_:Exception){emptyList<String>()}
+ val lastKnown=try{providers.mapNotNull{p->try{lm.getLastKnownLocation(p)}catch(_:SecurityException){null}}.maxByOrNull{it.time}}catch(_:Exception){null}
+ // Request a fresh device location first; use last-known only as a fallback if the request fails.
+ var requested=false
+ val listener=object:android.location.LocationListener{
+  override fun onLocationChanged(location:Location){
+   try{lm.removeUpdates(this)}catch(_:Exception){}
+   calculateShopCardDistances(location,shops)
+  }
+  @Deprecated("Deprecated in Android API")
+  override fun onStatusChanged(provider:String?,status:Int,extras:android.os.Bundle?){}
+  override fun onProviderEnabled(provider:String){}
+  override fun onProviderDisabled(provider:String){}
+ }
+ for(provider in listOf(LocationManager.GPS_PROVIDER,LocationManager.NETWORK_PROVIDER)){
+  if(provider !in providers)continue
+  try{
+   if(!hasFine && provider==LocationManager.GPS_PROVIDER)continue
+   @Suppress("DEPRECATION")
+   lm.requestSingleUpdate(provider,listener,Looper.getMainLooper())
+   requested=true
+   break
+  }catch(_:SecurityException){}catch(_:Exception){}
+ }
+ if(!requested){
+  if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
+  else shopDistanceViews.values.forEach{it.text="📍 लोकेशन नहीं मिली"}
+ }else{
+  // Avoid leaving the cards in a loading state if the device cannot return a fresh fix.
+  if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
+ }
+}
+private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,String>>){
  shops.forEach{(name,address)->
   val target=shopDistanceViews[name] ?: return@forEach
-  target.text="📍 दूरी पता की जा रही है…"
+  target.text="📍 दूरी देख रहे हैं…"
   shopGeoExecutor.execute{
    var shopLoc=synchronized(shopGeoCache){shopGeoCache[name]}
    if(shopLoc==null){
@@ -447,7 +480,7 @@ private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
    val km=shopLoc?.let{current.distanceTo(it)/1000.0}
    mainHandler.post{
     if(!isFinishing && target.parent!=null){
-     target.text=if(km!=null) "📍 आपसे %.1f km दूर".format(java.util.Locale.US,km) else "📍 दूरी उपलब्ध नहीं"
+     target.text=if(km!=null) "📍 %.1f km".format(java.util.Locale.US,km) else "📍 दूरी उपलब्ध नहीं"
     }
    }
   }
