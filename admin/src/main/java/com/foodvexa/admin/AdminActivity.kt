@@ -276,6 +276,8 @@ class AdminActivity : Activity() {
             val webView=WebView(this)
             renderView=webView
             webView.settings.javaScriptEnabled=false
+            webView.settings.useWideViewPort=false
+            webView.settings.loadWithOverviewMode=false
             webView.setBackgroundColor(android.graphics.Color.WHITE)
             webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null)
             webView.layoutParams=android.view.ViewGroup.LayoutParams(595,android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -349,12 +351,12 @@ class AdminActivity : Activity() {
         return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
         *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
-        .sheet{width:100%;margin:0 auto;border:1px solid #eee}
-        .head{background:#050505;color:white;padding:18px 22px;text-align:center;border-bottom:5px solid #ffd500}.brand{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 12px;max-width:100%}.brandcopy{text-align:left;min-width:0}.wordmark{font-size:clamp(22px,5vw,34px);font-weight:900;letter-spacing:-1px;white-space:nowrap}.wordmark span{color:#fff}.wordmark b{color:#ffdf00}.tagline{font-size:clamp(7px,1.7vw,11px);letter-spacing:2px;color:#fff;margin-top:5px;white-space:nowrap}
+        .sheet{width:100%;max-width:575px;margin:0 auto;border:1px solid #eee;overflow:hidden}
+        .head{background:#050505;color:white;padding:18px 22px;text-align:center;border-bottom:5px solid #ffd500}.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto 12px;max-width:100%;min-width:0}.brandcopy{text-align:left;min-width:0;flex:1}.wordmark{font-size:25px;font-weight:900;letter-spacing:-.5px;white-space:nowrap}.wordmark span{color:#fff}.wordmark b{color:#ffdf00}.tagline{font-size:8px;letter-spacing:1px;color:#fff;margin-top:5px;white-space:normal;overflow-wrap:anywhere}
         .logo{display:block;width:82px;height:82px;object-fit:contain;border-radius:50%;background:#050505;margin:0;padding:0;border:2px solid #fff;flex-shrink:0;}
         .receipt{font-size:20px;font-weight:bold;margin-top:8px;letter-spacing:1px}
-        .content{padding:20px}.meta{display:flex;justify-content:space-between;gap:10px;background:#fff8e5;border:1px solid #f4e3a5;padding:12px;margin-bottom:18px}
-        .label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}.value{font-size:13px;font-weight:bold;overflow-wrap:anywhere}
+        .content{padding:16px;min-width:0}.meta{display:grid;grid-template-columns:1.05fr 1.55fr .7fr .7fr;gap:6px;background:#fff8e5;border:1px solid #f4e3a5;padding:10px;margin-bottom:18px;min-width:0}.meta>div{min-width:0}
+        .label{font-size:9px;color:#777;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;overflow-wrap:anywhere}.value{font-size:11px;font-weight:bold;overflow-wrap:anywhere;word-break:break-word}
         .section{font-size:14px;font-weight:bold;color:#c9152b;border-bottom:1px solid #eee;padding-bottom:8px;margin:18px 0 10px;break-after:avoid}
         .info{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide{grid-column:1/-1}
         table{width:100%;border-collapse:collapse;table-layout:fixed}tr{break-inside:avoid}td.item{padding:11px 9px;border-bottom:1px solid #eee;font-size:13px;overflow-wrap:anywhere}
