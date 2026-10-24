@@ -288,17 +288,23 @@ class AdminActivity : Activity() {
                 override fun onPageFinished(view:WebView,url:String){
                     view.postDelayed({
                         try{
-                            val width=595
-                            val contentHeight=view.contentHeight.coerceAtLeast(842)
-                            view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
-                            view.layout(0,0,width,contentHeight)
+                            // WebView dimensions are physical pixels, while PDF pages use points.
+                            // Match the WebView's CSS viewport to an A4-width page before drawing.
+                            val density=resources.displayMetrics.density
+                            val pageWidth=595
                             val pageHeight=842
-                            val pageCount=((contentHeight+pageHeight-1)/pageHeight).coerceAtLeast(1)
+                            val viewWidth=(pageWidth*density).toInt()
+                            val contentHeight=(view.contentHeight*density).toInt().coerceAtLeast((pageHeight*density).toInt())
+                            view.measure(android.view.View.MeasureSpec.makeMeasureSpec(viewWidth,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
+                            view.layout(0,0,viewWidth,contentHeight)
+                            val physicalPageHeight=(pageHeight*density).toInt()
+                            val pageCount=((contentHeight+physicalPageHeight-1)/physicalPageHeight).coerceAtLeast(1)
                             val pdf=android.graphics.pdf.PdfDocument()
                             for(pageNumber in 0 until pageCount){
-                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,pageHeight,pageNumber+1).create())
+                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber+1).create())
                                 page.canvas.save()
-                                page.canvas.translate(0f,-(pageNumber*pageHeight).toFloat())
+                                page.canvas.scale(1f/density,1f/density)
+                                page.canvas.translate(0f,-(pageNumber*physicalPageHeight).toFloat())
                                 view.draw(page.canvas)
                                 page.canvas.restore()
                                 pdf.finishPage(page)
