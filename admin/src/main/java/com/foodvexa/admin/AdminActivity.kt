@@ -281,7 +281,7 @@ class AdminActivity : Activity() {
             webView.setBackgroundColor(android.graphics.Color.WHITE)
             webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null)
             webView.layoutParams=android.view.ViewGroup.LayoutParams(595,android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            webView.visibility=android.view.View.INVISIBLE
+            webView.visibility=android.view.View.VISIBLE
             (window.decorView as? android.view.ViewGroup)?.addView(webView)
                 ?: throw IllegalStateException("Unable to prepare bill preview")
             webView.webViewClient=object:WebViewClient(){
@@ -331,7 +331,7 @@ class AdminActivity : Activity() {
                             renderView=null
                             Toast.makeText(this@AdminActivity,"Could not create/share bill PDF: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
                         }
-                    },300L)
+                    },700L)
                 }
             }
             webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
