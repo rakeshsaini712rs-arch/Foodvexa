@@ -134,9 +134,9 @@ class AdminActivity : Activity() {
         val todayUpiVerified=todayOrders.filter{it.second["paymentMethod"]?.toString()?.equals("UPI",true)==true && it.second["paymentStatus"]?.toString()=="VERIFIED"}.sumOf{orderAmount(it.second)}
         card("TODAY'S ORDERS",if(ordersLoadError!=null)"—" else todayOrders.size.toString(),if(ordersLoadError!=null)"Database connection error" else "Orders received today (India time)")
         card("TODAY'S ORDER VALUE","₹"+formatAmount(todayValue),"Total value of today's orders")
-        card("COD COLLECTED TODAY","₹"+formatAmount(todayCodCollected),"Delivered COD orders only")
+        card("COD DELIVERED TODAY","₹"+formatAmount(todayCodCollected),"Today's delivered COD orders; confirm cash was received")
         card("COD STILL DUE","₹"+formatAmount(todayCodDue),"Undelivered COD orders")
-        card("VERIFIED UPI TODAY","₹"+formatAmount(todayUpiVerified),"UPI orders marked verified today")
+        card("VERIFIED UPI (TODAY'S ORDERS)","₹"+formatAmount(todayUpiVerified),"Verified UPI orders placed today")
         card("ALL-TIME ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),"All orders in database")
         card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
         card("PAYMENTS TO REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
