@@ -83,16 +83,17 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    }
   }
  }
- override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();preloadCategoryImages();showHome()}
- override fun onBackPressed(){
-  androidx.appcompat.app.AlertDialog.Builder(this)
+ override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);onBackPressedDispatcher.addCallback(this,object:androidx.activity.OnBackPressedCallback(true){
+ override fun handleOnBackPressed(){
+  androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
    .setTitle("Are you sure?")
    .setMessage("Do you want to exit Foodvexa?")
    .setNegativeButton("Stay"){dialog,_ -> dialog.dismiss()}
-   .setPositiveButton("Exit"){_,_ -> finish()}
+   .setPositiveButton("Exit"){_,_ -> isEnabled=false;onBackPressedDispatcher.onBackPressed()}
    .setCancelable(true)
    .show()
  }
+});val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();preloadCategoryImages();showHome()}
  override fun onStart(){super.onStart();if(::root.isInitialized)loadSharedMenu()}
  override fun onStop(){menuListener?.remove();menuListener=null;super.onStop()}
  private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}
