@@ -240,6 +240,7 @@ class AdminActivity : Activity() {
             card.addView(text("Payment: $payment · $pStatus",13f,if(pStatus=="VERIFIED")green else Color.rgb(145,90,0),true))
             card.addView(button("PRINT CUSTOMER BILL", { printCustomerBill(id,d) }, Color.rgb(35,105,75)),
                 LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(9)})
+            card.addView(button("SHARE BILL ON WHATSAPP",{ shareCustomerBillOnWhatsApp(id,d) },Color.rgb(37,150,80)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
             val statuses=listOf("New","Accepted","Preparing","Ready","Out for delivery","Delivered","Cancelled")
             val spinner=Spinner(this)
             spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,statuses)
@@ -256,6 +257,23 @@ class AdminActivity : Activity() {
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
     }
+    private fun shareCustomerBillOnWhatsApp(orderId:String,d:Map<String,Any>){
+        val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
+        val phone=d["phone"]?.toString()?.trim().orEmpty()
+        val address=d["address"]?.toString()?: "—"
+        val items=d["itemsText"]?.toString()?: "—"
+        val total=d["total"]?.toString()?: "—"
+        val payment=d["paymentMethod"]?.toString()?: "COD"
+        val paymentStatus=d["paymentStatus"]?.toString()?: "COD_DUE"
+        val status=d["status"]?.toString()?: "New"
+        val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
+        val message="FOODVEXA - CUSTOMER BILL\nOrder ID: #${orderId.takeLast(7).uppercase()}\nCustomer: $customer\nPhone: $phone\nAddress: $address\n\nItems:\n$items\n\nScheduled delivery: $scheduled\nPayment: $payment ($paymentStatus)\nOrder status: $status\nTotal: ₹$total\n\nThank you for choosing Foodvexa!"
+        try{
+            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{type="text/plain";putExtra(android.content.Intent.EXTRA_TEXT,message)}
+            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill via WhatsApp"))
+        }catch(e:Exception){Toast.makeText(this,"Unable to share bill: "+(e.localizedMessage?: "unknown error"),Toast.LENGTH_LONG).show()}
+    }
+
     private fun printCustomerBill(orderId:String, d:Map<String,Any>){
         val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
         val phone=d["phone"]?.toString()?: "—"
