@@ -127,7 +127,17 @@ class AdminActivity : Activity() {
             addLine("Firebase project: "+(com.google.firebase.FirebaseApp.getInstance().options.projectId?: "unknown"),12f,Color.GRAY)
             body.addView(button("RETRY ORDERS CONNECTION",{showPage("Dashboard")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
-        card("TOTAL ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),if(ordersLoadError!=null)"Database connection error — count unavailable" else "Orders loaded from the shared database")
+        val todayOrders=orders.filter{isOrderFromToday(it.second)}
+        val todayValue=todayOrders.sumOf{orderAmount(it.second)}
+        val todayCodDue=todayOrders.filter{it.second["paymentMethod"]?.toString()?.equals("COD",true)==true && it.second["status"]?.toString()!="Delivered" && it.second["status"]?.toString()!="Cancelled"}.sumOf{orderAmount(it.second)}
+        val todayCodCollected=todayOrders.filter{it.second["paymentMethod"]?.toString()?.equals("COD",true)==true && it.second["status"]?.toString()=="Delivered"}.sumOf{orderAmount(it.second)}
+        val todayUpiVerified=todayOrders.filter{it.second["paymentMethod"]?.toString()?.equals("UPI",true)==true && it.second["paymentStatus"]?.toString()=="VERIFIED"}.sumOf{orderAmount(it.second)}
+        card("TODAY'S ORDERS",if(ordersLoadError!=null)"—" else todayOrders.size.toString(),if(ordersLoadError!=null)"Database connection error" else "Orders received today (India time)")
+        card("TODAY'S ORDER VALUE","₹"+formatAmount(todayValue),"Total value of today's orders")
+        card("COD COLLECTED TODAY","₹"+formatAmount(todayCodCollected),"Delivered COD orders only")
+        card("COD STILL DUE","₹"+formatAmount(todayCodDue),"Undelivered COD orders")
+        card("VERIFIED UPI TODAY","₹"+formatAmount(todayUpiVerified),"UPI orders marked verified today")
+        card("ALL-TIME ORDERS",if(ordersLoadError!=null)"—" else orders.size.toString(),"All orders in database")
         card("NEW / PENDING",orders.count{it.second["status"]=="New"||it.second["status"]=="Pending"}.toString(),"Awaiting action")
         card("PAYMENTS TO REVIEW",orders.count{it.second["paymentMethod"]=="UPI"&&it.second["paymentStatus"]!="VERIFIED"}.toString(),"UPI payment status")
         body.addView(button("VIEW ORDERS",{showPage("Orders")}),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
@@ -158,6 +168,40 @@ class AdminActivity : Activity() {
             if(page=="Dashboard")showPage("Dashboard")
         }
         onLoaded()
+    }
+    private fun indiaDateFormat()=java.text.SimpleDateFormat("yyyy-MM-dd",java.util.Locale("en","IN")).apply{timeZone=java.util.TimeZone.getTimeZone("Asia/Kolkata")}
+    private fun isOrderFromToday(d:Map<String,Any>):Boolean{
+        val ts=d["createdAt"] as? com.google.firebase.Timestamp
+        val date=ts?.toDate() ?: run{
+            val raw=d["orderDate"]?.toString()?.trim().orEmpty()
+            val parsed=try{java.text.SimpleDateFormat("dd-MM-yyyy",java.util.Locale("en","IN")).parse(raw)}catch(_:Exception){null}
+            parsed
+        } ?: return false
+        val fmt=indiaDateFormat()
+        return fmt.format(date)==fmt.format(java.util.Date())
+    }
+    private fun orderAmount(d:Map<String,Any>):Double{
+        val value=d["total"]
+        return when(value){is Number->value.toDouble();else->value?.toString()?.replace(",","")?.replace("₹","")?.trim()?.toDoubleOrNull()?:0.0}
+    }
+    private fun formatAmount(value:Double)=if(value%1.0==0.0)value.toLong().toString() else String.format(java.util.Locale.US,"%.2f",value)
+    private fun orderDateKey(d:Map<String,Any>):String{
+        val ts=d["createdAt"] as? com.google.firebase.Timestamp
+        val date=ts?.toDate() ?: run{
+            val raw=d["orderDate"]?.toString()?.trim().orEmpty()
+            try{java.text.SimpleDateFormat("dd-MM-yyyy",java.util.Locale("en","IN")).parse(raw)}catch(_:Exception){null}
+        }
+        return date?.let{indiaDateFormat().format(it)} ?: "Unknown date"
+    }
+    private fun orderSerials(source:List<Pair<String,Map<String,Any>>>):Map<String,Int>{
+        val counts=mutableMapOf<String,Int>()
+        val result=mutableMapOf<String,Int>()
+        source.sortedWith(compareBy<Pair<String,Map<String,Any>>>{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.thenBy{it.first}).forEach{(id,d)->
+            val key=orderDateKey(d)
+            counts[key]=(counts[key]?:0)+1
+            result[id]=counts[key]!!
+        }
+        return result
     }
     private fun ordersPage(){addLine("Customer Orders",22f,ink,true);addLine("Live order list and status controls",13f,Color.GRAY);listenOrders{renderOrders()}}
     private fun createDeliveryBoyAccount(){
@@ -192,14 +236,18 @@ class AdminActivity : Activity() {
         body.removeAllViews()
         val scheduled=orders.filter{!it.second["scheduledDelivery"]?.toString().isNullOrBlank()}
         val visibleOrders=if(scheduledOrdersOnly)scheduled else orders
+        val todayOrders=orders.filter{isOrderFromToday(it.second)}
+        val serials=orderSerials(orders)
         addLine(if(scheduledOrdersOnly)"Scheduled orders · "+scheduled.size else "Customer orders · "+orders.size,21f,ink,true)
+        card("TODAY'S ORDERS",todayOrders.size.toString(),"Today's orders received")
+        card("TODAY'S ORDER VALUE","₹"+formatAmount(todayOrders.sumOf{orderAmount(it.second)}),"Today's total order value")
         body.addView(button(if(scheduledOrdersOnly)"SHOW ALL ORDERS" else "SCHEDULED ORDERS ("+scheduled.size+")",{scheduledOrdersOnly=!scheduledOrdersOnly;renderOrders()},Color.rgb(188,86,20)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(8)})
         body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         if(visibleOrders.isEmpty()){addLine(if(scheduledOrdersOnly)"No scheduled orders found yet." else "No orders found yet.",14f,Color.GRAY);return}
-        visibleOrders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
+        visibleOrders.sortedWith(compareByDescending<Pair<String,Map<String,Any>>>{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.thenByDescending{it.first}).forEach{(id,d)->
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
             val total=d["total"]?.toString()?: "—"
-            card.addView(text("Order #"+id.takeLast(7)+"   ·   ₹"+total,16f,ink,true))
+            card.addView(text("DAILY SERIAL #"+(serials[id]?: "—")+"   ·   Order #"+id.takeLast(7)+"   ·   ₹"+total,16f,ink,true))
             card.addView(text("Order date & time: "+orderDateTime(d),13f,Color.DKGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             card.addView(text("Status: "+(d["status"]?.toString()?: "New"),13f,red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             val scheduledTime=d["scheduledDelivery"]?.toString()?.trim().orEmpty()
