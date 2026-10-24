@@ -277,36 +277,35 @@ class AdminActivity : Activity() {
             webView.webViewClient=object:WebViewClient(){
                 override fun onPageFinished(view:WebView,url:String){
                     try{
-                        val dir=java.io.File(cacheDir,"bills")
-                        if(!dir.exists())dir.mkdirs()
-                        val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
-                        val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
-                        val attrs=PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build()
-                        val cancellation=android.os.CancellationSignal()
-                        adapter.onLayout(null,attrs,cancellation,object:android.print.PrintDocumentAdapter.LayoutResultCallback(){
-                            override fun onLayoutFinished(info:android.print.PrintDocumentInfo,changed:Boolean){
-                                try{
-                                    val descriptor=android.os.ParcelFileDescriptor.open(file,android.os.ParcelFileDescriptor.MODE_CREATE or android.os.ParcelFileDescriptor.MODE_TRUNCATE or android.os.ParcelFileDescriptor.MODE_READ_WRITE)
-                                    adapter.onWrite(arrayOf(android.print.PageRange.ALL_PAGES),descriptor,cancellation,object:android.print.PrintDocumentAdapter.WriteResultCallback(){
-                                        override fun onWriteFinished(pages:Array<android.print.PageRange>){
-                                            try{
-                                                val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
-                                                val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
-                                                    type="application/pdf"
-                                                    putExtra(android.content.Intent.EXTRA_STREAM,uri)
-                                                    putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
-                                                    putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
-                                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                }
-                                                startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
-                                            }catch(e:Exception){Toast.makeText(this@AdminActivity,"PDF created but sharing failed: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
-                                        }
-                                        override fun onWriteFailed(error:String?){Toast.makeText(this@AdminActivity,"Could not generate bill PDF: "+(error?: "unknown error"),Toast.LENGTH_LONG).show()}
-                                    })
-                                }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not save bill PDF: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
-                            }
-                            override fun onLayoutFailed(error:String?){Toast.makeText(this@AdminActivity,"Could not prepare bill PDF: "+(error?: "unknown error"),Toast.LENGTH_LONG).show()}
-                        })
+                        view.post {
+                            try{
+                                val width=595
+                                val contentHeight=(view.contentHeight*width.toFloat()/maxOf(view.width,1)).toInt().coerceAtLeast(842)
+                                view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
+                                view.layout(0,0,width,contentHeight)
+                                val bitmap=android.graphics.Bitmap.createBitmap(width,contentHeight,android.graphics.Bitmap.Config.ARGB_8888)
+                                view.draw(android.graphics.Canvas(bitmap))
+                                val pdf=android.graphics.pdf.PdfDocument()
+                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,contentHeight,1).create())
+                                page.canvas.drawBitmap(bitmap,0f,0f,null)
+                                pdf.finishPage(page)
+                                val dir=java.io.File(cacheDir,"bills")
+                                if(!dir.exists())dir.mkdirs()
+                                val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
+                                java.io.FileOutputStream(file).use{pdf.writeTo(it)}
+                                pdf.close()
+                                bitmap.recycle()
+                                val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
+                                val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+                                    type="application/pdf"
+                                    putExtra(android.content.Intent.EXTRA_STREAM,uri)
+                                    putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
+                                    putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
+                            }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not create bill PDF: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
+                        }
                     }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not prepare bill: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
                 }
             }
