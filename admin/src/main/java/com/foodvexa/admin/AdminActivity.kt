@@ -270,47 +270,62 @@ class AdminActivity : Activity() {
     private fun shareCustomerBillOnWhatsApp(orderId:String,d:Map<String,Any>){
         val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
         val orderTime=orderDateTime(d)
+        var renderView:WebView?=null
         try{
             val html=customerBillHtml(orderId,d)
             val webView=WebView(this)
+            renderView=webView
             webView.settings.javaScriptEnabled=false
+            webView.setBackgroundColor(android.graphics.Color.WHITE)
+            webView.layoutParams=android.view.ViewGroup.LayoutParams(595,android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+            webView.alpha=0f
+            (window.decorView as? android.view.ViewGroup)?.addView(webView)
+                ?: throw IllegalStateException("Unable to prepare bill preview")
             webView.webViewClient=object:WebViewClient(){
                 override fun onPageFinished(view:WebView,url:String){
-                    try{
-                        view.post {
-                            try{
-                                val width=595
-                                val contentHeight=(view.contentHeight*width.toFloat()/maxOf(view.width,1)).toInt().coerceAtLeast(842)
-                                view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
-                                view.layout(0,0,width,contentHeight)
-                                val bitmap=android.graphics.Bitmap.createBitmap(width,contentHeight,android.graphics.Bitmap.Config.ARGB_8888)
-                                view.draw(android.graphics.Canvas(bitmap))
-                                val pdf=android.graphics.pdf.PdfDocument()
-                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,contentHeight,1).create())
-                                page.canvas.drawBitmap(bitmap,0f,0f,null)
-                                pdf.finishPage(page)
-                                val dir=java.io.File(cacheDir,"bills")
-                                if(!dir.exists())dir.mkdirs()
-                                val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
-                                java.io.FileOutputStream(file).use{pdf.writeTo(it)}
-                                pdf.close()
-                                bitmap.recycle()
-                                val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
-                                val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
-                                    type="application/pdf"
-                                    putExtra(android.content.Intent.EXTRA_STREAM,uri)
-                                    putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
-                                    putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
-                            }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not create bill PDF: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
+                    view.post {
+                        try{
+                            val width=595
+                            val contentHeight=(view.contentHeight*width.toFloat()/maxOf(view.width,1)).toInt().coerceAtLeast(842)
+                            view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
+                            view.layout(0,0,width,contentHeight)
+                            val bitmap=android.graphics.Bitmap.createBitmap(width,contentHeight,android.graphics.Bitmap.Config.ARGB_8888)
+                            view.draw(android.graphics.Canvas(bitmap))
+                            val pdf=android.graphics.pdf.PdfDocument()
+                            val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,contentHeight,1).create())
+                            page.canvas.drawBitmap(bitmap,0f,0f,null)
+                            pdf.finishPage(page)
+                            val dir=java.io.File(cacheDir,"bills")
+                            if(!dir.exists()&&!dir.mkdirs())throw java.io.IOException("Could not create bill folder")
+                            val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
+                            java.io.FileOutputStream(file).use{pdf.writeTo(it)}
+                            pdf.close()
+                            bitmap.recycle()
+                            (view.parent as? android.view.ViewGroup)?.removeView(view)
+                            renderView=null
+                            if(!file.exists()||file.length()==0L)throw java.io.IOException("Bill PDF is empty")
+                            val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
+                            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+                                type="application/pdf"
+                                putExtra(android.content.Intent.EXTRA_STREAM,uri)
+                                putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
+                                putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
+                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
+                        }catch(e:Exception){
+                            (view.parent as? android.view.ViewGroup)?.removeView(view)
+                            renderView=null
+                            Toast.makeText(this@AdminActivity,"Could not create/share bill PDF: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
                         }
-                    }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not prepare bill: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
+                    }
                 }
             }
             webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
-        }catch(e:Exception){Toast.makeText(this,"Unable to create/share bill PDF: "+(e.localizedMessage?: "unknown error"),Toast.LENGTH_LONG).show()}
+        }catch(e:Exception){
+            (renderView?.parent as? android.view.ViewGroup)?.removeView(renderView)
+            Toast.makeText(this,"Unable to prepare bill sharing: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun customerBillHtml(orderId:String,d:Map<String,Any>):String {
