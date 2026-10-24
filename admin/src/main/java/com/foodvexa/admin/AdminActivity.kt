@@ -277,12 +277,81 @@ class AdminActivity : Activity() {
         val paymentStatus=d["paymentStatus"]?.toString()?: "COD_DUE"
         val status=d["status"]?.toString()?: "New"
         val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
-        val orderDateTime=orderDateTime(d)
-        val message="FOODVEXA - CUSTOMER BILL\nOrder ID: #${orderId.takeLast(7).uppercase()}\nOrder date & time: $orderDateTime\nCustomer: $customer\nPhone: $phone\nAddress: $address\n\nItems:\n$items\n\nScheduled delivery: $scheduled\nPayment: $payment ($paymentStatus)\nOrder status: $status\nTotal: ₹$total\n\nThank you for choosing Foodvexa!"
+        val orderTime=orderDateTime(d)
         try{
-            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{type="text/plain";putExtra(android.content.Intent.EXTRA_TEXT,message)}
-            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill via WhatsApp"))
-        }catch(e:Exception){Toast.makeText(this,"Unable to share bill: "+(e.localizedMessage?: "unknown error"),Toast.LENGTH_LONG).show()}
+            val pageWidth=595
+            val pageHeight=842
+            val document=android.graphics.pdf.PdfDocument()
+            val paint=android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+            var pageNumber=1
+            var page=document.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber).create())
+            var canvas=page.canvas
+            var y=44f
+            fun startNewPage(){
+                document.finishPage(page)
+                pageNumber++
+                page=document.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber).create())
+                canvas=page.canvas
+                y=48f
+            }
+            fun line(value:String,size:Float=12f,bold:Boolean=false,color:Int=Color.rgb(35,35,35),left:Float=42f){
+                paint.color=color;paint.textSize=size;paint.typeface=if(bold) Typeface.create("sans-serif",Typeface.BOLD) else Typeface.create("sans-serif",Typeface.NORMAL)
+                val maxWidth=pageWidth-left-42f
+                val words=value.split(" ")
+                var current=""
+                for(word in words){
+                    val test=if(current.isEmpty())word else "$current $word"
+                    if(paint.measureText(test)>maxWidth && current.isNotEmpty()){
+                        if(y>pageHeight-55)startNewPage()
+                        canvas.drawText(current,left,y,paint);y+=size+7f;current=word
+                    }else current=test
+                }
+                if(current.isNotEmpty()){
+                    if(y>pageHeight-55)startNewPage()
+                    canvas.drawText(current,left,y,paint);y+=size+7f
+                }
+            }
+            canvas.drawColor(Color.WHITE)
+            paint.color=Color.BLACK;canvas.drawRect(0f,0f,pageWidth.toFloat(),150f,paint)
+            paint.color=Color.rgb(255,218,0);canvas.drawRect(0f,146f,pageWidth.toFloat(),151f,paint)
+            paint.color=Color.WHITE;paint.textSize=28f;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD)
+            canvas.drawText("FOOD",190f,57f,paint)
+            paint.color=Color.rgb(255,218,0);canvas.drawText("VEXA",267f,57f,paint)
+            paint.color=Color.LTGRAY;paint.textSize=10f;paint.typeface=Typeface.DEFAULT
+            canvas.drawText("FOOD ORDERING MADE EASY",190f,77f,paint)
+            paint.color=Color.WHITE;paint.textSize=20f;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD)
+            canvas.drawText("CUSTOMER BILL",pageWidth/2f-75f,119f,paint)
+            y=185f
+            paint.color=Color.rgb(255,248,229);canvas.drawRect(35f,163f,pageWidth-35f,239f,paint)
+            line("ORDER ID: #"+orderId.takeLast(7).uppercase(),11f,true)
+            line("ORDER DATE & TIME: $orderTime",11f,true)
+            line("PAYMENT: $payment ($paymentStatus)",11f,true)
+            line("STATUS: $status",11f,true)
+            y+=8f
+            line("CUSTOMER DETAILS",15f,true,Color.rgb(201,21,43));line("Name: $customer");line("Phone: $phone");line("Address: $address")
+            y+=12f;line("ORDER SUMMARY",15f,true,Color.rgb(201,21,43));line("Scheduled delivery: $scheduled",12f,true)
+            items.split(Regex("\\r?\\n")).filter{it.isNotBlank()}.forEach{line(it,12f)}
+            y+=15f
+            paint.color=Color.rgb(255,248,229);canvas.drawRect(35f,y-19f,pageWidth-35f,y+28f,paint)
+            line("TOTAL AMOUNT: Rs $total",18f,true,Color.rgb(201,21,43),48f)
+            y+=35f;line("Thank you for choosing Foodvexa!",11f,false,Color.GRAY,180f)
+            line("Food Ordering Made Easy",10f,false,Color.GRAY,210f)
+            document.finishPage(page)
+            val dir=java.io.File(cacheDir,"bills")
+            if(!dir.exists())dir.mkdirs()
+            val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
+            java.io.FileOutputStream(file).use{document.writeTo(it)}
+            document.close()
+            val uri=androidx.core.content.FileProvider.getUriForFile(this,"com.foodvexa.admin.fileprovider",file)
+            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+                type="application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM,uri)
+                putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
+                putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
+        }catch(e:Exception){Toast.makeText(this,"Unable to create/share bill PDF: "+(e.localizedMessage?: "unknown error"),Toast.LENGTH_LONG).show()}
     }
 
     private fun printCustomerBill(orderId:String, d:Map<String,Any>){
