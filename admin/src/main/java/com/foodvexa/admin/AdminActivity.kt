@@ -269,92 +269,52 @@ class AdminActivity : Activity() {
 
     private fun shareCustomerBillOnWhatsApp(orderId:String,d:Map<String,Any>){
         val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
-        val phone=d["phone"]?.toString()?.trim().orEmpty()
-        val address=d["address"]?.toString()?: "—"
-        val items=d["itemsText"]?.toString()?: "—"
-        val total=d["total"]?.toString()?: "—"
-        val payment=d["paymentMethod"]?.toString()?: "COD"
-        val paymentStatus=d["paymentStatus"]?.toString()?: "COD_DUE"
-        val status=d["status"]?.toString()?: "New"
-        val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
         val orderTime=orderDateTime(d)
         try{
-            val pageWidth=595
-            val pageHeight=842
-            val document=android.graphics.pdf.PdfDocument()
-            val paint=android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-            var pageNumber=1
-            var page=document.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber).create())
-            var canvas=page.canvas
-            var y=44f
-            fun startNewPage(){
-                document.finishPage(page)
-                pageNumber++
-                page=document.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber).create())
-                canvas=page.canvas
-                y=48f
-            }
-            fun line(value:String,size:Float=12f,bold:Boolean=false,color:Int=Color.rgb(35,35,35),left:Float=42f){
-                paint.color=color;paint.textSize=size;paint.typeface=if(bold) Typeface.create("sans-serif",Typeface.BOLD) else Typeface.create("sans-serif",Typeface.NORMAL)
-                val maxWidth=pageWidth-left-42f
-                val words=value.split(" ")
-                var current=""
-                for(word in words){
-                    val test=if(current.isEmpty())word else "$current $word"
-                    if(paint.measureText(test)>maxWidth && current.isNotEmpty()){
-                        if(y>pageHeight-55)startNewPage()
-                        canvas.drawText(current,left,y,paint);y+=size+7f;current=word
-                    }else current=test
+            val html=customerBillHtml(orderId,d)
+            val webView=WebView(this)
+            webView.settings.javaScriptEnabled=false
+            webView.webViewClient=object:WebViewClient(){
+                override fun onPageFinished(view:WebView,url:String){
+                    try{
+                        val dir=java.io.File(cacheDir,"bills")
+                        if(!dir.exists())dir.mkdirs()
+                        val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
+                        val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
+                        val attrs=PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4).setMinMargins(PrintAttributes.Margins.NO_MARGINS).build()
+                        val cancellation=android.os.CancellationSignal()
+                        adapter.onLayout(null,attrs,cancellation,object:android.print.PrintDocumentAdapter.LayoutResultCallback(){
+                            override fun onLayoutFinished(info:android.print.PrintDocumentInfo,changed:Boolean){
+                                try{
+                                    val descriptor=android.os.ParcelFileDescriptor.open(file,android.os.ParcelFileDescriptor.MODE_CREATE or android.os.ParcelFileDescriptor.MODE_TRUNCATE or android.os.ParcelFileDescriptor.MODE_READ_WRITE)
+                                    adapter.onWrite(arrayOf(android.print.PageRange.ALL_PAGES),descriptor,cancellation,object:android.print.PrintDocumentAdapter.WriteResultCallback(){
+                                        override fun onWriteFinished(pages:Array<android.print.PageRange>){
+                                            try{
+                                                val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
+                                                val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
+                                                    type="application/pdf"
+                                                    putExtra(android.content.Intent.EXTRA_STREAM,uri)
+                                                    putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
+                                                    putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
+                                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                }
+                                                startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
+                                            }catch(e:Exception){Toast.makeText(this@AdminActivity,"PDF created but sharing failed: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
+                                        }
+                                        override fun onWriteFailed(error:String?){Toast.makeText(this@AdminActivity,"Could not generate bill PDF: "+(error?: "unknown error"),Toast.LENGTH_LONG).show()}
+                                    })
+                                }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not save bill PDF: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
+                            }
+                            override fun onLayoutFailed(error:String?){Toast.makeText(this@AdminActivity,"Could not prepare bill PDF: "+(error?: "unknown error"),Toast.LENGTH_LONG).show()}
+                        })
+                    }catch(e:Exception){Toast.makeText(this@AdminActivity,"Could not prepare bill: ${e.localizedMessage}",Toast.LENGTH_LONG).show()}
                 }
-                if(current.isNotEmpty()){
-                    if(y>pageHeight-55)startNewPage()
-                    canvas.drawText(current,left,y,paint);y+=size+7f
-                }
             }
-            canvas.drawColor(Color.WHITE)
-            paint.color=Color.BLACK;canvas.drawRect(0f,0f,pageWidth.toFloat(),150f,paint)
-            paint.color=Color.rgb(255,218,0);canvas.drawRect(0f,146f,pageWidth.toFloat(),151f,paint)
-            paint.color=Color.WHITE;paint.textSize=28f;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD)
-            canvas.drawText("FOOD",190f,57f,paint)
-            paint.color=Color.rgb(255,218,0);canvas.drawText("VEXA",267f,57f,paint)
-            paint.color=Color.LTGRAY;paint.textSize=10f;paint.typeface=Typeface.DEFAULT
-            canvas.drawText("FOOD ORDERING MADE EASY",190f,77f,paint)
-            paint.color=Color.WHITE;paint.textSize=20f;paint.typeface=Typeface.create("sans-serif",Typeface.BOLD)
-            canvas.drawText("CUSTOMER BILL",pageWidth/2f-75f,119f,paint)
-            y=185f
-            paint.color=Color.rgb(255,248,229);canvas.drawRect(35f,163f,pageWidth-35f,239f,paint)
-            line("ORDER ID: #"+orderId.takeLast(7).uppercase(),11f,true)
-            line("ORDER DATE & TIME: $orderTime",11f,true)
-            line("PAYMENT: $payment ($paymentStatus)",11f,true)
-            line("STATUS: $status",11f,true)
-            y+=8f
-            line("CUSTOMER DETAILS",15f,true,Color.rgb(201,21,43));line("Name: $customer");line("Phone: $phone");line("Address: $address")
-            y+=12f;line("ORDER SUMMARY",15f,true,Color.rgb(201,21,43));line("Scheduled delivery: $scheduled",12f,true)
-            items.split(Regex("\\r?\\n")).filter{it.isNotBlank()}.forEach{line(it,12f)}
-            y+=15f
-            paint.color=Color.rgb(255,248,229);canvas.drawRect(35f,y-19f,pageWidth-35f,y+28f,paint)
-            line("TOTAL AMOUNT: Rs $total",18f,true,Color.rgb(201,21,43),48f)
-            y+=35f;line("Thank you for choosing Foodvexa!",11f,false,Color.GRAY,180f)
-            line("Food Ordering Made Easy",10f,false,Color.GRAY,210f)
-            document.finishPage(page)
-            val dir=java.io.File(cacheDir,"bills")
-            if(!dir.exists())dir.mkdirs()
-            val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
-            java.io.FileOutputStream(file).use{document.writeTo(it)}
-            document.close()
-            val uri=androidx.core.content.FileProvider.getUriForFile(this,"com.foodvexa.admin.fileprovider",file)
-            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
-                type="application/pdf"
-                putExtra(android.content.Intent.EXTRA_STREAM,uri)
-                putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
-                putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
+            webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
         }catch(e:Exception){Toast.makeText(this,"Unable to create/share bill PDF: "+(e.localizedMessage?: "unknown error"),Toast.LENGTH_LONG).show()}
     }
 
-    private fun printCustomerBill(orderId:String, d:Map<String,Any>){
+    private fun customerBillHtml(orderId:String,d:Map<String,Any>):String {
         val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
         val phone=d["phone"]?.toString()?: "—"
         val address=d["address"]?.toString()?: "—"
@@ -364,13 +324,10 @@ class AdminActivity : Activity() {
         val status=d["status"]?.toString()?: "New"
         val orderDateTime=orderDateTime(d)
         val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
-        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;")
-        val itemLines=items.split(Regex("\\r?\\n|\\s(?=[^\\n]+ × \\d+\\s*=)")).filter{it.isNotBlank()}
-        val itemRows=itemLines.joinToString(""){line ->
-            val clean=line.trim()
-            "<tr><td class='item'>${esc(clean)}</td></tr>"
-        }.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
-        val html="""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\\\"","&quot;")
+        val itemLines=items.split(Regex("\\\\r?\\\\n|\\\\s(?=[^\\\\n]+ × \\\\d+\\\\s*=)")).filter{it.isNotBlank()}
+        val itemRows=itemLines.joinToString(""){line -> "<tr><td class='item'>${esc(line.trim())}</td></tr>"}.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
         *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
         .sheet{width:100%;margin:0 auto;border:1px solid #eee}
@@ -393,6 +350,25 @@ class AdminActivity : Activity() {
         <div class="section">ORDER SUMMARY</div><div class="info"><div class="wide"><div class="label">Scheduled delivery</div><div class="value">${esc(scheduled)}</div></div></div><table>$itemRows</table>
         <div class="totalbox"><span>Total amount</span><strong>₹ ${esc(total)}</strong></div></div>
         <div class="footer">Thank you for choosing Foodvexa!<br>Food Ordering Made Easy</div></div></body></html>"""
+    }
+
+    private fun printCustomerBill(orderId:String, d:Map<String,Any>){
+        val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
+        val phone=d["phone"]?.toString()?: "—"
+        val address=d["address"]?.toString()?: "—"
+        val items=d["itemsText"]?.toString()?: "—"
+        val total=d["total"]?.toString()?: "—"
+        val payment=d["paymentMethod"]?.toString()?: "COD"
+        val status=d["status"]?.toString()?: "New"
+        val orderDateTime=orderDateTime(d)
+        val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
+        fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;")
+        val itemLines=items.split(Regex("\\r?\\n|\\s(?=[^\\n]+ × \\d+\\s*=)")).filter{it.isNotBlank()}
+        val itemRows=itemLines.joinToString(""){line ->
+            val clean=line.trim()
+            "<tr><td class='item'>${esc(clean)}</td></tr>"
+        }.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
+        val html=customerBillHtml(orderId,d)
         val webView=WebView(this)
         webView.settings.javaScriptEnabled=false
         webView.webViewClient=object:WebViewClient(){
