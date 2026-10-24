@@ -268,76 +268,35 @@ class AdminActivity : Activity() {
     }
 
     private fun shareCustomerBillOnWhatsApp(orderId:String,d:Map<String,Any>){
-        val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
-        val orderTime=orderDateTime(d)
-        var renderView:WebView?=null
+        // Use the same Android WebView print pipeline as Print Customer Bill.
+        // Directly drawing a WebView onto PdfDocument caused clipped/blank output on some devices.
         try{
             val html=customerBillHtml(orderId,d)
             val webView=WebView(this)
-            renderView=webView
             webView.settings.javaScriptEnabled=false
-            webView.settings.useWideViewPort=false
-            webView.settings.loadWithOverviewMode=false
-            webView.setBackgroundColor(android.graphics.Color.WHITE)
-            webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null)
-            webView.layoutParams=android.view.ViewGroup.LayoutParams(595,android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            webView.visibility=android.view.View.VISIBLE
-            (window.decorView as? android.view.ViewGroup)?.addView(webView)
-                ?: throw IllegalStateException("Unable to prepare bill preview")
+            webView.setBackgroundColor(Color.WHITE)
             webView.webViewClient=object:WebViewClient(){
                 override fun onPageFinished(view:WebView,url:String){
-                    view.postDelayed({
-                        try{
-                            // WebView dimensions are physical pixels, while PDF pages use points.
-                            // Match the WebView's CSS viewport to an A4-width page before drawing.
-                            val density=resources.displayMetrics.density
-                            val pageWidth=595
-                            val pageHeight=842
-                            val viewWidth=(pageWidth*density).toInt()
-                            val contentHeight=(view.contentHeight*density).toInt().coerceAtLeast((pageHeight*density).toInt())
-                            view.measure(android.view.View.MeasureSpec.makeMeasureSpec(viewWidth,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
-                            view.layout(0,0,viewWidth,contentHeight)
-                            val physicalPageHeight=(pageHeight*density).toInt()
-                            val pageCount=((contentHeight+physicalPageHeight-1)/physicalPageHeight).coerceAtLeast(1)
-                            val pdf=android.graphics.pdf.PdfDocument()
-                            for(pageNumber in 0 until pageCount){
-                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(pageWidth,pageHeight,pageNumber+1).create())
-                                page.canvas.save()
-                                page.canvas.scale(1f/density,1f/density)
-                                page.canvas.translate(0f,-(pageNumber*physicalPageHeight).toFloat())
-                                view.draw(page.canvas)
-                                page.canvas.restore()
-                                pdf.finishPage(page)
-                            }
-                            val dir=java.io.File(cacheDir,"bills")
-                            if(!dir.exists()&&!dir.mkdirs())throw java.io.IOException("Could not create bill folder")
-                            val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
-                            java.io.FileOutputStream(file).use{pdf.writeTo(it)}
-                            pdf.close()
-                            (view.parent as? android.view.ViewGroup)?.removeView(view)
-                            renderView=null
-                            if(!file.exists()||file.length()==0L)throw java.io.IOException("Bill PDF is empty")
-                            val uri=androidx.core.content.FileProvider.getUriForFile(this@AdminActivity,"com.foodvexa.admin.fileprovider",file)
-                            val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{
-                                type="application/pdf"
-                                putExtra(android.content.Intent.EXTRA_STREAM,uri)
-                                putExtra(android.content.Intent.EXTRA_SUBJECT,"Foodvexa Bill #${orderId.takeLast(7).uppercase()}")
-                                putExtra(android.content.Intent.EXTRA_TEXT,"Foodvexa customer bill for $customer. Order date & time: $orderTime")
-                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill PDF via WhatsApp"))
-                        }catch(e:Exception){
-                            (view.parent as? android.view.ViewGroup)?.removeView(view)
-                            renderView=null
-                            Toast.makeText(this@AdminActivity,"Could not create/share bill PDF: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
-                        }
-                    },700L)
+                    try{
+                        val manager=getSystemService(PRINT_SERVICE) as PrintManager
+                        val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
+                        manager.print(
+                            "Foodvexa-Bill-${orderId.takeLast(7)}",
+                            adapter,
+                            PrintAttributes.Builder()
+                                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                .build()
+                        )
+                        Toast.makeText(this@AdminActivity,"Bill print preview khul gaya. Save as PDF karein, phir WhatsApp par share karein.",Toast.LENGTH_LONG).show()
+                    }catch(e:Exception){
+                        Toast.makeText(this@AdminActivity,"Could not open bill PDF preview: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
+                    }
                 }
             }
             webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
         }catch(e:Exception){
-            (renderView?.parent as? android.view.ViewGroup)?.removeView(renderView)
-            Toast.makeText(this,"Unable to prepare bill sharing: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
+            Toast.makeText(this,"Unable to prepare bill PDF: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
         }
     }
 
