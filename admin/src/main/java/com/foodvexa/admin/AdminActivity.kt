@@ -330,7 +330,9 @@ class AdminActivity : Activity() {
             webView.setLayerType(View.LAYER_TYPE_SOFTWARE,null)
             // Use a fixed A4 CSS viewport, attached to the window so WebView actually renders.
             webView.layoutParams=android.view.ViewGroup.LayoutParams(dp(595),android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            webView.alpha=0.01f
+            // Keep the renderer fully opaque for PDF capture, but move it outside the visible screen.
+            // View.draw() captures the view at the canvas origin, so the PDF stays correctly positioned.
+            webView.translationX=-dp(700).toFloat()
             (window.decorView as? android.view.ViewGroup)?.addView(webView)
                 ?: throw IllegalStateException("Unable to prepare bill preview")
             webView.webViewClient=object:WebViewClient(){
