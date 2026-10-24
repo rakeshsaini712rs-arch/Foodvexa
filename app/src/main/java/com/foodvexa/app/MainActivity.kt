@@ -83,6 +83,28 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    }
   }
  }
+
+ private fun checkForAppUpdate(){
+  val currentVersion=if(android.os.Build.VERSION.SDK_INT>=android.os.Build.VERSION_CODES.P) packageManager.getPackageInfo(packageName,0).longVersionCode else @Suppress("DEPRECATION") packageManager.getPackageInfo(packageName,0).versionCode.toLong()
+  FirebaseFirestore.getInstance().collection("app_config").document("update").get()
+   .addOnSuccessListener { doc ->
+    if(isFinishing || isDestroyed || !doc.exists()) return@addOnSuccessListener
+    val latest=doc.getLong("latestVersionCode") ?: return@addOnSuccessListener
+    if(latest<=currentVersion) return@addOnSuccessListener
+    val updateUrl=doc.getString("updateUrl")?.trim().takeUnless{it.isNullOrBlank()}
+      ?: "https://play.google.com/store/apps/details?id=com.foodvexa.app"
+    val forceUpdate=doc.getBoolean("forceUpdate") ?: false
+    val message=doc.getString("updateMessage")?.takeIf{it.isNotBlank()}
+      ?: "A new version of Foodvexa is available. Update now to get the latest features and improvements."
+    val builder=AlertDialog.Builder(this)
+      .setTitle("Update Foodvexa")
+      .setMessage(message)
+      .setPositiveButton("Update Now"){_,_->try{startActivity(Intent(Intent.ACTION_VIEW,android.net.Uri.parse(updateUrl)))}catch(_:Exception){Toast.makeText(this,"Unable to open update link",Toast.LENGTH_LONG).show()}}
+    if(!forceUpdate) builder.setNegativeButton("Later",null).setCancelable(true) else builder.setCancelable(false)
+    if(!isFinishing && !isDestroyed) builder.show()
+   }
+   .addOnFailureListener { android.util.Log.w("FoodvexaUpdate","Could not check for updates",it) }
+ }
  override fun onCreate(b:Bundle?){val savedTheme=getSharedPreferences("foodvexa",MODE_PRIVATE).getString("theme","dark");androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(when(savedTheme){"light"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO;"system"->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;else->androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES});super.onCreate(b);onBackPressedDispatcher.addCallback(this,object:androidx.activity.OnBackPressedCallback(true){
  override fun handleOnBackPressed(){
   androidx.appcompat.app.AlertDialog.Builder(this@MainActivity)
@@ -93,7 +115,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    .setCancelable(true)
    .show()
  }
-});val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);loadCart();preloadCategoryImages();showHome()}
+});val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);checkForAppUpdate();loadCart();preloadCategoryImages();showHome()}
  override fun onStart(){super.onStart();if(::root.isInitialized)loadSharedMenu()}
  override fun onStop(){menuListener?.remove();menuListener=null;super.onStop()}
  private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}
