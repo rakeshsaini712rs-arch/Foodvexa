@@ -277,16 +277,17 @@ class AdminActivity : Activity() {
             renderView=webView
             webView.settings.javaScriptEnabled=false
             webView.setBackgroundColor(android.graphics.Color.WHITE)
+            webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE,null)
             webView.layoutParams=android.view.ViewGroup.LayoutParams(595,android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            webView.alpha=0f
+            webView.visibility=android.view.View.INVISIBLE
             (window.decorView as? android.view.ViewGroup)?.addView(webView)
                 ?: throw IllegalStateException("Unable to prepare bill preview")
             webView.webViewClient=object:WebViewClient(){
                 override fun onPageFinished(view:WebView,url:String){
-                    view.post {
+                    view.postDelayed({
                         try{
                             val width=595
-                            val contentHeight=(view.contentHeight*width.toFloat()/maxOf(view.width,1)).toInt().coerceAtLeast(842)
+                            val contentHeight=view.contentHeight.coerceAtLeast(842)
                             view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
                             view.layout(0,0,width,contentHeight)
                             val pageHeight=842
@@ -322,7 +323,7 @@ class AdminActivity : Activity() {
                             renderView=null
                             Toast.makeText(this@AdminActivity,"Could not create/share bill PDF: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
                         }
-                    }
+                    },300L)
                 }
             }
             webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
