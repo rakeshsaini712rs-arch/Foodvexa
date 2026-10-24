@@ -293,6 +293,9 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    if(shouldShow!=stickyWasVisible){
     stickyWasVisible=shouldShow
     stickyCategories.visibility=if(shouldShow)View.VISIBLE else View.GONE
+    // Keep the original category row's layout space, but hide it while the
+    // fixed sticky row is visible so customers never see two category menus.
+    categoryScroller.visibility=if(shouldShow)View.INVISIBLE else View.VISIBLE
     fixed.setPadding(dp(16),if(shouldShow)statusBarInset+dp(10) else originalFixedTopPadding,dp(16),0)
     stickyCategories.requestLayout()
    }
