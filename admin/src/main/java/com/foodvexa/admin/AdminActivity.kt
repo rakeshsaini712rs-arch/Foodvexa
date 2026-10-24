@@ -200,6 +200,7 @@ class AdminActivity : Activity() {
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
             val total=d["total"]?.toString()?: "—"
             card.addView(text("Order #"+id.takeLast(7)+"   ·   ₹"+total,16f,ink,true))
+            card.addView(text("Order date & time: "+orderDateTime(d),13f,Color.DKGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             card.addView(text("Status: "+(d["status"]?.toString()?: "New"),13f,red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             val scheduledTime=d["scheduledDelivery"]?.toString()?.trim().orEmpty()
             if(scheduledTime.isNotBlank())card.addView(text("Scheduled delivery: "+scheduledTime,14f,Color.rgb(188,86,20),true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
@@ -257,6 +258,15 @@ class AdminActivity : Activity() {
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
         }
     }
+    private fun orderDateTime(d:Map<String,Any>):String {
+        val timestamp=d["createdAt"] as? com.google.firebase.Timestamp
+        if(timestamp!=null) return java.text.SimpleDateFormat("dd-MM-yyyy hh:mm a",java.util.Locale("en","IN")).format(timestamp.toDate())
+        val date=d["orderDate"]?.toString()?.trim().orEmpty()
+        val time=d["orderTime"]?.toString()?.trim().orEmpty()
+        val combined=listOf(date,time).filter{it.isNotBlank()}.joinToString(" ")
+        return combined.ifBlank{"Not available"}
+    }
+
     private fun shareCustomerBillOnWhatsApp(orderId:String,d:Map<String,Any>){
         val customer=d["customerName"]?.toString()?.takeIf{it.isNotBlank()}?: "Customer"
         val phone=d["phone"]?.toString()?.trim().orEmpty()
@@ -267,7 +277,8 @@ class AdminActivity : Activity() {
         val paymentStatus=d["paymentStatus"]?.toString()?: "COD_DUE"
         val status=d["status"]?.toString()?: "New"
         val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
-        val message="FOODVEXA - CUSTOMER BILL\nOrder ID: #${orderId.takeLast(7).uppercase()}\nCustomer: $customer\nPhone: $phone\nAddress: $address\n\nItems:\n$items\n\nScheduled delivery: $scheduled\nPayment: $payment ($paymentStatus)\nOrder status: $status\nTotal: ₹$total\n\nThank you for choosing Foodvexa!"
+        val orderDateTime=orderDateTime(d)
+        val message="FOODVEXA - CUSTOMER BILL\nOrder ID: #${orderId.takeLast(7).uppercase()}\nOrder date & time: $orderDateTime\nCustomer: $customer\nPhone: $phone\nAddress: $address\n\nItems:\n$items\n\nScheduled delivery: $scheduled\nPayment: $payment ($paymentStatus)\nOrder status: $status\nTotal: ₹$total\n\nThank you for choosing Foodvexa!"
         try{
             val intent=android.content.Intent(android.content.Intent.ACTION_SEND).apply{type="text/plain";putExtra(android.content.Intent.EXTRA_TEXT,message)}
             startActivity(android.content.Intent.createChooser(intent,"Share Foodvexa bill via WhatsApp"))
@@ -282,6 +293,8 @@ class AdminActivity : Activity() {
         val total=d["total"]?.toString()?: "—"
         val payment=d["paymentMethod"]?.toString()?: "COD"
         val status=d["status"]?.toString()?: "New"
+        val orderDateTime=orderDateTime(d)
+        val scheduled=d["scheduledDelivery"]?.toString()?.takeIf{it.isNotBlank()}?: "As soon as possible"
         fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;")
         val itemLines=items.split(Regex("\\r?\\n|\\s(?=[^\\n]+ × \\d+\\s*=)")).filter{it.isNotBlank()}
         val itemRows=itemLines.joinToString(""){line ->
@@ -306,9 +319,9 @@ class AdminActivity : Activity() {
         @media print{body{padding:0}.sheet{border:0}.head,.totalbox,.meta{print-color-adjust:exact;-webkit-print-color-adjust:exact}thead{display:table-header-group}}
         </style></head><body><div class="sheet">
         <div class="head"><div class="brand"><img class="logo" src="https://raw.githubusercontent.com/rakeshsaini712rs-arch/Foodvexa/main/app/src/main/res/drawable-nodpi/foodvexa_exact_logo.jpg" alt="Foodvexa logo"><div class="brandcopy"><div class="wordmark"><span>FOOD</span><b>VEXA</b></div><div class="tagline">FOOD ORDERING MADE EASY</div></div></div><div class="receipt">CUSTOMER BILL</div></div>
-        <div class="content"><div class="meta"><div><div class="label">Order ID</div><div class="value">#${esc(orderId.takeLast(7).uppercase())}</div></div><div><div class="label">Payment</div><div class="value">${esc(payment)}</div></div><div><div class="label">Status</div><div class="value">${esc(status)}</div></div></div>
+        <div class="content"><div class="meta"><div><div class="label">Order ID</div><div class="value">#${esc(orderId.takeLast(7).uppercase())}</div></div><div><div class="label">Order date &amp; time</div><div class="value">${esc(orderDateTime)}</div></div><div><div class="label">Payment</div><div class="value">${esc(payment)}</div></div><div><div class="label">Status</div><div class="value">${esc(status)}</div></div></div>
         <div class="section">CUSTOMER DETAILS</div><div class="info"><div><div class="label">Name</div><div class="value">${esc(customer)}</div></div><div><div class="label">Phone</div><div class="value">${esc(phone)}</div></div><div class="wide"><div class="label">Delivery address</div><div class="value">${esc(address)}</div></div></div>
-        <div class="section">ORDER SUMMARY</div><table>$itemRows</table>
+        <div class="section">ORDER SUMMARY</div><div class="info"><div class="wide"><div class="label">Scheduled delivery</div><div class="value">${esc(scheduled)}</div></div></div><table>$itemRows</table>
         <div class="totalbox"><span>Total amount</span><strong>₹ ${esc(total)}</strong></div></div>
         <div class="footer">Thank you for choosing Foodvexa!<br>Food Ordering Made Easy</div></div></body></html>"""
         val webView=WebView(this)
