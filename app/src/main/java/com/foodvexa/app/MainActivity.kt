@@ -468,7 +468,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   card.addView(label(shop.name,12f,true,primaryText).apply{gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=2;setPadding(dp(3),dp(2),dp(3),dp(2))})
   if(shop.name!="FOODVEXA"){
    val distanceLabel=TextView(this).apply{
-    text="📍 दूरी पता की जा रही है…";textSize=10f;setTextColor(secondaryText)
+    text="📍 Calculating distance…";textSize=10f;setTextColor(secondaryText)
     gravity=Gravity.CENTER;textAlignment=TextView.TEXT_ALIGNMENT_CENTER;maxLines=1
     setPadding(dp(8),dp(5),dp(8),dp(5))
     background=GradientDrawable().apply{setColor(if(isLightTheme)Color.rgb(245,245,248) else Color.rgb(48,48,55));cornerRadius=dp(12).toFloat()}
@@ -486,7 +486,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
 }
 private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
  if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-  shopDistanceViews.values.forEach{it.text="📍 लोकेशन अनुमति दें"}
+  shopDistanceViews.values.forEach{it.text="📍 Enable location"}
   if(!isFinishing)ActivityCompat.requestPermissions(this,arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),shopLocationPermissionRequest)
   return
  }
@@ -518,7 +518,7 @@ private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
  }
  if(!requested){
   if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
-  else shopDistanceViews.values.forEach{it.text="📍 लोकेशन नहीं मिली"}
+  else shopDistanceViews.values.forEach{it.text="📍 Location unavailable"}
  }else{
   // Avoid leaving the cards in a loading state if the device cannot return a fresh fix.
   if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
@@ -527,7 +527,7 @@ private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
 private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,String>>){
  shops.forEach{(name,address)->
   val target=shopDistanceViews[name] ?: return@forEach
-  target.text="📍 दूरी देख रहे हैं…"
+  target.text="📍 Calculating distance…"
   shopGeoExecutor.execute{
    var shopLoc=synchronized(shopGeoCache){shopGeoCache[name]}
    if(shopLoc==null){
@@ -544,7 +544,7 @@ private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,S
    mainHandler.post{
     if(!isFinishing && target.parent!=null){
      if(km!=null)synchronized(shopDistancesKm){shopDistancesKm[name]=km.toFloat()}
-     val distanceText=if(km!=null) "%.1f km".format(java.util.Locale.US,km) else "दूरी उपलब्ध नहीं"
+     val distanceText=if(km!=null) "%.1f km".format(java.util.Locale.US,km) else "Distance unavailable"
      val fullText="●  "+distanceText
      val styled=android.text.SpannableString(fullText)
      styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(20,150,85)),0,1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -576,7 +576,7 @@ override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out St
   if(grantResults.any{it==PackageManager.PERMISSION_GRANTED}){
    // Refresh the current page so the shop cards can calculate distances with permission.
    showHome()
-  }else shopDistanceViews.values.forEach{it.text="📍 दूरी के लिए लोकेशन अनुमति जरूरी है"}
+  }else shopDistanceViews.values.forEach{it.text="📍 Location permission required"}
  }
 }
 private fun correctedImageUrl(p:Product):String {
@@ -888,13 +888,13 @@ private fun isShopOpenNow():Boolean{
  return !indiaNow.isBefore(java.time.LocalTime.of(9,0)) && indiaNow.isBefore(java.time.LocalTime.of(21,0))
 }
 private fun showShopClosedMessage(){
- Toast.makeText(this,"Foodvexa abhi band hai. Order subah 9:00 AM se raat 9:00 PM tak hi kiye ja sakte hain.",Toast.LENGTH_LONG).show()
+ Toast.makeText(this,"Foodvexa is currently closed. Orders are accepted daily from 9:00 AM to 9:00 PM.",Toast.LENGTH_LONG).show()
 }
 private fun placeOrderAndShowOrders(){
  if(!isShopOpenNow()){showShopClosedMessage();return}
  val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
- if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
- if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
+ if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
+ if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
  if(FirebaseAuth.getInstance().currentUser==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val savedName=prefs.getString("profile_name","").orEmpty().ifBlank{FirebaseAuth.getInstance().currentUser?.displayName.orEmpty()}
  val savedMobile=prefs.getString("profile_mobile","").orEmpty()
@@ -944,8 +944,8 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  if(!isShopOpenNow()){showShopClosedMessage();return}
  val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
- if(subtotal<=0){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
- if(subtotal<150){Toast.makeText(this,"Minimum order ₹150 hai. Cart mein ₹${150-subtotal} aur add karein.",Toast.LENGTH_LONG).show();return}
+ if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
+ if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
  val user=FirebaseAuth.getInstance().currentUser
  val address=deliveryAddress
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
