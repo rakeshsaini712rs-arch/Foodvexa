@@ -16,6 +16,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
     }
 
+    // Public read-only app update configuration; no client may write it.
+    match /app_config/update {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /admins/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;
