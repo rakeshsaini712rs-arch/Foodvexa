@@ -32,6 +32,7 @@ class AdminActivity : Activity() {
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
     private val orders=mutableListOf<Pair<String,Map<String,Any>>>()
     private var ordersLoadError:String?=null
+    private var scheduledOrdersOnly=false
 
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun shape(color:Int=Color.WHITE,radius:Int=16)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
@@ -188,13 +189,20 @@ class AdminActivity : Activity() {
         }
     }
     private fun renderOrders(){
-        body.removeAllViews();addLine("Customer orders · "+orders.size,21f,ink,true);body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(10)})
-        if(orders.isEmpty()){addLine("No orders found yet.",14f,Color.GRAY);return}
-        orders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
+        body.removeAllViews()
+        val scheduled=orders.filter{!it.second["scheduledDelivery"]?.toString().isNullOrBlank()}
+        val visibleOrders=if(scheduledOrdersOnly)scheduled else orders
+        addLine(if(scheduledOrdersOnly)"Scheduled orders · "+scheduled.size else "Customer orders · "+orders.size,21f,ink,true)
+        body.addView(button(if(scheduledOrdersOnly)"SHOW ALL ORDERS" else "SCHEDULED ORDERS ("+scheduled.size+")",{scheduledOrdersOnly=!scheduledOrdersOnly;renderOrders()},Color.rgb(188,86,20)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(8)})
+        body.addView(button("＋ CREATE DELIVERY BOY LOGIN",{createDeliveryBoyAccount()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+        if(visibleOrders.isEmpty()){addLine(if(scheduledOrdersOnly)"No scheduled orders found yet." else "No orders found yet.",14f,Color.GRAY);return}
+        visibleOrders.sortedByDescending{(it.second["createdAt"] as? com.google.firebase.Timestamp)?.seconds?:0L}.forEach{(id,d)->
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
             val total=d["total"]?.toString()?: "—"
             card.addView(text("Order #"+id.takeLast(7)+"   ·   ₹"+total,16f,ink,true))
             card.addView(text("Status: "+(d["status"]?.toString()?: "New"),13f,red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            val scheduledTime=d["scheduledDelivery"]?.toString()?.trim().orEmpty()
+            if(scheduledTime.isNotBlank())card.addView(text("Scheduled delivery: "+scheduledTime,14f,Color.rgb(188,86,20),true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             card.addView(text("Customer: "+(d["customerName"]?.toString()?: "Customer"),13f))
             card.addView(text("Phone: "+(d["phone"]?.toString()?: "—"),13f))
             card.addView(text("Address: "+(d["address"]?.toString()?: "—"),13f))
