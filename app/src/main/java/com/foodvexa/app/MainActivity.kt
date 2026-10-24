@@ -545,7 +545,7 @@ private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,S
     if(!isFinishing && target.parent!=null){
      if(km!=null)synchronized(shopDistancesKm){shopDistancesKm[name]=km.toFloat()}
      val distanceText=if(km!=null) "%.1f km".format(java.util.Locale.US,km) else "Distance unavailable"
-     val fullText="●  "+distanceText
+     val fullText="⌖  "+distanceText
      val styled=android.text.SpannableString(fullText)
      styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(20,150,85)),0,1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
      styled.setSpan(android.text.style.ForegroundColorSpan(if(km!=null)Color.rgb(255,76,76) else secondaryText),3,fullText.length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
