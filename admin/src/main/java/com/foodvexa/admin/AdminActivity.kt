@@ -289,18 +289,22 @@ class AdminActivity : Activity() {
                             val contentHeight=(view.contentHeight*width.toFloat()/maxOf(view.width,1)).toInt().coerceAtLeast(842)
                             view.measure(android.view.View.MeasureSpec.makeMeasureSpec(width,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(contentHeight,android.view.View.MeasureSpec.EXACTLY))
                             view.layout(0,0,width,contentHeight)
-                            val bitmap=android.graphics.Bitmap.createBitmap(width,contentHeight,android.graphics.Bitmap.Config.ARGB_8888)
-                            view.draw(android.graphics.Canvas(bitmap))
+                            val pageHeight=842
+                            val pageCount=((contentHeight+pageHeight-1)/pageHeight).coerceAtLeast(1)
                             val pdf=android.graphics.pdf.PdfDocument()
-                            val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,contentHeight,1).create())
-                            page.canvas.drawBitmap(bitmap,0f,0f,null)
-                            pdf.finishPage(page)
+                            for(pageNumber in 0 until pageCount){
+                                val page=pdf.startPage(android.graphics.pdf.PdfDocument.PageInfo.Builder(width,pageHeight,pageNumber+1).create())
+                                page.canvas.save()
+                                page.canvas.translate(0f,-(pageNumber*pageHeight).toFloat())
+                                view.draw(page.canvas)
+                                page.canvas.restore()
+                                pdf.finishPage(page)
+                            }
                             val dir=java.io.File(cacheDir,"bills")
                             if(!dir.exists()&&!dir.mkdirs())throw java.io.IOException("Could not create bill folder")
                             val file=java.io.File(dir,"Foodvexa-Bill-${orderId.takeLast(7)}.pdf")
                             java.io.FileOutputStream(file).use{pdf.writeTo(it)}
                             pdf.close()
-                            bitmap.recycle()
                             (view.parent as? android.view.ViewGroup)?.removeView(view)
                             renderView=null
                             if(!file.exists()||file.length()==0L)throw java.io.IOException("Bill PDF is empty")
