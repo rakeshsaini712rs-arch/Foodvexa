@@ -354,7 +354,7 @@ class AdminActivity : Activity() {
         fun esc(value:String)=value.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\\\"","&quot;")
         val itemLines=items.split(Regex("\\\\r?\\\\n|\\\\s(?=[^\\\\n]+ × \\\\d+\\\\s*=)")).filter{it.isNotBlank()}
         val itemRows=itemLines.joinToString(""){line -> "<tr><td class='item'>${esc(line.trim())}</td></tr>"}.ifBlank{"<tr><td class='item'>${esc(items)}</td></tr>"}
-        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+        return """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=595, initial-scale=1, maximum-scale=1">
         <style>
         *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#242424;margin:0;padding:0;background:#fff;font-size:14px}
         .sheet{width:100%;max-width:575px;margin:0 auto;border:1px solid #eee;overflow:hidden}
