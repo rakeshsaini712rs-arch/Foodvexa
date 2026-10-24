@@ -275,23 +275,35 @@ class AdminActivity : Activity() {
             val webView=WebView(this)
             webView.settings.javaScriptEnabled=false
             webView.setBackgroundColor(Color.WHITE)
+            // WebView must be attached to the Activity window for Android's print adapter
+            // to render its HTML reliably; an unattached WebView can produce a blank A4 preview.
+            webView.alpha=0.01f
+            webView.layoutParams=android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            (window.decorView as? android.view.ViewGroup)?.addView(webView)
+                ?: throw IllegalStateException("Unable to attach bill for printing")
             webView.webViewClient=object:WebViewClient(){
                 override fun onPageFinished(view:WebView,url:String){
-                    try{
-                        val manager=getSystemService(PRINT_SERVICE) as PrintManager
-                        val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
-                        manager.print(
-                            "Foodvexa-Bill-${orderId.takeLast(7)}",
-                            adapter,
-                            PrintAttributes.Builder()
-                                .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                                .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                                .build()
-                        )
-                        Toast.makeText(this@AdminActivity,"Bill print preview khul gaya. Save as PDF karein, phir WhatsApp par share karein.",Toast.LENGTH_LONG).show()
-                    }catch(e:Exception){
-                        Toast.makeText(this@AdminActivity,"Could not open bill PDF preview: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
-                    }
+                    view.postDelayed({
+                        try{
+                            val manager=getSystemService(PRINT_SERVICE) as PrintManager
+                            val adapter=view.createPrintDocumentAdapter("Foodvexa-Bill-${orderId.takeLast(7)}")
+                            manager.print(
+                                "Foodvexa-Bill-${orderId.takeLast(7)}",
+                                adapter,
+                                PrintAttributes.Builder()
+                                    .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                                    .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                                    .build()
+                            )
+                            Toast.makeText(this@AdminActivity,"Bill preview khul gaya. Save as PDF karein, phir WhatsApp par share karein.",Toast.LENGTH_LONG).show()
+                        }catch(e:Exception){
+                            (view.parent as? android.view.ViewGroup)?.removeView(view)
+                            Toast.makeText(this@AdminActivity,"Could not open bill PDF preview: ${e.localizedMessage?: "unknown error"}",Toast.LENGTH_LONG).show()
+                        }
+                    },700L)
                 }
             }
             webView.loadDataWithBaseURL("https://raw.githubusercontent.com/",html,"text/html","UTF-8",null)
