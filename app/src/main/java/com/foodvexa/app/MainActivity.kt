@@ -69,7 +69,7 @@ private fun updatePartnerCategoryVisibility(){
   stickyRow.getChildAt(i).visibility=if(selectedPartnerShop=="Ganpati Restaurant" && name !in keep)View.GONE else View.VISIBLE
  }
 }
-private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false};private val pageBackground:Int get()=if(isLightTheme)Color.rgb(248,248,250) else Color.rgb(17,17,20);private val primaryText:Int get()=if(isLightTheme)Color.rgb(35,35,42) else Color.WHITE;private val secondaryText:Int get()=if(isLightTheme)Color.rgb(100,100,110) else Color.LTGRAY;private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper());private val shopGeoExecutor=Executors.newSingleThreadExecutor();private val shopDistanceViews=mutableMapOf<String,TextView>();private val shopGeoCache=mutableMapOf<String,Location>();private val shopLocationPermissionRequest=7412
+private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);private val ink=Color.rgb(35,35,42);private val muted=Color.rgb(105,105,115);private val isLightTheme:Boolean get()=when(prefs.getString("theme","dark")){"light"->true;"system"->(resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)!=android.content.res.Configuration.UI_MODE_NIGHT_YES;else->false};private val pageBackground:Int get()=if(isLightTheme)Color.rgb(248,248,250) else Color.rgb(17,17,20);private val primaryText:Int get()=if(isLightTheme)Color.rgb(35,35,42) else Color.WHITE;private val secondaryText:Int get()=if(isLightTheme)Color.rgb(100,100,110) else Color.LTGRAY;private val imageExecutor=Executors.newFixedThreadPool(4);private val mainHandler=Handler(Looper.getMainLooper());private val shopGeoExecutor=Executors.newSingleThreadExecutor();private val shopDistanceViews=mutableMapOf<String,TextView>();private val shopCardViews=mutableMapOf<String,View>();private val shopDistancesKm=mutableMapOf<String,Float>();private var shopCardsGrid:LinearLayout?=null;private val shopGeoCache=mutableMapOf<String,Location>();private val shopLocationPermissionRequest=7412
  override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
   super.onActivityResult(requestCode,resultCode,data)
   if(requestCode==VOICE_SEARCH_REQUEST && resultCode==Activity.RESULT_OK){
@@ -421,6 +421,11 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
  if(restaurantMode){
   content.addView(label("Restaurants & Hotels in $selectedCity",18f,true,primaryText),margin(4,0,4,12))
  }
+ shopDistanceViews.clear()
+ shopCardViews.clear()
+ synchronized(shopDistancesKm){shopDistancesKm.clear()}
+ val shopGrid=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+ shopCardsGrid=shopGrid
  var row:LinearLayout?=null
  shops.forEachIndexed{index,shop->
   if(index%3==0){row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}}
@@ -471,10 +476,12 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    shopDistanceViews[shop.name]=distanceLabel
    card.addView(distanceLabel,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);leftMargin=dp(2);rightMargin=dp(2)})
   }
+  shopCardViews[shop.name]=card
   row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(4);leftMargin=dp(4);bottomMargin=dp(10)})
-  if(index%3==2)content.addView(row,LinearLayout.LayoutParams(-1,-2))
+  if(index%3==2){shopGrid.addView(row,LinearLayout.LayoutParams(-1,-2));row=null}
  }
- if(shops.size%3!=0 && row!=null)content.addView(row,LinearLayout.LayoutParams(-1,-2))
+ if(row!=null)shopGrid.addView(row,LinearLayout.LayoutParams(-1,-2))
+ content.addView(shopGrid,LinearLayout.LayoutParams(-1,-2))
  updateDistancesForShopCards(shops.map{it.name to it.address}.filter{it.first!="FOODVEXA"})
 }
 private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
@@ -536,16 +543,32 @@ private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,S
    val km=shopLoc?.let{current.distanceTo(it)/1000.0}
    mainHandler.post{
     if(!isFinishing && target.parent!=null){
+     if(km!=null)synchronized(shopDistancesKm){shopDistancesKm[name]=km.toFloat()}
      val distanceText=if(km!=null) "%.1f km".format(java.util.Locale.US,km) else "दूरी उपलब्ध नहीं"
      val fullText="●  "+distanceText
      val styled=android.text.SpannableString(fullText)
      styled.setSpan(android.text.style.ForegroundColorSpan(Color.rgb(20,150,85)),0,1,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
      styled.setSpan(android.text.style.ForegroundColorSpan(if(km!=null)Color.rgb(255,76,76) else secondaryText),3,fullText.length,android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
      target.text=styled
+     reorderShopCardsByDistance()
     }
    }
   }
  }
+}
+private fun reorderShopCardsByDistance(){
+ val grid=shopCardsGrid ?: return
+ val ordered=shopCardViews.entries.sortedWith(compareBy<Map.Entry<String,View>>{entry->synchronized(shopDistancesKm){shopDistancesKm[entry.key] ?: Float.MAX_VALUE}}.thenBy{it.key}).map{it.value}
+ if(ordered.isEmpty())return
+ grid.removeAllViews()
+ var row:LinearLayout?=null
+ ordered.forEachIndexed{index,card->
+  if(index%3==0)row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+  (card.parent as? android.view.ViewGroup)?.removeView(card)
+  row!!.addView(card,LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(4);leftMargin=dp(4);bottomMargin=dp(10)})
+  if(index%3==2){grid.addView(row,LinearLayout.LayoutParams(-1,-2));row=null}
+ }
+ if(row!=null)grid.addView(row,LinearLayout.LayoutParams(-1,-2))
 }
 override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
  super.onRequestPermissionsResult(requestCode,permissions,grantResults)
