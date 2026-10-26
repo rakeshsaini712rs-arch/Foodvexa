@@ -434,26 +434,30 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     hint = hintText
     inputType = inputTypeValue
     setSingleLine(hintText != "Full business address")
+    setTextColor(Color.rgb(35, 35, 40))
+    setHintTextColor(Color.rgb(105, 105, 115))
+    textSize = 15f
+    minHeight = dp(50)
     setPadding(dp(12), dp(10), dp(12), dp(10))
-    background = rounded(Color.rgb(248, 246, 244), 12)
-    layoutParams = LinearLayout.LayoutParams(-1, dp(50)).apply { bottomMargin = dp(8) }
+    background = rounded(Color.rgb(255, 255, 255), 12)
+    layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) }
    }
   }
-  val business = makeField("Restaurant / business name")
-  val owner = makeField("Owner / contact person")
-  val phone = makeField("10-digit mobile number", android.text.InputType.TYPE_CLASS_PHONE)
-  val type = makeField("Business type: Restaurant / Cafe / Bakery / Hotel")
-  val city = makeField("City")
+  val business = makeField("Business name *")
+  val owner = makeField("Owner / contact person *")
+  val phone = makeField("10-digit mobile number *", android.text.InputType.TYPE_CLASS_PHONE)
+  val type = makeField("Business type (e.g. Restaurant, Cafe, Bakery, Hotel)")
+  val city = makeField("City *")
   val district = makeField("District")
-  val state = makeField("State")
-  val pin = makeField("6-digit PIN code", android.text.InputType.TYPE_CLASS_NUMBER)
-  val address = makeField("Full business address")
+  val state = makeField("State *")
+  val pin = makeField("6-digit PIN code *", android.text.InputType.TYPE_CLASS_NUMBER)
+  val address = makeField("Full business address *")
   val email = makeField("Email (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
   listOf(business, owner, phone, type, city, district, state, pin, address, email).forEach { panel.addView(it) }
   val scroll = ScrollView(this).apply { addView(panel) }
   val dialog = AlertDialog.Builder(this)
    .setTitle("Register as a Foodvexa partner")
-   .setMessage("Submit your business details. Your listing will appear only after Foodvexa review and approval.")
+   .setMessage("Foodvexa Partner Registration\n\nFields marked * are required. Enter your real business and contact details. Your restaurant will be listed only after our team reviews and approves your application.")
    .setView(scroll)
    .setNegativeButton("Cancel", null)
    .setPositiveButton("Submit application", null)
@@ -517,15 +521,6 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   ShopCard("Ganpati Restaurant","Sweets","Nansa Gate, Nawalgarh",R.drawable.ganpati_restaurant_sweets_nawalgarh),
  )
  val shops=if(!restaurantMode)allShops else if(selectedCity.equals("Nawalgarh",true))allShops.filter{it.name!="FOODVEXA"} else emptyList()
- val join = LinearLayout(this).apply {
-  orientation = LinearLayout.VERTICAL
-  setPadding(dp(16), dp(14), dp(16), dp(14))
-  background = rounded(Color.rgb(255, 246, 238), 18)
-  addView(label("Own a restaurant, cafe, bakery or hotel?", 17f, true, primaryText))
-  addView(label("Apply to join Foodvexa across India. Listings go live after approval.", 13f, false, secondaryText), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(5) })
-  addView(primaryButton("REGISTER YOUR BUSINESS") { showPartnerApplicationDialog() }, LinearLayout.LayoutParams(-1, dp(46)).apply { topMargin = dp(10) })
- }
- content.addView(join, margin(10, 8, 10, 12))
  if(restaurantMode && shops.isEmpty()){
   val message=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(24),dp(42),dp(24),dp(42))}
   message.addView(TextView(this).apply{text="⌖";textSize=42f;gravity=Gravity.CENTER;setTextColor(secondaryText)})
@@ -1405,6 +1400,7 @@ private fun showProfile(){
   box.addView(arrow)
   content.addView(box,margin(0,0,0,10))
  }
+ item("🍽️  Restaurant Partner Registration","Register your restaurant, cafe, bakery or hotel. Listing after approval."){showPartnerApplicationDialog()}
  item("👤  My Profile",savedName.ifBlank{"Name and mobile number"}){showProfileEditor()}
  item("📦  My Orders","Order history"){showOrders()}
  item("📍  Address Book","Saved delivery locations"){showAddressBook()}
