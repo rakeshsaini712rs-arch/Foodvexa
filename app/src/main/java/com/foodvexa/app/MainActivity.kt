@@ -471,8 +471,9 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   form.addView(city); form.addView(district); form.addView(state); form.addView(pin)
 
   val scroll = ScrollView(this).apply {
-   isFillViewport = false
+   isFillViewport = true
    clipToPadding = false
+   descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
    isVerticalScrollBarEnabled = true
    overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
    addView(form, ViewGroup.LayoutParams(-1, -2))
@@ -517,6 +518,14 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    .setTitle("Foodvexa Partner Registration")
    .setView(root)
    .create()
+  dialog.setOnShowListener {
+   dialog.window?.apply {
+    setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+    val metrics = resources.displayMetrics
+    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.76f).toInt())
+   }
+   scroll.post { scroll.requestLayout() }
+  }
   cancel.setOnClickListener { dialog.dismiss() }
   submit.setOnClickListener {
    val businessName = business.text.toString().trim()
