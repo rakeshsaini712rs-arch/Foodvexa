@@ -475,7 +475,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    clipToPadding = false
    isVerticalScrollBarEnabled = true
    overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
-   addView(form, ScrollView.LayoutParams(-1, -2))
+   addView(form, ViewGroup.LayoutParams(-1, -2))
    layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
   }
   root.addView(TextView(this).apply {
