@@ -71,7 +71,7 @@ class AdminActivity : Activity() {
         root.addView(top)
         val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(Color.WHITE)}
         val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(8),dp(8),dp(8))}
-        listOf("Dashboard","Orders","Payments","Menu","Delivery").forEach{item->
+        listOf("Dashboard","Orders","Payments","Menu","Partners","Delivery").forEach{item->
             val v=text(item,13f,if(page==item)red else ink,page==item);v.gravity=Gravity.CENTER;v.setPadding(dp(12),dp(12),dp(12),dp(12))
             v.background=shape(if(page==item)Color.rgb(255,239,241) else Color.WHITE,10);v.setOnClickListener{showPage(item)}
             nav.addView(v,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(4)})
@@ -88,6 +88,7 @@ class AdminActivity : Activity() {
             "Orders"->ordersPage()
             "Payments"->paymentsPage()
             "Menu"->menuPage()
+            "Partners"->partnerApplicationsPage()
             "Delivery"->deliveryPage()
         }
     }
@@ -473,6 +474,36 @@ class AdminActivity : Activity() {
             },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
             if(method=="COD")c.addView(text("Delivery: collect ₹"+(d["total"]?.toString()?: "—")+" in cash",13f))
             body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+        }
+    }
+    private fun partnerApplicationsPage(){
+        body.removeAllViews()
+        addLine("Restaurant Partner Applications",22f,ink,true)
+        addLine("Review applications from the customer app. Approved businesses become visible only after publishing.",13f,Color.GRAY)
+        db.collection("partnerApplications").addSnapshotListener(this){snap,error->
+            if(page!="Partners")return@addSnapshotListener
+            body.removeAllViews()
+            addLine("Restaurant Partner Applications",22f,ink,true)
+            if(error!=null){addLine("Unable to load applications: "+(error.localizedMessage?:"Check Firestore permissions."),14f,red);return@addSnapshotListener}
+            if(snap==null||snap.isEmpty){addLine("No applications yet.",15f,Color.GRAY);return@addSnapshotListener}
+            snap.documents.forEach{doc->
+                val d=doc.data?:emptyMap<String,Any>()
+                val status=d["status"]?.toString()?:"pending"
+                val c=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(13),dp(14),dp(13));background=shape(Color.WHITE,14)}
+                c.addView(text(d["businessName"]?.toString()?:"Unnamed business",17f,ink,true))
+                c.addView(text((d["businessType"]?.toString()?:"Business")+" · "+(d["city"]?.toString()?:"")+", "+(d["state"]?.toString()?:""),13f,Color.DKGRAY))
+                c.addView(text("Owner: "+(d["ownerName"]?.toString()?:"—")+"  ·  Phone: "+(d["phone"]?.toString()?:"—"),13f,ink))
+                c.addView(text("Address: "+(d["address"]?.toString()?:"—"),12f,Color.GRAY))
+                c.addView(text("Status: "+status,13f,if(status=="approved")green else red,true))
+                if(status!="approved"){
+                    c.addView(button("APPROVE & PUBLISH",{
+                        val partner=hashMapOf<String,Any>("name" to (d["businessName"]?.toString()?:""),"businessName" to (d["businessName"]?.toString()?:""),"businessType" to (d["businessType"]?.toString()?:""),"ownerName" to (d["ownerName"]?.toString()?:""),"phone" to (d["phone"]?.toString()?:""),"city" to (d["city"]?.toString()?:""),"district" to (d["district"]?.toString()?:""),"state" to (d["state"]?.toString()?:""),"pincode" to (d["pincode"]?.toString()?:""),"address" to (d["address"]?.toString()?:""),"email" to (d["email"]?.toString()?:""),"approved" to true,"active" to true,"applicationId" to doc.id,"updatedAt" to FieldValue.serverTimestamp())
+                        db.collection("partners").document(doc.id).set(partner).addOnSuccessListener{db.collection("partnerApplications").document(doc.id).update(mapOf("status" to "approved","approved" to true,"reviewedAt" to FieldValue.serverTimestamp()));Toast.makeText(this,"Partner approved and published.",Toast.LENGTH_LONG).show()}.addOnFailureListener{e->Toast.makeText(this,"Publish failed: "+(e.localizedMessage?:""),Toast.LENGTH_LONG).show()}
+                    },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                    c.addView(button("REJECT APPLICATION",{db.collection("partnerApplications").document(doc.id).update(mapOf("status" to "rejected","approved" to false,"reviewedAt" to FieldValue.serverTimestamp()))},red),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                }
+                body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+            }
         }
     }
     private val partnerNames=listOf("FOODVEXA","Cake Tower","Santa Banta Bakery","Kanha Bakery & Fast Food","Sadafal Cafe & Dining","Bistro Nawalgarh","Brew & Bite","Chotiya Ji Sweets","Shree Rajaram Peda Bhandar","Royal Fast Food","Hotel Marwadi & Restaurant","Mayur Hotel & Restaurant","La Veg Pizza","Hotel Nawalgarh Plaza","Vivaana Museum Hotel","Bungli Restaurant","Ganpati Restaurant")
