@@ -475,18 +475,20 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   }
   val dialog = AlertDialog.Builder(this)
    .setTitle("Foodvexa Partner Registration")
-   .setMessage("Register your business to join Foodvexa. Fields marked * are required. Your listing goes live only after review and approval.")
+   .setMessage("Fill the form below. * = required. Swipe/scroll inside the form to reach every field. Submit using the button at the bottom.")
    .setView(scroll)
    .setNegativeButton("Cancel", null)
    .setPositiveButton("Submit application", null)
    .create()
   dialog.setOnShowListener {
-   dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-   dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.82f).toInt())
-   scroll.post {
-    val availableHeight = (resources.displayMetrics.heightPixels * 0.56f).toInt()
-    scroll.layoutParams = scroll.layoutParams.apply { height = availableHeight }
+   dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+   dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.70f).toInt())
+   scroll.layoutParams = scroll.layoutParams.apply {
+    height = (resources.displayMetrics.heightPixels * 0.42f).toInt()
    }
+   scroll.isVerticalScrollBarEnabled = true
+   scroll.overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
+   scroll.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) scroll.requestChildFocus(scroll, scroll.focusedChild) }
    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
     val businessName = business.text.toString().trim()
     val ownerName = owner.text.toString().trim()
