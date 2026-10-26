@@ -427,42 +427,66 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
  private fun showPartnerApplicationDialog() {
   val panel = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
-   setPadding(dp(18), dp(8), dp(18), dp(4))
+   setPadding(dp(18), dp(12), dp(18), dp(12))
+  }
+  fun section(text: String): TextView = TextView(this).apply {
+   this.text = text
+   textSize = 13f
+   setTextColor(Color.rgb(85, 85, 95))
+   setPadding(dp(2), dp(8), dp(2), dp(5))
   }
   fun makeField(hintText: String, inputTypeValue: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
    return EditText(this).apply {
     hint = hintText
     inputType = inputTypeValue
-    setSingleLine(hintText != "Full business address")
+    setSingleLine(hintText != "Full business address *")
     setTextColor(Color.rgb(35, 35, 40))
     setHintTextColor(Color.rgb(105, 105, 115))
-    textSize = 15f
-    minHeight = dp(50)
-    setPadding(dp(12), dp(10), dp(12), dp(10))
+    textSize = 16f
+    minHeight = dp(52)
+    setPadding(dp(14), dp(10), dp(14), dp(10))
     background = rounded(Color.rgb(255, 255, 255), 12)
-    layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) }
+    layoutParams = LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(10) }
    }
   }
-  val business = makeField("Business name *")
+  panel.addView(section("BUSINESS DETAILS"))
+  val business = makeField("Business / restaurant name *")
+  val type = makeField("Business type (Restaurant, Cafe, Bakery, Hotel) *")
+  val address = makeField("Full business address *")
+  panel.addView(business); panel.addView(type); panel.addView(address)
+  panel.addView(section("OWNER & CONTACT"))
   val owner = makeField("Owner / contact person *")
   val phone = makeField("10-digit mobile number *", android.text.InputType.TYPE_CLASS_PHONE)
-  val type = makeField("Business type (e.g. Restaurant, Cafe, Bakery, Hotel)")
+  val email = makeField("Email address (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+  panel.addView(owner); panel.addView(phone); panel.addView(email)
+  panel.addView(section("LOCATION"))
   val city = makeField("City *")
-  val district = makeField("District")
+  val district = makeField("District (optional)")
   val state = makeField("State *")
   val pin = makeField("6-digit PIN code *", android.text.InputType.TYPE_CLASS_NUMBER)
-  val address = makeField("Full business address *")
-  val email = makeField("Email (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
-  listOf(business, owner, phone, type, city, district, state, pin, address, email).forEach { panel.addView(it) }
-  val scroll = ScrollView(this).apply { addView(panel) }
+  panel.addView(city); panel.addView(district); panel.addView(state); panel.addView(pin)
+
+  val scroll = ScrollView(this).apply {
+   isFillViewport = false
+   clipToPadding = false
+   setPadding(0, 0, 0, dp(8))
+   addView(panel, ScrollView.LayoutParams(-1, -2))
+   isNestedScrollingEnabled = true
+  }
   val dialog = AlertDialog.Builder(this)
-   .setTitle("Register as a Foodvexa partner")
-   .setMessage("Foodvexa Partner Registration\n\nFields marked * are required. Enter your real business and contact details. Your restaurant will be listed only after our team reviews and approves your application.")
+   .setTitle("Foodvexa Partner Registration")
+   .setMessage("Register your business to join Foodvexa. Fields marked * are required. Your listing goes live only after review and approval.")
    .setView(scroll)
    .setNegativeButton("Cancel", null)
    .setPositiveButton("Submit application", null)
    .create()
   dialog.setOnShowListener {
+   dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+   dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.82f).toInt())
+   scroll.post {
+    val availableHeight = (resources.displayMetrics.heightPixels * 0.56f).toInt()
+    scroll.layoutParams = scroll.layoutParams.apply { height = availableHeight }
+   }
    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
     val businessName = business.text.toString().trim()
     val ownerName = owner.text.toString().trim()
@@ -473,7 +497,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     val pinCode = pin.text.toString().filter { ch -> ch.isDigit() }
     val fullAddress = address.text.toString().trim()
     if (businessName.isBlank() || ownerName.isBlank() || mobile.length != 10 || businessType.isBlank() || cityName.isBlank() || stateName.isBlank() || pinCode.length != 6 || fullAddress.isBlank()) {
-     Toast.makeText(this, "Complete required fields and verify phone/PIN code.", Toast.LENGTH_LONG).show()
+     Toast.makeText(this, "Please complete all required fields (*) and check mobile/PIN.", Toast.LENGTH_LONG).show()
      return@setOnClickListener
     }
     val data = hashMapOf<String, Any>(
