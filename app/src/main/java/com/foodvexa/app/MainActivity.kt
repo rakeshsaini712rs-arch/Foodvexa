@@ -499,7 +499,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    isFillViewport = false
    clipToPadding = false
    setBackgroundColor(surface)
-   addView(panel, ScrollView.LayoutParams(-1, -2))
+   addView(panel, android.widget.FrameLayout.LayoutParams(-1, -2))
   }
   val cancel = TextView(this).apply {
    text = "Cancel"
