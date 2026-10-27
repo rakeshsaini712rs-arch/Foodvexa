@@ -546,12 +546,18 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val fields = listOf(business, type, owner, phone, email, city, district, state, pin, address)
   fields.forEach { edit ->
    edit.setOnFocusChangeListener { _, focused ->
-    if(focused) scroll.postDelayed({
+    if (focused) scroll.postDelayed({
+     if (!dialog.isShowing || !edit.hasFocus()) return@postDelayed
      val rect = android.graphics.Rect()
      edit.getDrawingRect(rect)
      scroll.offsetDescendantRectToMyCoords(edit, rect)
-     scroll.smoothScrollTo(0, (rect.bottom - scroll.height + dp(90)).coerceAtLeast(0))
-    }, 250)
+     val visibleBottom = scroll.scrollY + scroll.height
+     if (rect.bottom + dp(24) > visibleBottom) {
+      scroll.smoothScrollTo(0, (rect.bottom + dp(24) - scroll.height).coerceAtLeast(0))
+     } else if (rect.top < scroll.scrollY) {
+      scroll.smoothScrollTo(0, rect.top.coerceAtLeast(0))
+     }
+    }, 400)
    }
   }
   cancel.setOnClickListener { hideKeyboard(); dialog.dismiss() }
