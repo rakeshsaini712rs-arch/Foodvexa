@@ -511,6 +511,19 @@ class AdminActivity : Activity() {
             }
         }
     }
+    private fun partnerProductChangesPage(){
+        body.removeAllViews()
+        addLine("Partner Product Approval",22f,ink,true)
+        addLine("Partner product changes will appear here for review.",14f,Color.GRAY)
+        db.collection("partnerProductChanges").whereEqualTo("status","pending").get().addOnSuccessListener{snap->
+            if(snap.isEmpty){addLine("No pending changes.",14f,Color.GRAY);return@addOnSuccessListener}
+            snap.documents.forEach{doc->
+                val product=doc.get("product") as? Map<String,Any>?:emptyMap()
+                addLine((doc.getString("partnerName")?:"Partner")+" · "+(product["name"]?.toString()?:"Product")+" · ₹"+(product["price"]?.toString()?:"—"),15f,ink,true)
+                body.addView(button("APPROVE",{Toast.makeText(this,"Approval action needs the next update.",Toast.LENGTH_LONG).show()},green))
+            }
+        }.addOnFailureListener{addLine("Could not load pending changes.",14f,red)}
+    }
     private fun approvedPartnerLoginsPage(){
         body.removeAllViews()
         addLine("Approved Partner Logins",22f,ink,true)
