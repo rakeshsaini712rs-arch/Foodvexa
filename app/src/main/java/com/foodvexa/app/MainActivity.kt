@@ -425,90 +425,110 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   }
  }
  private fun showPartnerApplicationDialog() {
+  val surface = Color.rgb(250, 250, 252)
+  val dark = Color.rgb(35, 35, 42)
+  val gray = Color.rgb(108, 108, 119)
   val panel = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
-   setPadding(dp(16), dp(4), dp(16), dp(8))
+   setPadding(dp(20), dp(14), dp(20), dp(20))
   }
-  fun makeField(hintText: String, inputTypeValue: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
-   return EditText(this).apply {
-    hint = hintText
-    inputType = inputTypeValue
-    setSingleLine(hintText != "Full business address *")
-    setTextColor(Color.rgb(35, 35, 40))
-    setHintTextColor(Color.rgb(105, 105, 115))
+  fun section(label: String) {
+   panel.addView(TextView(this).apply {
+    text = label
+    textSize = 12f
+    typeface = Typeface.DEFAULT_BOLD
+    letterSpacing = 0.08f
+    setTextColor(orange)
+    setPadding(0, dp(16), 0, dp(10))
+   })
+  }
+  fun field(label: String, input: Int = InputType.TYPE_CLASS_TEXT, multiline: Boolean = false): EditText {
+   val edit = EditText(this).apply {
+    hint = label
+    inputType = input
+    setSingleLine(!multiline)
+    setTextColor(dark)
+    setHintTextColor(gray)
     textSize = 15f
-    minHeight = dp(52)
-    setPadding(dp(12), dp(10), dp(12), dp(10))
-    background = rounded(Color.WHITE, 12)
-    layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) }
+    minHeight = dp(if(multiline) 84 else 54)
+    gravity = if(multiline) Gravity.TOP else Gravity.CENTER_VERTICAL
+    setPadding(dp(16), dp(12), dp(16), dp(12))
+    background = rounded(Color.WHITE, 14)
+    imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_NEXT
    }
+   panel.addView(edit, LinearLayout.LayoutParams(-1, if(multiline) dp(88) else dp(56)).apply { bottomMargin = dp(11) })
+   return edit
   }
-  val business = makeField("Business name *")
-  val owner = makeField("Owner / contact person *")
-  val phone = makeField("10-digit mobile number *", android.text.InputType.TYPE_CLASS_PHONE)
-  val type = makeField("Business type (Restaurant / Cafe / Bakery / Hotel) *")
-  val city = makeField("City *")
-  val district = makeField("District (optional)")
-  val state = makeField("State *")
-  val pin = makeField("6-digit PIN code *", android.text.InputType.TYPE_CLASS_NUMBER)
-  val address = makeField("Full business address *")
-  val email = makeField("Email (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
-  listOf(business, owner, phone, type, city, district, state, pin, address, email).forEach { panel.addView(it) }
-
-  val heading = TextView(this).apply {
-   text = "Register as a Foodvexa partner"
-   textSize = 20f
-   typeface = Typeface.DEFAULT_BOLD
-   setTextColor(Color.WHITE)
-   setPadding(dp(20), dp(18), dp(20), dp(8))
-  }
-  val instructions = TextView(this).apply {
-   text = "Fields marked * are required. Enter your business details. Your listing appears only after Foodvexa reviews and approves your application."
-   textSize = 14f
-   setLineSpacing(dp(2).toFloat(), 1f)
-   setTextColor(Color.rgb(235, 235, 240))
-   setPadding(dp(20), 0, dp(20), dp(12))
+  section("BUSINESS DETAILS")
+  val business = field("Business name *")
+  val type = field("Business type (Restaurant / Cafe / Bakery / Hotel) *")
+  section("CONTACT DETAILS")
+  val owner = field("Owner / contact person *")
+  val phone = field("10-digit mobile number *", InputType.TYPE_CLASS_PHONE)
+  val email = field("Email address (optional)", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+  section("BUSINESS LOCATION")
+  val city = field("City *")
+  val district = field("District (optional)")
+  val state = field("State *")
+  val pin = field("6-digit PIN code *", InputType.TYPE_CLASS_NUMBER)
+  val address = field("Full business address *", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE, true)
+  address.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+  val header = LinearLayout(this).apply {
+   orientation = LinearLayout.VERTICAL
+   setPadding(dp(20), dp(18), dp(20), dp(14))
+   setBackgroundColor(Color.WHITE)
+   addView(TextView(this@MainActivity).apply {
+    text = "Partner Registration"
+    textSize = 22f
+    typeface = Typeface.DEFAULT_BOLD
+    setTextColor(dark)
+   })
+   addView(TextView(this@MainActivity).apply {
+    text = "Grow your business with Foodvexa"
+    textSize = 13f
+    setTextColor(gray)
+    setPadding(0, dp(4), 0, dp(6))
+   })
+   addView(TextView(this@MainActivity).apply {
+    text = "Fields marked * are required. Listings go live only after Foodvexa approval."
+    textSize = 12f
+    setTextColor(gray)
+   })
   }
   val scroll = ScrollView(this).apply {
-   isFillViewport = true
+   isFillViewport = false
    clipToPadding = false
-   setPadding(0, 0, 0, dp(4))
+   setBackgroundColor(surface)
    addView(panel, ScrollView.LayoutParams(-1, -2))
-   overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
   }
   val cancel = TextView(this).apply {
-   text = "CANCEL"
-   textSize = 14f
-   typeface = Typeface.DEFAULT_BOLD
+   text = "Cancel"
+   textSize = 15f
    gravity = Gravity.CENTER
-   setTextColor(Color.LTGRAY)
-   setPadding(dp(18), dp(12), dp(18), dp(12))
+   setTextColor(dark)
    isClickable = true
-   isFocusable = true
   }
   val submit = TextView(this).apply {
-   text = "SUBMIT APPLICATION"
+   text = "Submit Application"
    textSize = 14f
    typeface = Typeface.DEFAULT_BOLD
    gravity = Gravity.CENTER
    setTextColor(Color.WHITE)
    background = rounded(orange, 12)
-   setPadding(dp(16), dp(12), dp(16), dp(12))
    isClickable = true
-   isFocusable = true
   }
   val footer = LinearLayout(this).apply {
    orientation = LinearLayout.HORIZONTAL
-   gravity = Gravity.END or Gravity.CENTER_VERTICAL
-   setPadding(dp(12), dp(8), dp(12), dp(12))
-   addView(cancel, LinearLayout.LayoutParams(-2, dp(48)))
-   addView(submit, LinearLayout.LayoutParams(-2, dp(48)).apply { leftMargin = dp(8) })
+   gravity = Gravity.CENTER_VERTICAL
+   setPadding(dp(16), dp(10), dp(16), dp(12))
+   setBackgroundColor(Color.WHITE)
+   addView(cancel, LinearLayout.LayoutParams(0, dp(50), 1f))
+   addView(submit, LinearLayout.LayoutParams(0, dp(50), 2f).apply { leftMargin = dp(10) })
   }
   val root = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
-   background = rounded(Color.rgb(48, 47, 51), 18)
-   addView(heading, LinearLayout.LayoutParams(-1, -2))
-   addView(instructions, LinearLayout.LayoutParams(-1, -2))
+   background = rounded(surface, 18)
+   addView(header, LinearLayout.LayoutParams(-1, -2))
    addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
    addView(footer, LinearLayout.LayoutParams(-1, -2))
   }
@@ -517,27 +537,49 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    dialog.window?.apply {
     setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
-    val display = resources.displayMetrics
-    setLayout((display.widthPixels * 0.94f).toInt(), (display.heightPixels * 0.78f).toInt())
+    val metrics = resources.displayMetrics
+    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.88f).toInt())
+   }
+   root.requestFocus()
+  }
+  root.isFocusableInTouchMode = true
+  val fields = listOf(business, type, owner, phone, email, city, district, state, pin, address)
+  fields.forEach { edit ->
+   edit.setOnFocusChangeListener { _, focused ->
+    if(focused) scroll.postDelayed({
+     val rect = android.graphics.Rect()
+     edit.getDrawingRect(rect)
+     scroll.offsetDescendantRectToMyCoords(edit, rect)
+     scroll.smoothScrollTo(0, (rect.bottom - scroll.height + dp(90)).coerceAtLeast(0))
+    }, 250)
    }
   }
   cancel.setOnClickListener { hideKeyboard(); dialog.dismiss() }
   submit.setOnClickListener {
-   hideKeyboard()
    val businessName = business.text.toString().trim()
    val ownerName = owner.text.toString().trim()
-   val mobile = phone.text.toString().filter { ch -> ch.isDigit() }
+   val mobile = phone.text.toString().filter { it.isDigit() }
    val businessType = type.text.toString().trim()
    val cityName = city.text.toString().trim()
    val stateName = state.text.toString().trim()
-   val pinCode = pin.text.toString().filter { ch -> ch.isDigit() }
+   val pinCode = pin.text.toString().filter { it.isDigit() }
    val fullAddress = address.text.toString().trim()
-   if (businessName.isBlank() || ownerName.isBlank() || mobile.length != 10 || businessType.isBlank() || cityName.isBlank() || stateName.isBlank() || pinCode.length != 6 || fullAddress.isBlank()) {
-    Toast.makeText(this, "Please complete all required fields. Mobile must be 10 digits and PIN code 6 digits.", Toast.LENGTH_LONG).show()
+   val required = listOf(business, type, owner, city, state, address)
+   val missing = required.firstOrNull { it.text.toString().isBlank() }
+   val invalid = missing ?: when {
+    mobile.length != 10 -> phone
+    pinCode.length != 6 -> pin
+    else -> null
+   }
+   if(invalid != null) {
+    invalid.error = "Please enter a valid required value"
+    invalid.requestFocus()
+    scroll.post { scroll.smoothScrollTo(0, invalid.top.coerceAtLeast(0)) }
     return@setOnClickListener
    }
+   hideKeyboard()
    submit.isEnabled = false
-   submit.text = "SUBMITTING..."
+   submit.text = "Submitting..."
    val data = hashMapOf<String, Any>(
     "businessName" to businessName, "ownerName" to ownerName, "phone" to mobile,
     "businessType" to businessType, "city" to cityName, "district" to district.text.toString().trim(),
@@ -547,18 +589,23 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    )
    FirebaseFirestore.getInstance().collection("partnerApplications").add(data)
     .addOnSuccessListener {
-     Toast.makeText(this, "Application submitted for review.", Toast.LENGTH_LONG).show()
      dialog.dismiss()
+     AlertDialog.Builder(this)
+      .setTitle("Thank You for Choosing Foodvexa!")
+      .setMessage("Your application has been submitted successfully. Our Foodvexa team will review your details and contact you soon.\\n\\nWe appreciate your interest in partnering with Foodvexa!")
+      .setPositiveButton("Done", null)
+      .show()
     }
     .addOnFailureListener {
      submit.isEnabled = true
-     submit.text = "SUBMIT APPLICATION"
-     Toast.makeText(this, "Application could not be submitted. Check internet and Firestore permissions.", Toast.LENGTH_LONG).show()
+     submit.text = "Submit Application"
+     AlertDialog.Builder(this).setTitle("Submission Failed")
+      .setMessage("Your application could not be submitted. Please check your internet connection and try again.")
+      .setPositiveButton("OK", null).show()
     }
   }
   dialog.show()
  }
- 
  private fun renderPartnerShopCards(){
  val restaurantMode=prefs.getBoolean("restaurant_hotel_results",false)
  if(restaurantMode)prefs.edit().remove("restaurant_hotel_results").apply()
