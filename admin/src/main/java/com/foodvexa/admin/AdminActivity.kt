@@ -520,7 +520,20 @@ class AdminActivity : Activity() {
             snap.documents.forEach{doc->
                 val product=doc.get("product") as? Map<String,Any>?:emptyMap()
                 addLine((doc.getString("partnerName")?:"Partner")+" · "+(product["name"]?.toString()?:"Product")+" · ₹"+(product["price"]?.toString()?:"—"),15f,ink,true)
-                body.addView(button("APPROVE",{Toast.makeText(this,"Approval action needs the next update.",Toast.LENGTH_LONG).show()},green))
+                body.addView(button("APPROVE & PUBLISH",{
+                    val productId=doc.getString("productId").orEmpty()
+                    val ref=if(productId.isBlank())db.collection("menu").document() else db.collection("menu").document(productId)
+                    val published=HashMap<String,Any>()
+                    product.forEach{(k,v)->if(v!=null)published[k]=v}
+                    published["partnerId"]=doc.getString("partnerId").orEmpty()
+                    published["partnerName"]=doc.getString("partnerName").orEmpty()
+                    published["updatedAt"]=FieldValue.serverTimestamp()
+                    ref.set(published,com.google.firebase.firestore.SetOptions.merge()).addOnSuccessListener{
+                        doc.reference.update(mapOf("status" to "approved","reviewedAt" to FieldValue.serverTimestamp(),"publishedProductId" to ref.id))
+                        Toast.makeText(this,"Approved and published",Toast.LENGTH_SHORT).show()
+                    }.addOnFailureListener{Toast.makeText(this,"Publish failed",Toast.LENGTH_LONG).show()}
+                },green))
+                body.addView(button("REJECT",{doc.reference.update(mapOf("status" to "rejected","reviewedAt" to FieldValue.serverTimestamp()))},red))
             }
         }.addOnFailureListener{addLine("Could not load pending changes.",14f,red)}
     }
