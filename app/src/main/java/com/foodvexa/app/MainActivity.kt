@@ -524,7 +524,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     // dialog when the keyboard opens, so SUBMIT APPLICATION remains reachable.
     setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
     val metrics = resources.displayMetrics
-    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.68f).toInt())
+    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.88f).toInt())
    }
    root.isFocusableInTouchMode = true
    root.requestFocus()
