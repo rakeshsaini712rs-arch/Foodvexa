@@ -425,18 +425,9 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   }
  }
  private fun showPartnerApplicationDialog() {
-  val root = LinearLayout(this).apply {
+  val panel = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
-   setPadding(dp(18), dp(10), dp(18), dp(10))
-   setBackgroundColor(Color.rgb(248, 247, 245))
-  }
-  fun section(text: String) = TextView(this).apply {
-   this.text = text
-   textSize = 12f
-   typeface = Typeface.DEFAULT_BOLD
-   letterSpacing = 0.08f
-   setTextColor(Color.rgb(90, 72, 65))
-   setPadding(dp(2), dp(10), dp(2), dp(7))
+   setPadding(dp(16), dp(4), dp(16), dp(8))
   }
   fun makeField(hintText: String, inputTypeValue: Int = android.text.InputType.TYPE_CLASS_TEXT): EditText {
    return EditText(this).apply {
@@ -444,61 +435,56 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     inputType = inputTypeValue
     setSingleLine(hintText != "Full business address *")
     setTextColor(Color.rgb(35, 35, 40))
-    setHintTextColor(Color.rgb(110, 110, 118))
-    textSize = 16f
+    setHintTextColor(Color.rgb(105, 105, 115))
+    textSize = 15f
     minHeight = dp(52)
-    setPadding(dp(14), dp(10), dp(14), dp(10))
+    setPadding(dp(12), dp(10), dp(12), dp(10))
     background = rounded(Color.WHITE, 12)
-    layoutParams = LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(9) }
+    layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(8) }
    }
   }
-  val form = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-  form.addView(section("BUSINESS DETAILS"))
-  val business = makeField("Business / restaurant name *")
-  val type = makeField("Business type (Restaurant, Cafe, Bakery, Hotel) *")
-  val address = makeField("Full business address *")
-  form.addView(business); form.addView(type); form.addView(address)
-  form.addView(section("OWNER & CONTACT"))
+  val business = makeField("Business name *")
   val owner = makeField("Owner / contact person *")
   val phone = makeField("10-digit mobile number *", android.text.InputType.TYPE_CLASS_PHONE)
-  val email = makeField("Email address (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
-  form.addView(owner); form.addView(phone); form.addView(email)
-  form.addView(section("LOCATION"))
+  val type = makeField("Business type (Restaurant / Cafe / Bakery / Hotel) *")
   val city = makeField("City *")
   val district = makeField("District (optional)")
   val state = makeField("State *")
   val pin = makeField("6-digit PIN code *", android.text.InputType.TYPE_CLASS_NUMBER)
-  form.addView(city); form.addView(district); form.addView(state); form.addView(pin)
+  val address = makeField("Full business address *")
+  val email = makeField("Email (optional)", android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+  listOf(business, owner, phone, type, city, district, state, pin, address, email).forEach { panel.addView(it) }
 
+  val heading = TextView(this).apply {
+   text = "Register as a Foodvexa partner"
+   textSize = 20f
+   typeface = Typeface.DEFAULT_BOLD
+   setTextColor(Color.WHITE)
+   setPadding(dp(20), dp(18), dp(20), dp(8))
+  }
+  val instructions = TextView(this).apply {
+   text = "Fields marked * are required. Enter your business details. Your listing appears only after Foodvexa reviews and approves your application."
+   textSize = 14f
+   setLineSpacing(dp(2).toFloat(), 1f)
+   setTextColor(Color.rgb(235, 235, 240))
+   setPadding(dp(20), 0, dp(20), dp(12))
+  }
   val scroll = ScrollView(this).apply {
    isFillViewport = true
    clipToPadding = false
-   descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
-   isVerticalScrollBarEnabled = true
+   setPadding(0, 0, 0, dp(4))
+   addView(panel, ScrollView.LayoutParams(-1, -2))
    overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
-   addView(form, ViewGroup.LayoutParams(-1, -2))
-   layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
-  }
-  root.addView(TextView(this).apply {
-   text = "Fields marked * are required. Your listing appears only after Foodvexa review and approval."
-   textSize = 13f
-   setTextColor(Color.rgb(75, 75, 82))
-   setPadding(0, dp(2), 0, dp(8))
-  })
-  root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-  val buttons = LinearLayout(this).apply {
-   orientation = LinearLayout.HORIZONTAL
-   gravity = Gravity.END or Gravity.CENTER_VERTICAL
-   setPadding(0, dp(8), 0, 0)
   }
   val cancel = TextView(this).apply {
    text = "CANCEL"
    textSize = 14f
    typeface = Typeface.DEFAULT_BOLD
    gravity = Gravity.CENTER
-   setTextColor(Color.rgb(90, 80, 95))
-   setPadding(dp(16), dp(13), dp(16), dp(13))
+   setTextColor(Color.LTGRAY)
+   setPadding(dp(18), dp(12), dp(18), dp(12))
    isClickable = true
+   isFocusable = true
   }
   val submit = TextView(this).apply {
    text = "SUBMIT APPLICATION"
@@ -506,60 +492,52 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    typeface = Typeface.DEFAULT_BOLD
    gravity = Gravity.CENTER
    setTextColor(Color.WHITE)
-   background = rounded(Color.rgb(255, 82, 52), 12)
-   setPadding(dp(16), dp(13), dp(16), dp(13))
+   background = rounded(orange, 12)
+   setPadding(dp(16), dp(12), dp(16), dp(12))
    isClickable = true
+   isFocusable = true
   }
-  buttons.addView(cancel)
-  buttons.addView(submit, LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(8) })
-  root.addView(buttons, LinearLayout.LayoutParams(-1, -2))
-
-  val dialog = AlertDialog.Builder(this)
-   .setTitle("Foodvexa Partner Registration")
-   .setView(root)
-   .create()
+  val footer = LinearLayout(this).apply {
+   orientation = LinearLayout.HORIZONTAL
+   gravity = Gravity.END or Gravity.CENTER_VERTICAL
+   setPadding(dp(12), dp(8), dp(12), dp(12))
+   addView(cancel, LinearLayout.LayoutParams(-2, dp(48)))
+   addView(submit, LinearLayout.LayoutParams(-2, dp(48)).apply { leftMargin = dp(8) })
+  }
+  val root = LinearLayout(this).apply {
+   orientation = LinearLayout.VERTICAL
+   background = rounded(Color.rgb(48, 47, 51), 18)
+   addView(heading, LinearLayout.LayoutParams(-1, -2))
+   addView(instructions, LinearLayout.LayoutParams(-1, -2))
+   addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+   addView(footer, LinearLayout.LayoutParams(-1, -2))
+  }
+  val dialog = AlertDialog.Builder(this).setView(root).create()
   dialog.setOnShowListener {
    dialog.window?.apply {
-    // Keep the footer outside the scrolling form and let Android resize the
-    // dialog when the keyboard opens, so SUBMIT APPLICATION remains reachable.
+    setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
     setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
-    val metrics = resources.displayMetrics
-    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.88f).toInt())
+    val display = resources.displayMetrics
+    setLayout((display.widthPixels * 0.94f).toInt(), (display.heightPixels * 0.78f).toInt())
    }
-   root.isFocusableInTouchMode = true
-   root.requestFocus()
-   scroll.post { scroll.requestLayout() }
   }
-  cancel.setOnClickListener { dialog.dismiss() }
+  cancel.setOnClickListener { hideKeyboard(); dialog.dismiss() }
   submit.setOnClickListener {
+   hideKeyboard()
    val businessName = business.text.toString().trim()
    val ownerName = owner.text.toString().trim()
-   val mobile = phone.text.toString().filter { it.isDigit() }
+   val mobile = phone.text.toString().filter { ch -> ch.isDigit() }
    val businessType = type.text.toString().trim()
    val cityName = city.text.toString().trim()
    val stateName = state.text.toString().trim()
-   val pinCode = pin.text.toString().filter { it.isDigit() }
+   val pinCode = pin.text.toString().filter { ch -> ch.isDigit() }
    val fullAddress = address.text.toString().trim()
    if (businessName.isBlank() || ownerName.isBlank() || mobile.length != 10 || businessType.isBlank() || cityName.isBlank() || stateName.isBlank() || pinCode.length != 6 || fullAddress.isBlank()) {
-    Toast.makeText(this, "Please complete all required fields (*) and check mobile/PIN.", Toast.LENGTH_LONG).show()
-    val missing = listOf(business, type, address, owner, phone, city, state, pin).firstOrNull {
-     when (it) {
-      business -> businessName.isBlank()
-      type -> businessType.isBlank()
-      address -> fullAddress.isBlank()
-      owner -> ownerName.isBlank()
-      phone -> mobile.length != 10
-      city -> cityName.isBlank()
-      state -> stateName.isBlank()
-      else -> pinCode.length != 6
-     }
-    }
-    missing?.requestFocus()
-    missing?.let { field -> scroll.post { scroll.smoothScrollTo(0, field.top) } }
+    Toast.makeText(this, "Please complete all required fields. Mobile must be 10 digits and PIN code 6 digits.", Toast.LENGTH_LONG).show()
     return@setOnClickListener
    }
    submit.isEnabled = false
-   submit.text = "SUBMITTING…"
+   submit.text = "SUBMITTING..."
    val data = hashMapOf<String, Any>(
     "businessName" to businessName, "ownerName" to ownerName, "phone" to mobile,
     "businessType" to businessType, "city" to cityName, "district" to district.text.toString().trim(),
@@ -575,18 +553,12 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     .addOnFailureListener {
      submit.isEnabled = true
      submit.text = "SUBMIT APPLICATION"
-     Toast.makeText(this, "Application could not be submitted. Check internet or sign-in and try again.", Toast.LENGTH_LONG).show()
+     Toast.makeText(this, "Application could not be submitted. Check internet and Firestore permissions.", Toast.LENGTH_LONG).show()
     }
   }
-  dialog.setOnShowListener {
-   dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
-   dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.78f).toInt())
-  }
   dialog.show()
-  dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
-  dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), (resources.displayMetrics.heightPixels * 0.78f).toInt())
  }
-
+ 
  private fun renderPartnerShopCards(){
  val restaurantMode=prefs.getBoolean("restaurant_hotel_results",false)
  if(restaurantMode)prefs.edit().remove("restaurant_hotel_results").apply()
