@@ -69,6 +69,18 @@ service cloud.firestore {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow create, update, delete: if isAdmin();
     }
+    match /partnerProductChanges/{changeId} {
+      allow create: if signedIn() &&
+        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+        request.resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
+        request.resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName &&
+        request.resource.data.status == 'pending';
+      allow read: if isAdmin() ||
+        (signedIn() && resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
     match /orders/{orderId} {
       allow create: if isWithinShopHours()
         && signedIn()
