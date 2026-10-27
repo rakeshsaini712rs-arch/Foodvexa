@@ -599,7 +599,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
      dialog.dismiss()
      AlertDialog.Builder(this)
       .setTitle("Thank You for Choosing Foodvexa!")
-      .setMessage("Your application has been submitted successfully. Our Foodvexa team will review your details and contact you soon.\\n\\nWe appreciate your interest in partnering with Foodvexa!")
+      .setMessage("Your application has been submitted successfully. Our Foodvexa team will review your details and contact you soon.\n\nWe appreciate your interest in partnering with Foodvexa!")
       .setPositiveButton("Done", null)
       .show()
     }
