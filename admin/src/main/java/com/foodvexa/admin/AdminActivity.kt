@@ -486,6 +486,7 @@ class AdminActivity : Activity() {
             addLine("Restaurant / Hotel / Shop Partners",22f,ink,true)
             addLine("Approve applications and create login IDs for approved partners.",13f,Color.GRAY)
             body.addView(button("MANAGE APPROVED PARTNER LOGINS",{approvedPartnerLoginsPage()},Color.rgb(45,88,140)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(12)})
+            body.addView(button("REVIEW PARTNER PRODUCT CHANGES",{partnerProductChangesPage()},Color.rgb(25,112,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
             if(error!=null){addLine("Unable to load applications: "+(error.localizedMessage?:"Check Firestore permissions."),14f,red);return@addSnapshotListener}
             if(snap==null||snap.isEmpty){addLine("No applications yet. Use Manage Approved Partner Logins to see partners already published.",15f,Color.GRAY);return@addSnapshotListener}
             snap.documents.forEach{doc->
