@@ -483,9 +483,11 @@ class AdminActivity : Activity() {
         db.collection("partnerApplications").addSnapshotListener(this){snap,error->
             if(page!="Partners")return@addSnapshotListener
             body.removeAllViews()
-            addLine("Restaurant Partner Applications",22f,ink,true)
+            addLine("Restaurant / Hotel / Shop Partners",22f,ink,true)
+            addLine("Approve applications and create login IDs for approved partners.",13f,Color.GRAY)
+            body.addView(button("MANAGE APPROVED PARTNER LOGINS",{approvedPartnerLoginsPage()},Color.rgb(45,88,140)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(12)})
             if(error!=null){addLine("Unable to load applications: "+(error.localizedMessage?:"Check Firestore permissions."),14f,red);return@addSnapshotListener}
-            if(snap==null||snap.isEmpty){addLine("No applications yet.",15f,Color.GRAY);return@addSnapshotListener}
+            if(snap==null||snap.isEmpty){addLine("No applications yet. Use Manage Approved Partner Logins to see partners already published.",15f,Color.GRAY);return@addSnapshotListener}
             snap.documents.forEach{doc->
                 val d=doc.data?:emptyMap<String,Any>()
                 val status=d["status"]?.toString()?:"pending"
@@ -505,6 +507,33 @@ class AdminActivity : Activity() {
                     c.addView(button("CREATE PARTNER LOGIN ID",{createPartnerLogin(doc.id,d)},green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
                 }
                 body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+            }
+        }
+    }
+    private fun approvedPartnerLoginsPage(){
+        body.removeAllViews()
+        addLine("Approved Partner Logins",22f,ink,true)
+        addLine("Select an approved restaurant, hotel or shop to create its login ID.",13f,Color.GRAY)
+        body.addView(button("BACK TO APPLICATIONS",{showPage("Partners")},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8);bottomMargin=dp(12)})
+        db.collection("partners").whereEqualTo("approved",true).addSnapshotListener(this){snap,error->
+            if(page!="Partners")return@addSnapshotListener
+            if(error!=null){addLine("Could not load approved partners: "+(error.localizedMessage?: "Check Firestore rules."),14f,red);return@addSnapshotListener}
+            // Keep the heading and back button; replace only the partner-list area.
+            val start=body.childCount
+            if(snap==null||snap.isEmpty){body.addView(text("No approved partners found. Approve an application first.",14f,Color.GRAY));return@addSnapshotListener}
+            val existingNames=mutableSetOf<String>()
+            for(i in start until body.childCount){body.removeViewAt(start)}
+            snap.documents.forEach{doc->
+                val d=doc.data?:emptyMap<String,Any>()
+                val name=d["businessName"]?.toString()?.takeIf{it.isNotBlank()}?:d["name"]?.toString()?:"Unnamed partner"
+                val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(12),dp(14),dp(12));background=shape(Color.WHITE,14)}
+                card.addView(text(name,17f,ink,true))
+                card.addView(text((d["businessType"]?.toString()?:"Business")+" · "+(d["city"]?.toString()?:"")+", "+(d["state"]?.toString()?:""),13f,Color.GRAY))
+                val hasLogin=!d["authUid"]?.toString().isNullOrBlank()
+                card.addView(text(if(hasLogin)"Login: "+(d["loginEmail"]?.toString()?:"Created") else "Login ID not created",13f,if(hasLogin)green else red,true))
+                if(!hasLogin)card.addView(button("CREATE PARTNER LOGIN ID",{createPartnerLogin(doc.id,d)},green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                else card.addView(button("LOGIN ALREADY CREATED",{Toast.makeText(this,"This partner already has a login ID.",Toast.LENGTH_SHORT).show()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
             }
         }
     }
