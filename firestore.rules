@@ -24,7 +24,23 @@ service cloud.firestore {
     }
     match /menu/{productId} {
       allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin() || (signedIn() &&
+        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+        request.resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
+        request.resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName);
+      allow update: if isAdmin() || (signedIn() &&
+        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+        resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
+        resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName &&
+        request.resource.data.partnerId == resource.data.partnerId &&
+        request.resource.data.partnerName == resource.data.partnerName);
+      allow delete: if isAdmin() || (signedIn() &&
+        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+        resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
+        resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName);
     }
     match /deliveryBoys/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
@@ -46,7 +62,11 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     match /partners/{partnerId} {
-      allow read: if resource.data.approved == true && resource.data.active == true;
+      allow read: if (resource.data.approved == true && resource.data.active == true) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+    match /partnerAccounts/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow create, update, delete: if isAdmin();
     }
     match /orders/{orderId} {
