@@ -4,3 +4,4 @@ rootProject.name = "Foodvexa"
 include(":app")
 include(":admin")
 include(":delivery")
+include(":partner")
