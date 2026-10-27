@@ -38,11 +38,14 @@ class PartnerActivity : Activity() {
     }
     private fun render(){
         val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
-        val header=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(16));setBackgroundColor(Color.WHITE)}
-        header.addView(label("FOODVEXA PARTNER",12f,orange,true))
-        header.addView(label(partnerName,23f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-        header.addView(label("Manage your products, prices and availability",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
-        header.addView(button("LOG OUT",{FirebaseAuth.getInstance().signOut();finish()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
+        val header=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(24),dp(20),dp(18));setBackgroundColor(Color.WHITE)}
+        val brandRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+        brandRow.addView(label("FOODVEXA",15f,orange,true),LinearLayout.LayoutParams(-2,-2))
+        brandRow.addView(label("PARTNER",11f,Color.WHITE,true).apply{gravity=Gravity.CENTER;background=shape(orange,7);setPadding(dp(8),dp(5),dp(8),dp(5))},LinearLayout.LayoutParams(-2,-2).apply{leftMargin=dp(8)})
+        header.addView(brandRow,LinearLayout.LayoutParams(-1,-2))
+        header.addView(label(partnerName,25f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
+        header.addView(label("Manage your products, prices and availability",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+        header.addView(button("LOG OUT",{FirebaseAuth.getInstance().signOut();finish()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(14)})
         root.addView(header)
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
