@@ -520,10 +520,14 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    .create()
   dialog.setOnShowListener {
    dialog.window?.apply {
-    setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+    // Keep the footer outside the scrolling form and let Android resize the
+    // dialog when the keyboard opens, so SUBMIT APPLICATION remains reachable.
+    setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
     val metrics = resources.displayMetrics
-    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.76f).toInt())
+    setLayout((metrics.widthPixels * 0.94f).toInt(), (metrics.heightPixels * 0.68f).toInt())
    }
+   root.isFocusableInTouchMode = true
+   root.requestFocus()
    scroll.post { scroll.requestLayout() }
   }
   cancel.setOnClickListener { dialog.dismiss() }
