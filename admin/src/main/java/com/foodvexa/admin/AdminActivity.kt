@@ -501,10 +501,52 @@ class AdminActivity : Activity() {
                         db.collection("partners").document(doc.id).set(partner).addOnSuccessListener{db.collection("partnerApplications").document(doc.id).update(mapOf("status" to "approved","approved" to true,"reviewedAt" to FieldValue.serverTimestamp()));Toast.makeText(this,"Partner approved and published.",Toast.LENGTH_LONG).show()}.addOnFailureListener{e->Toast.makeText(this,"Publish failed: "+(e.localizedMessage?:""),Toast.LENGTH_LONG).show()}
                     },green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
                     c.addView(button("REJECT APPLICATION",{db.collection("partnerApplications").document(doc.id).update(mapOf("status" to "rejected","approved" to false,"reviewedAt" to FieldValue.serverTimestamp()))},red),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                } else {
+                    c.addView(button("CREATE PARTNER LOGIN ID",{createPartnerLogin(doc.id,d)},green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
                 }
                 body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
             }
         }
+    }
+    private fun createPartnerLogin(partnerId:String, application:Map<String,Any>){
+        val partnerRef=db.collection("partners").document(partnerId)
+        partnerRef.get().addOnSuccessListener { existing ->
+            if(!existing.exists() || existing.getBoolean("approved")!=true || existing.getBoolean("active")!=true){
+                Toast.makeText(this,"Approve and publish this partner first.",Toast.LENGTH_LONG).show();return@addOnSuccessListener
+            }
+            if(!existing.getString("authUid").isNullOrBlank()){
+                Toast.makeText(this,"Partner login already exists.",Toast.LENGTH_LONG).show();return@addOnSuccessListener
+            }
+            val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(8),dp(18),0)}
+            val email=EditText(this).apply{hint="Partner login email";setText(application["email"]?.toString().orEmpty());isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS}
+            val password=EditText(this).apply{hint="Temporary password (at least 6 characters)";isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD}
+            panel.addView(email,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(8)})
+            panel.addView(password,LinearLayout.LayoutParams(-1,dp(52)))
+            val dlg=android.app.AlertDialog.Builder(this).setTitle("Create partner login").setMessage("Create a private login for "+(application["businessName"]?.toString()?: "this partner")+". Share credentials securely.").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Create",null).create()
+            dlg.setOnShowListener{dlg.getButton(-1).setOnClickListener{
+                val e=email.text.toString().trim();val p=password.text.toString()
+                if(e.isBlank()||p.length<6){Toast.makeText(this,"Enter a valid email and password of at least 6 characters.",Toast.LENGTH_LONG).show();return@setOnClickListener}
+                val appName="foodvexaPartnerAccountCreator"
+                val secondary=try{com.google.firebase.FirebaseApp.getApps(this).firstOrNull{it.name==appName}?:com.google.firebase.FirebaseApp.initializeApp(this,com.google.firebase.FirebaseApp.getInstance().options,appName)}catch(ex:Exception){null}
+                if(secondary==null){Toast.makeText(this,"Could not initialize account creator.",Toast.LENGTH_LONG).show();return@setOnClickListener}
+                val creator=com.google.firebase.auth.FirebaseAuth.getInstance(secondary)
+                dlg.getButton(-1).isEnabled=false
+                creator.createUserWithEmailAndPassword(e,p).addOnSuccessListener{result->
+                    val uid=result.user?.uid
+                    if(uid.isNullOrBlank()){creator.signOut();Toast.makeText(this,"Account created but UID missing.",Toast.LENGTH_LONG).show();return@addOnSuccessListener}
+                    val name=application["businessName"]?.toString().orEmpty()
+                    val account=mapOf("partnerId" to partnerId,"partnerName" to name,"email" to e,"active" to true,"createdAt" to FieldValue.serverTimestamp(),"createdBy" to (auth.currentUser?.uid?: "admin"))
+                    db.collection("partnerAccounts").document(uid).set(account).addOnSuccessListener{
+                        partnerRef.update(mapOf("authUid" to uid,"loginEmail" to e,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{
+                            creator.signOut()
+                            android.app.AlertDialog.Builder(this).setTitle("Partner login created").setMessage("Business: "+name+"\nLogin ID: "+e+"\nTemporary password: "+p+"\n\nShare these details privately with the partner.").setPositiveButton("Done",null).show()
+                            dlg.dismiss()
+                        }.addOnFailureListener{err->creator.signOut();Toast.makeText(this,"Login created but partner link failed: "+(err.localizedMessage?: ""),Toast.LENGTH_LONG).show()}
+                    }.addOnFailureListener{err->creator.signOut();Toast.makeText(this,"Could not save partner access: "+(err.localizedMessage?: ""),Toast.LENGTH_LONG).show()}
+                }.addOnFailureListener{err->dlg.getButton(-1).isEnabled=true;Toast.makeText(this,"Could not create login: "+(err.localizedMessage?: "check whether this email is already registered"),Toast.LENGTH_LONG).show()}
+            }}
+            dlg.show()
+        }.addOnFailureListener{Toast.makeText(this,"Could not check partner account.",Toast.LENGTH_LONG).show()}
     }
     private val partnerNames=listOf("FOODVEXA","Cake Tower","Santa Banta Bakery","Kanha Bakery & Fast Food","Sadafal Cafe & Dining","Bistro Nawalgarh","Brew & Bite","Chotiya Ji Sweets","Shree Rajaram Peda Bhandar","Royal Fast Food","Hotel Marwadi & Restaurant","Mayur Hotel & Restaurant","La Veg Pizza","Hotel Nawalgarh Plaza","Vivaana Museum Hotel","Bungli Restaurant","Ganpati Restaurant")
     private val defaultCategories=listOf("Snacks","Chaat Special","Fast Food","Beverages","Sweets","Birthday Special","Meals","Special Sabji","Deals & Offers")
