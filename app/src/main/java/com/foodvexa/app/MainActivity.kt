@@ -1049,6 +1049,7 @@ filtered.forEachIndexed{index,p->
  private val ganpatiAvailability=mutableMapOf<String,Boolean>()
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
+ private fun findCartProduct(name:String):Product? = currentMenuProducts().firstOrNull{it.name.equals(name,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(name,true)} ?: products.firstOrNull{it.name.equals(name,true)}
  private fun isProductSoldOut(p:Product):Boolean {
   val key=p.name.lowercase(java.util.Locale.ROOT)
   return if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailability[key]==false else productAvailability[key]==false
@@ -1143,7 +1144,7 @@ private fun showShopClosedMessage(){
 }
 private fun placeOrderAndShowOrders(){
  if(!isShopOpenNow()){showShopClosedMessage();return}
- val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
+ val subtotal=cart.entries.sumOf{(name,qty)->findCartProduct(name)?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
  if(FirebaseAuth.getInstance().currentUser==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
@@ -1203,7 +1204,7 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  val deliveryFee=if(subtotal>500) 0 else 30
  val total=subtotal+deliveryFee
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
- val items=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->
+ val items=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->
   val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)
   val key=p.name.lowercase(java.util.Locale.ROOT)
   productPartnerIds[key]?.let{item["partnerId"]=it}
@@ -1327,7 +1328,7 @@ private fun showCart(){
  }
  var subtotal=0
  entries.forEach{(name,qty)->
-  val p=products.firstOrNull{it.name==name}
+  val p=findCartProduct(name)
   if(p!=null){
    subtotal+=p.price*qty
    val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(12),dp(10),dp(10),dp(10));background=rounded(Color.rgb(38,29,22),14)}
@@ -1345,8 +1346,8 @@ private fun showCart(){
  }
  content.addView(label("Subtotal: ₹$subtotal",20f,true,primaryText),margin(0,10,0,6))
  if(subtotal<150) content.addView(label("Minimum order ₹150 • Add ₹${150-subtotal} more to place order",14f,true,orange),margin(0,0,0,8))
- val deliveryFee=if(subtotal>500) 0 else 30
- content.addView(label(if(deliveryFee==0) "Delivery fee: FREE" else "Delivery fee: ₹$deliveryFee",14f,false,secondaryText),margin(0,0,0,6))
+ val deliveryFee=if(subtotal<=0) 0 else if(subtotal>500) 0 else 30
+ content.addView(label(if(subtotal<=0) "Delivery fee: ₹0" else if(deliveryFee==0) "Delivery fee: FREE" else "Delivery fee: ₹$deliveryFee",14f,false,secondaryText),margin(0,0,0,6))
  content.addView(label("Total: ₹${subtotal+deliveryFee}",22f,true,primaryText),margin(0,0,0,14))
  content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+deliveryFee}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
