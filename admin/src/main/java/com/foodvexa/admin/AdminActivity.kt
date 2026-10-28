@@ -520,6 +520,7 @@ class AdminActivity : Activity() {
             snap.documents.forEach{doc->
                 val product=doc.get("product") as? Map<String,Any>?:emptyMap()
                 addLine((doc.getString("partnerName")?:"Partner")+" · "+(product["name"]?.toString()?:"Product")+" · ₹"+(product["price"]?.toString()?:"—"),15f,ink,true)
+                addLine("Category: "+(product["category"]?.toString()?:"—")+"  ·  "+if(product["available"]==false)"Sold out request" else "Available",12f,Color.GRAY)
                 body.addView(button("APPROVE & PUBLISH",{
                     val productId=doc.getString("productId").orEmpty()
                     val ref=if(productId.isBlank())db.collection("menu").document() else db.collection("menu").document(productId)
