@@ -1195,7 +1195,7 @@ private fun placeOrderAndShowOrders(){
 private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
  if(!isShopOpenNow()){showShopClosedMessage();return}
  val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
- val subtotal=cart.entries.sumOf{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.price?.times(qty)?:0}
+ val subtotal=cart.entries.sumOf{(name,qty)->findCartProduct(name)?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
  val user=FirebaseAuth.getInstance().currentUser
