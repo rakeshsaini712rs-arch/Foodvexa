@@ -28,6 +28,7 @@ class PartnerActivity : Activity() {
     private lateinit var partnerName: String
     private var listener: ListenerRegistration?=null
     private var ordersListener: ListenerRegistration?=null
+    private var legacyOrdersListener: ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun shape(color:Int=Color.WHITE,radius:Int=14)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
@@ -83,11 +84,24 @@ class PartnerActivity : Activity() {
 
     private fun renderPartnerOrders(){
         ordersListener?.remove()
-        ordersListener=db.collection("orders").whereArrayContains("partnerIds",partnerId).addSnapshotListener(this){snap,error->
+        legacyOrdersListener?.remove()
+        val merged=linkedMapOf<String,com.google.firebase.firestore.DocumentSnapshot>()
+        var listQueryDone=false
+        var legacyQueryDone=false
+        var listQueryError:Exception?=null
+        var legacyQueryError:Exception?=null
+        fun showOrders(){
             ordersContainer.removeAllViews()
-            if(error!=null){ordersContainer.addView(label("Orders could not load. Check Firestore rules.",13f,Color.RED));return@addSnapshotListener}
-            if(snap==null||snap.isEmpty){ordersContainer.addView(label("No orders for your shop yet.",13f,Color.GRAY));return@addSnapshotListener}
-            snap.documents.sortedByDescending{it.getTimestamp("createdAt")?.toDate()?.time?:0L}.forEach{doc->
+            if(merged.isEmpty() && listQueryError!=null && legacyQueryError!=null){
+                ordersContainer.addView(label("Orders load failed: "+(listQueryError?.localizedMessage?:legacyQueryError?.localizedMessage?: "permission denied"),13f,Color.RED))
+                ordersContainer.addView(label("Check that this login's partnerAccounts/{uid} document has the correct partnerId and active=true, then deploy the latest Firestore rules.",12f,Color.GRAY))
+                return
+            }
+            if(merged.isEmpty() && listQueryDone && legacyQueryDone){
+                ordersContainer.addView(label("No orders for your shop yet.",13f,Color.GRAY))
+                return
+            }
+            merged.values.sortedByDescending{it.getTimestamp("createdAt")?.toDate()?.time?:0L}.forEach{doc->
                 val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(Color.WHITE,12)}
                 card.addView(label("Order #"+doc.id.takeLast(6).uppercase(Locale.ROOT),15f,ink,true))
                 card.addView(label((doc.getString("customerName")?:"Customer")+" · "+(doc.getString("phone")?:""),13f,ink))
@@ -95,6 +109,19 @@ class PartnerActivity : Activity() {
                 card.addView(label("₹"+(doc.get("total")?.toString()?: "—")+" · "+(doc.getString("status")?: "New"),13f,green,true))
                 ordersContainer.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
             }
+        }
+        // Use separate constrained queries so Firestore rules can validate each result set.
+        ordersListener=db.collection("orders").whereArrayContains("partnerIds",partnerId).addSnapshotListener(this){snap,error->
+            listQueryDone=true
+            listQueryError=error
+            if(error==null) snap?.documents?.forEach{merged[it.id]=it}
+            showOrders()
+        }
+        legacyOrdersListener=db.collection("orders").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
+            legacyQueryDone=true
+            legacyQueryError=error
+            if(error==null) snap?.documents?.forEach{merged[it.id]=it}
+            showOrders()
         }
     }
     private fun submitAvailabilityChange(id:String,old:Map<String,Any>,available:Boolean){
@@ -127,5 +154,5 @@ class PartnerActivity : Activity() {
             dialog.show()
         }
     }
-    override fun onDestroy(){listener?.remove();ordersListener?.remove();super.onDestroy()}
+    override fun onDestroy(){listener?.remove();ordersListener?.remove();legacyOrdersListener?.remove();super.onDestroy()}
 }
