@@ -81,7 +81,8 @@ service cloud.firestore {
         (signedIn() &&
           exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
           get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
-          resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId);
+          (resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId ||
+           (resource.data.partnerIds is list && resource.data.partnerIds.hasAny([get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId]))));
       allow update: if isAdmin() ||
         (signedIn()
           && resource.data.customerUid == request.auth.uid
