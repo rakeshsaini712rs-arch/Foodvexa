@@ -23,6 +23,7 @@ class PartnerActivity : Activity() {
     private val green=Color.rgb(28,130,76)
     private val db by lazy { FirebaseFirestore.getInstance() }
     private lateinit var body: LinearLayout
+    private lateinit var ordersContainer: LinearLayout
     private lateinit var partnerId: String
     private lateinit var partnerName: String
     private var listener: ListenerRegistration?=null
@@ -57,6 +58,8 @@ class PartnerActivity : Activity() {
             body.addView(label("Only products belonging to your business are shown here.",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(12)})
             body.addView(button("+ ADD PRODUCT",{productDialog(null,null)},orange),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
             body.addView(label("Orders for "+partnerName,19f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(18);bottomMargin=dp(8)})
+            ordersContainer=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            body.addView(ordersContainer,LinearLayout.LayoutParams(-1,-2))
             renderPartnerOrders()
             if(error!=null){body.addView(label("Could not load products. Check connection and partner permissions.",14f,Color.RED));return@addSnapshotListener}
             products.clear()
@@ -80,20 +83,17 @@ class PartnerActivity : Activity() {
 
     private fun renderPartnerOrders(){
         ordersListener?.remove()
-        val heading = "Orders for " + partnerName
         ordersListener=db.collection("orders").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
-            val headingView=(0 until body.childCount).map{body.getChildAt(it)}.filterIsInstance<TextView>().firstOrNull{it.text.toString()==heading} ?: return@addSnapshotListener
-            val start=body.indexOfChild(headingView)
-            while(body.childCount>start+1)body.removeViewAt(start+1)
-            if(error!=null){body.addView(label("Orders could not load. Check Firestore rules.",13f,Color.RED));return@addSnapshotListener}
-            if(snap==null||snap.isEmpty){body.addView(label("No orders for your shop yet.",13f,Color.GRAY));return@addSnapshotListener}
+            ordersContainer.removeAllViews()
+            if(error!=null){ordersContainer.addView(label("Orders could not load. Check Firestore rules.",13f,Color.RED));return@addSnapshotListener}
+            if(snap==null||snap.isEmpty){ordersContainer.addView(label("No orders for your shop yet.",13f,Color.GRAY));return@addSnapshotListener}
             snap.documents.sortedByDescending{it.getTimestamp("createdAt")?.toDate()?.time?:0L}.forEach{doc->
                 val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(Color.WHITE,12)}
                 card.addView(label("Order #"+doc.id.takeLast(6).uppercase(Locale.ROOT),15f,ink,true))
                 card.addView(label((doc.getString("customerName")?:"Customer")+" · "+(doc.getString("phone")?:""),13f,ink))
                 card.addView(label(doc.getString("itemsText")?: "Items details unavailable",12f,Color.DKGRAY))
-                card.addView(label("₹"+(doc.get("total")?.toString()?:"—")+" · "+(doc.getString("status")?:"New"),13f,green,true))
-                body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+                card.addView(label("₹"+(doc.get("total")?.toString()?: "—")+" · "+(doc.getString("status")?: "New"),13f,green,true))
+                ordersContainer.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
             }
         }
     }
