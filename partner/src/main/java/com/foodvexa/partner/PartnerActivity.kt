@@ -83,7 +83,7 @@ class PartnerActivity : Activity() {
 
     private fun renderPartnerOrders(){
         ordersListener?.remove()
-        ordersListener=db.collection("orders").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
+        ordersListener=db.collection("orders").whereArrayContains("partnerIds",partnerId).addSnapshotListener(this){snap,error->
             ordersContainer.removeAllViews()
             if(error!=null){ordersContainer.addView(label("Orders could not load. Check Firestore rules.",13f,Color.RED));return@addSnapshotListener}
             if(snap==null||snap.isEmpty){ordersContainer.addView(label("No orders for your shop yet.",13f,Color.GRAY));return@addSnapshotListener}
