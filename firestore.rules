@@ -23,24 +23,10 @@ service cloud.firestore {
       allow write: if false;
     }
     match /menu/{productId} {
+      // Published menu is readable by signed-in customer/admin/partner apps.
+      // Only admins may publish edits; partner edits must pass partnerProductChanges approval.
       allow read: if signedIn();
-      allow create: if isAdmin() || (signedIn() &&
-        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
-        request.resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
-        request.resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName);
-      allow update: if isAdmin() || (signedIn() &&
-        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
-        resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
-        resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName &&
-        request.resource.data.partnerId == resource.data.partnerId &&
-        request.resource.data.partnerName == resource.data.partnerName);
-      allow delete: if isAdmin() || (signedIn() &&
-        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
-        resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
-        resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName);
+      allow create, update, delete: if isAdmin();
     }
     match /deliveryBoys/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
@@ -91,7 +77,11 @@ service cloud.firestore {
         (signedIn() && resource.data.customerUid == request.auth.uid) ||
         (signedIn() && resource.data.deliveryBoyUid == request.auth.uid &&
           exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true);
+          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true) ||
+        (signedIn() &&
+          exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+          resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId);
       allow update: if isAdmin() ||
         (signedIn()
           && resource.data.customerUid == request.auth.uid
