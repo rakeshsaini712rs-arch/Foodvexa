@@ -1034,6 +1034,8 @@ filtered.forEachIndexed{index,p->
  }
  private fun saveLocation(value:String,label:String,landmark:String=""){val v=value.trim();if(v.isBlank()||v.length<10||!v.contains(Regex("[,0-9]"))){Toast.makeText(this,"Please enter your complete address, including house/shop number, street or area, and city.",Toast.LENGTH_LONG).show();return};val full=if(landmark.trim().isBlank())v else "$v\nLandmark: ${landmark.trim()}";val e=prefs.edit().putString("location",full).putString("location_label",label).putString("delivery_landmark",landmark.trim());when(label){"Home"->e.putString("home_address",full);"Work"->e.putString("work_address",full);"Delivery"->e.putString("delivery_address",full)};e.apply();showHome()}
  private val productAvailability=mutableMapOf<String,Boolean>()
+ private val productPartnerIds=mutableMapOf<String,String>()
+ private val productPartnerNames=mutableMapOf<String,String>()
  private val ganpatiAvailability=mutableMapOf<String,Boolean>()
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
@@ -1070,6 +1072,17 @@ private fun loadSharedMenu(){
    }
   }
   productAvailability.clear()
+  productPartnerIds.clear()
+  productPartnerNames.clear()
+  snapshot.documents.forEach{doc->
+   val name=doc.getString("name")?.trim().orEmpty()
+   val partnerId=doc.getString("partnerId")?.trim().orEmpty()
+   val partnerName=doc.getString("partnerName")?.trim().orEmpty()
+   if(name.isNotBlank() && partnerId.isNotBlank()){
+    productPartnerIds[name.lowercase(java.util.Locale.ROOT)]=partnerId
+    productPartnerNames[name.lowercase(java.util.Locale.ROOT)]=partnerName
+   }
+  }
   val foodvexaLive=mutableListOf<Product>()
   foodvexaByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
@@ -1180,7 +1193,13 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
  val deliveryFee=if(subtotal>500) 0 else 30
  val total=subtotal+deliveryFee
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
- val items=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)}}
+ val items=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->
+  val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)
+  val key=p.name.lowercase(java.util.Locale.ROOT)
+  productPartnerIds[key]?.let{item["partnerId"]=it}
+  productPartnerNames[key]?.takeIf{it.isNotBlank()}?.let{item["partnerName"]=it}
+  item
+ }}
  val data=hashMapOf<String,Any>(
   "customerUid" to user.uid,
   "customerName" to customerName,
@@ -1189,6 +1208,7 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
   "scheduledDelivery" to scheduledFor,
   "items" to items,
   "itemsText" to summary,
+  "partnerIds" to items.mapNotNull{it["partnerId"]?.toString()}.distinct(),
   "subtotal" to subtotal,
   "deliveryFee" to deliveryFee,
   "total" to total,
@@ -1198,6 +1218,11 @@ private fun submitOrder(customerName:String,customerMobile:String,deliveryAddres
   "createdAt" to FieldValue.serverTimestamp(),
   "updatedAt" to FieldValue.serverTimestamp()
  )
+ val assignedPartnerIds=items.mapNotNull{it["partnerId"]?.toString()}.distinct()
+ if(assignedPartnerIds.size==1){
+  data["partnerId"]=assignedPartnerIds.first()
+  items.firstNotNullOfOrNull{it["partnerName"]?.toString()}?.let{data["partnerName"]=it}
+ }
  FirebaseFirestore.getInstance().collection("orders").add(data)
   .addOnSuccessListener{
    val orders=try{JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){JSONArray()}
