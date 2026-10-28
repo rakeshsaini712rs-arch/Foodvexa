@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import android.text.InputType
 import android.view.Gravity
 import android.widget.*
@@ -14,6 +16,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.storage.FirebaseStorage
 import java.util.Locale
 
 class PartnerActivity : Activity() {
@@ -30,6 +33,8 @@ class PartnerActivity : Activity() {
     private var ordersListener: ListenerRegistration?=null
     private var legacyOrdersListener: ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
+    private var imageUrlField: EditText?=null
+    private val pickImageRequest=7814
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
     private fun shape(color:Int=Color.WHITE,radius:Int=14)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat()}
     private fun label(s:String,size:Float=14f,color:Int=ink,bold:Boolean=false)=TextView(this).apply{text=s;textSize=size;setTextColor(color);gravity=Gravity.CENTER_VERTICAL;if(bold)setTypeface(null,Typeface.BOLD)}
@@ -124,6 +129,33 @@ class PartnerActivity : Activity() {
             showOrders()
         }
     }
+    private fun chooseProductImage(){
+        val intent=Intent(Intent.ACTION_GET_CONTENT).apply{type="image/*";addCategory(Intent.CATEGORY_OPENABLE)}
+        startActivityForResult(Intent.createChooser(intent,"Select product photo"),pickImageRequest)
+    }
+    @Deprecated("Deprecated in Android, retained for compatibility with this Activity")
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode!=pickImageRequest||resultCode!=RESULT_OK)return
+        val uri=data?.data?:return
+        val field=imageUrlField
+        if(field==null){Toast.makeText(this,"Open Edit Product again and select the image.",Toast.LENGTH_LONG).show();return}
+        val uid=FirebaseAuth.getInstance().currentUser?.uid
+        if(uid.isNullOrBlank()){Toast.makeText(this,"Please log in again.",Toast.LENGTH_LONG).show();return}
+        field.setText("Uploading image…")
+        field.isEnabled=false
+        val ref=FirebaseStorage.getInstance().reference.child("partner-products/"+uid+"/"+System.currentTimeMillis()+".jpg")
+        ref.putFile(uri).continueWithTask{task->
+            if(!task.isSuccessful)throw (task.exception?:Exception("Image upload failed"))
+            ref.downloadUrl
+        }.addOnSuccessListener{downloadUri->
+            field.setText(downloadUri.toString());field.isEnabled=true
+            Toast.makeText(this,"Photo uploaded. Save the product to submit it for approval.",Toast.LENGTH_LONG).show()
+        }.addOnFailureListener{e->
+            field.isEnabled=true;field.setText("")
+            Toast.makeText(this,"Image upload failed: "+(e.localizedMessage?:"Check Firebase Storage setup and rules."),Toast.LENGTH_LONG).show()
+        }
+    }
     private fun submitAvailabilityChange(id:String,old:Map<String,Any>,available:Boolean){
         val product=HashMap<String,Any>()
         old.forEach{(k,v)->if(v!=null)product[k]=v}
@@ -139,7 +171,9 @@ class PartnerActivity : Activity() {
         val category=field("Category",old?.get("category")?.toString().orEmpty())
         val price=field("Price in ₹",old?.get("price")?.toString().orEmpty(),InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         val image=field("Image URL (optional)",old?.get("imageUrl")?.toString().orEmpty())
+        imageUrlField=image
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(6)})}
+        panel.addView(button("SELECT PHOTO FROM GALLERY",{chooseProductImage()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
         val available=CheckBox(this).apply{text="Available for customers";isChecked=old?.get("available")!=false}
         panel.addView(available)
         AlertDialog.Builder(this).setTitle(if(id==null)"Add product" else "Edit product").setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save",null).create().also{dialog->
@@ -154,5 +188,5 @@ class PartnerActivity : Activity() {
             dialog.show()
         }
     }
-    override fun onDestroy(){listener?.remove();ordersListener?.remove();legacyOrdersListener?.remove();super.onDestroy()}
+    override fun onDestroy(){listener?.remove();ordersListener?.remove();legacyOrdersListener?.remove();imageUrlField=null;super.onDestroy()}
 }
