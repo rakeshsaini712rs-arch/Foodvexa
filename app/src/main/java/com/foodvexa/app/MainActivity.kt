@@ -664,7 +664,17 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    isClickable=true;isFocusable=true
    setOnClickListener{
     if(shop.name=="Ganpati Restaurant"){
-     return@setOnClickListener
+     selectedPartnerShop="Ganpati Restaurant"
+     selectedCategory="All"
+     query=""
+     updatePartnerCategoryVisibility()
+     for(i in 0 until (categoryRow?.childCount?:0)){
+      val item=categoryRow?.getChildAt(i) as? LinearLayout ?: continue
+      val cat=categories.getOrNull(i) ?: continue
+      item.background=categoryBackground(cat.name==selectedCategory)
+      if(item.childCount>1)(item.getChildAt(1) as? TextView)?.setTextColor(if(cat.name==selectedCategory)Color.WHITE else ink)
+     }
+     renderProducts()
     }else if(shop.name=="FOODVEXA" || shop.name=="Cake Tower"){
      selectedPartnerShop=""
      updatePartnerCategoryVisibility()
@@ -1066,9 +1076,10 @@ private fun loadSharedMenu(){
   snapshot.documents.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
-   when(doc.getString("partnerName")?.trim().orEmpty().lowercase(java.util.Locale.ROOT)){
-    "", "foodvexa" -> chooseLatest(foodvexaByName,doc,name)
-    "ganpati restaurant" -> chooseLatest(ganpatiByName,doc,name)
+   val partnerName=doc.getString("partnerName")?.trim().orEmpty().lowercase(java.util.Locale.ROOT)
+   when{
+    partnerName.isBlank() || partnerName=="foodvexa" -> chooseLatest(foodvexaByName,doc,name)
+    partnerName=="ganpati" || partnerName=="ganpati restaurant" || partnerName.startsWith("ganpati ") -> chooseLatest(ganpatiByName,doc,name)
    }
   }
   productAvailability.clear()
@@ -1118,9 +1129,8 @@ private fun loadSharedMenu(){
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
    ganpatiLive.add(Product(name,price,category,image))
   }
-  // Ganpati is a new partner card only. Do not show Foodvexa fallback products here.
-  // Its menu remains empty until Ganpati-specific products are added in Admin.
-  ganpatiMenuProducts=emptyList()
+  // Publish only approved Ganpati-owned menu records into the Ganpati Restaurant card.
+  ganpatiMenuProducts=ganpatiLive
   if(!isFinishing)runOnUiThread{renderProducts()}
  }
 }
