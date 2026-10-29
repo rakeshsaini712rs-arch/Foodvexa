@@ -33,7 +33,7 @@ class PartnerActivity : Activity() {
     private var ordersListener: ListenerRegistration?=null
     private var legacyOrdersListener: ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
-    private var activeSection="My Products"
+    private var activeSection="Home"
     private var imageUrlField: EditText?=null
     private val pickImageRequest=7814
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
@@ -62,8 +62,8 @@ class PartnerActivity : Activity() {
         val navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
         fun drawNavigation(){
             navigation.removeAllViews()
-            listOf("My Products","Orders").forEach{section->
-                navigation.addView(button(if(section=="Orders")"ORDERS · DATE-WISE" else "MY PRODUCTS",{activeSection=section;renderPartnerContent(navigation)},if(activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f).apply{if(section=="My Products")rightMargin=dp(6)})
+            listOf("Home","My Products","Orders","Delivery","Reports").forEach{section->
+                navigation.addView(button(section.uppercase(Locale.ROOT),{activeSection=section;renderPartnerContent(navigation)},if(activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f).apply{if(section!="Reports")rightMargin=dp(4)})
             }
         }
         body.addView(navigation,LinearLayout.LayoutParams(-1,-2))
@@ -81,6 +81,40 @@ class PartnerActivity : Activity() {
     private fun renderPartnerContent(navigation:LinearLayout,errorMessage:String?=null){
         body.removeAllViews()
         body.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+        if(activeSection=="Home"){
+            body.addView(label("Partner Dashboard",22f,ink,true))
+            body.addView(label("Welcome, "+partnerName+" · Manage your shop in one place.",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(12)})
+            val shop=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(15),dp(16),dp(15));background=shape(orange,16)}
+            shop.addView(label(partnerName,20f,Color.WHITE,true))
+            shop.addView(label("Foodvexa Partner · Shop products and orders",12f,Color.WHITE),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+            body.addView(shop,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+            body.addView(label("Quick Actions",18f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            fun actionCard(title:String,desc:String,section:String,color:Int){
+                val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(13),dp(13),dp(13));background=shape(Color.WHITE,14);elevation=dp(1).toFloat();isClickable=true;setOnClickListener{activeSection=section;renderPartnerContent(navigation)}}
+                card.addView(label(title,16f,color,true))
+                card.addView(label(desc,12f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+                body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+            }
+            actionCard("My Products","Add products, edit prices and availability","My Products",orange)
+            actionCard("Orders · Date-wise","Review customer orders grouped by date","Orders",Color.rgb(230,65,86))
+            actionCard("Assign Delivery Boy","Delivery assignments are managed by Foodvexa Admin","Delivery",Color.rgb(28,150,88))
+            actionCard("Reports","Product count and shop activity","Reports",Color.rgb(20,145,220))
+            body.addView(label("My Products: "+products.size,14f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            return
+        }
+        if(activeSection=="Delivery"){
+            body.addView(label("Delivery",22f,ink,true))
+            body.addView(label("Delivery boy assignment is handled by Foodvexa Admin. Contact Admin to assign or change a delivery partner for an order.",14f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            body.addView(button("VIEW ORDERS",{activeSection="Orders";renderPartnerContent(navigation)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
+            return
+        }
+        if(activeSection=="Reports"){
+            body.addView(label("Reports",22f,ink,true))
+            body.addView(label("Products in your shop: "+products.size,16f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
+            body.addView(label("Live sales and order totals are available through the Foodvexa Admin dashboard.",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            body.addView(button("VIEW DATE-WISE ORDERS",{activeSection="Orders";renderPartnerContent(navigation)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
+            return
+        }
         if(activeSection=="Orders"){
             body.addView(label("Orders · Date-wise",21f,ink,true))
             body.addView(label("Newest orders appear first, grouped by order date.",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(10)})
@@ -106,6 +140,7 @@ class PartnerActivity : Activity() {
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
+
 
     private fun renderPartnerOrders(){
         ordersListener?.remove()
