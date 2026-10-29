@@ -33,6 +33,7 @@ class PartnerActivity : Activity() {
     private var ordersListener: ListenerRegistration?=null
     private var legacyOrdersListener: ListenerRegistration?=null
     private val products=mutableListOf<Pair<String,Map<String,Any>>>()
+    private var activeSection="My Products"
     private var imageUrlField: EditText?=null
     private val pickImageRequest=7814
     private fun dp(v:Int)=(v*resources.displayMetrics.density).toInt()
@@ -58,32 +59,51 @@ class PartnerActivity : Activity() {
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
+        val navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
+        fun drawNavigation(){
+            navigation.removeAllViews()
+            listOf("My Products","Orders").forEach{section->
+                navigation.addView(button(if(section=="Orders")"ORDERS · DATE-WISE" else "MY PRODUCTS",{activeSection=section;renderPartnerContent(navigation)},if(activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f).apply{if(section=="My Products")rightMargin=dp(6)})
+            }
+        }
+        body.addView(navigation,LinearLayout.LayoutParams(-1,-2))
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
-            body.removeAllViews()
-            body.addView(label("My Products",21f,ink,true))
-            body.addView(label("Only products belonging to your business are shown here.",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(12)})
-            body.addView(button("+ ADD PRODUCT",{productDialog(null,null)},orange),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
-            body.addView(label("Orders for "+partnerName,19f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(18);bottomMargin=dp(8)})
+            if(error!=null){products.clear();drawNavigation();renderPartnerContent(navigation,error.localizedMessage?: "Could not load products");return@addSnapshotListener}
+            products.clear()
+            snap?.documents?.forEach{doc->products.add(doc.id to (doc.data?:emptyMap<String,Any>()))}
+            drawNavigation()
+            renderPartnerContent(navigation)
+        }
+        drawNavigation()
+        renderPartnerContent(navigation)
+    }
+
+    private fun renderPartnerContent(navigation:LinearLayout,errorMessage:String?=null){
+        body.removeAllViews()
+        body.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+        if(activeSection=="Orders"){
+            body.addView(label("Orders · Date-wise",21f,ink,true))
+            body.addView(label("Newest orders appear first, grouped by order date.",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(10)})
             ordersContainer=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
             body.addView(ordersContainer,LinearLayout.LayoutParams(-1,-2))
             renderPartnerOrders()
-            if(error!=null){body.addView(label("Could not load products. Check connection and partner permissions.",14f,Color.RED));return@addSnapshotListener}
-            products.clear()
-            snap?.documents?.forEach{doc->products.add(doc.id to (doc.data?:emptyMap<String,Any>()))}
-            if(products.isEmpty()) body.addView(label("No products yet. Tap Add Product to add your first item.",14f,Color.GRAY))
-            products.forEach{(id,p)->
-                val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape(Color.WHITE,14);elevation=dp(1).toFloat()}
-                val name=p["name"]?.toString()?: "Unnamed product"
-                card.addView(label(name,17f,ink,true))
-                card.addView(label((p["category"]?.toString()?: "Uncategorized")+"  ·  ₹"+(p["price"]?.toString()?: "0"),14f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-                val available=p["available"]!=false
-                card.addView(label(if(available)"Available" else "Sold out",12f,if(available)green else Color.RED,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
-                val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-                actions.addView(button("EDIT PRICE / DETAILS",{productDialog(id,p)},orange),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
-                actions.addView(button(if(available)"REQUEST SOLD OUT" else "REQUEST AVAILABLE",{submitAvailabilityChange(id,p,!available)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,-2,1f))
-                card.addView(actions,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
-                body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
-            }
+            return
+        }
+        body.addView(label("My Products",21f,ink,true))
+        body.addView(label("Manage only the products belonging to your business.",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(12)})
+        body.addView(button("+ ADD PRODUCT",{productDialog(null,null)},orange),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+        if(errorMessage!=null){body.addView(label(errorMessage,14f,Color.RED));return}
+        if(products.isEmpty())body.addView(label("No products yet. Tap Add Product to add your first item.",14f,Color.GRAY))
+        products.forEach{(id,p)->
+            val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape(Color.WHITE,14);elevation=dp(1).toFloat()}
+            val name=p["name"]?.toString()?: "Unnamed product"
+            card.addView(label(name,17f,ink,true))
+            card.addView(label((p["category"]?.toString()?: "Uncategorized")+"  ·  ₹"+(p["price"]?.toString()?: "0"),14f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            val available=p["available"]!=false
+            card.addView(label(if(available)"Available" else "Sold out",12f,if(available)green else Color.RED,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+            card.addView(button("EDIT PRICE / DETAILS",{productDialog(id,p)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(6)})
+            card.addView(button(if(available)"REQUEST SOLD OUT" else "REQUEST AVAILABLE",{submitAvailabilityChange(id,p,!available)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2))
+            body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
 
@@ -106,13 +126,18 @@ class PartnerActivity : Activity() {
                 ordersContainer.addView(label("No orders for your shop yet.",13f,Color.GRAY))
                 return
             }
-            merged.values.sortedByDescending{it.getTimestamp("createdAt")?.toDate()?.time?:0L}.forEach{doc->
+            val sorted=merged.values.sortedByDescending{it.getTimestamp("createdAt")?.toDate()?.time?:0L}
+            var currentDate=""
+            sorted.forEach{doc->
+                val date=doc.getTimestamp("createdAt")?.toDate()?.let{java.text.SimpleDateFormat("dd MMM yyyy",Locale("en","IN")).format(it)}?: "Date unavailable"
+                if(date!=currentDate){currentDate=date;ordersContainer.addView(label(currentDate,15f,orange,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12);bottomMargin=dp(3)})}
                 val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),dp(10),dp(12),dp(10));background=shape(Color.WHITE,12)}
                 card.addView(label("Order #"+doc.id.takeLast(6).uppercase(Locale.ROOT),15f,ink,true))
                 card.addView(label((doc.getString("customerName")?:"Customer")+" · "+(doc.getString("phone")?:""),13f,ink))
                 card.addView(label(doc.getString("itemsText")?: "Items details unavailable",12f,Color.DKGRAY))
                 card.addView(label("₹"+(doc.get("total")?.toString()?: "—")+" · "+(doc.getString("status")?: "New"),13f,green,true))
-                ordersContainer.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+                card.addView(label("Delivery assignment: managed by Foodvexa Admin",11f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+                ordersContainer.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             }
         }
         // Use separate constrained queries so Firestore rules can validate each result set.
