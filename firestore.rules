@@ -54,6 +54,7 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     match /partners/{partnerId} {
+      // Public shop profile fields (business name/address) are needed by delivery partners for pickup navigation.
       allow read: if (resource.data.approved == true && resource.data.active == true) || isAdmin();
       allow create, update, delete: if isAdmin();
     }
