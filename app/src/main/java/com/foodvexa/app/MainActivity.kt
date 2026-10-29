@@ -649,20 +649,20 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
       ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), businessLocationPermissionRequest)
-   note.text = "Location permission allow karein, phir button dobara tap karein."
+   note.text = "लोकेशन की अनुमति दें और फिर दोबारा कोशिश करें।"
    return
   }
   val manager = getSystemService(LOCATION_SERVICE) as LocationManager
   val providers = try { manager.getProviders(true) } catch (_: Exception) { emptyList<String>() }
   val provider = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { it in providers }
-  if (provider == null) { note.text = "Phone ki Location ON karein. Shop ke bahar khule aasman ke neeche dobara try karein."; return }
-  note.text = "GPS fix le rahe hain… thoda samay lagega."
+  if (provider == null) { note.text = "फोन की लोकेशन चालू करें और दोबारा कोशिश करें।"; return }
+  note.text = "दुकान की सटीक लोकेशन मिल रही है…"
   try {
    @Suppress("DEPRECATION")
    manager.requestSingleUpdate(provider, object : android.location.LocationListener {
     override fun onLocationChanged(location: Location) {
      if (location.hasAccuracy() && location.accuracy > 100f) {
-      note.text = "GPS accuracy abhi " + location.accuracy.toInt() + " m hai. Zyada sahi location ke liye Location ON karke shop ke bahar dobara tap karein."
+      note.text = "अभी लोकेशन सटीक नहीं है (लगभग " + location.accuracy.toInt() + " मीटर)। कृपया दोबारा कोशिश करें।"
       return
      }
      pendingBusinessLocation = location
@@ -682,8 +682,8 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
        }
       }
      } catch (_: Exception) { }
-     val accuracy = if (location.hasAccuracy()) "Accuracy: ±" + location.accuracy.toInt() + " m" else "GPS accuracy unavailable"
-     note.text = "✓ Shop GPS captured. " + accuracy + "\nLat: %.6f, Long: %.6f".format(java.util.Locale.US, location.latitude, location.longitude)
+     val accuracy = if (location.hasAccuracy()) "सटीकता लगभग ±" + location.accuracy.toInt() + " मीटर" else "GPS सटीकता उपलब्ध नहीं"
+     note.text = "✓ दुकान की लोकेशन सफलतापूर्वक सेव हो गई।\n" + accuracy
     }
     @Deprecated("Deprecated in Android API")
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
@@ -691,9 +691,9 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     override fun onProviderDisabled(provider: String) {}
    }, Looper.getMainLooper())
   } catch (_: SecurityException) {
-   note.text = "Location permission allow karke dobara try karein."
+   note.text = "लोकेशन की अनुमति दें और फिर दोबारा कोशिश करें।"
   } catch (_: Exception) {
-   note.text = "Location nahi mil rahi. GPS ON karke shop ke bahar dobara try karein."
+   note.text = "लोकेशन नहीं मिल रही। फोन की लोकेशन चालू करके दोबारा कोशिश करें।"
   }
  }
  private fun renderPartnerShopCards(){
