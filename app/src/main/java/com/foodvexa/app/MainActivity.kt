@@ -676,7 +676,8 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
         if (streetAddress.isNotBlank()) addressField.setText(streetAddress)
         val cityName = place.locality ?: place.subAdminArea
         if (!cityName.isNullOrBlank()) cityField.setText(cityName)
-        if (!place.subAdminArea.isNullOrBlank()) districtField.setText(place.subAdminArea)
+        val districtName = place.subAdminArea?.takeIf { !it.contains("division", ignoreCase = true) && !it.contains("region", ignoreCase = true) }
+        if (!districtName.isNullOrBlank()) districtField.setText(districtName)
         if (!place.adminArea.isNullOrBlank()) stateField.setText(place.adminArea)
         if (!place.postalCode.isNullOrBlank()) pinField.setText(place.postalCode.filter { it.isDigit() }.take(6))
        }
