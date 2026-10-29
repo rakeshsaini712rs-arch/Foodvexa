@@ -54,9 +54,17 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     match /partners/{partnerId} {
-      // Public shop profile fields (business name/address) are needed by delivery partners for pickup navigation.
-      allow read: if (resource.data.approved == true && resource.data.active == true) || isAdmin();
-      allow create, update, delete: if isAdmin();
+      // Public active shop profile and schedule are needed for customer availability and delivery pickup.
+      allow read: if (resource.data.approved == true && resource.data.active == true) || isAdmin()
+        || (signedIn() && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId == partnerId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (signedIn()
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId == partnerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['openingTime','closingTime','holidayDates','manuallyClosed','scheduleUpdatedAt']));
     }
     match /partnerAccounts/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
