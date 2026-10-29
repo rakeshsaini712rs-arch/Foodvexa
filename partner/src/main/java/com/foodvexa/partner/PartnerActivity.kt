@@ -60,9 +60,9 @@ class PartnerActivity : Activity() {
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;fillViewport=false;setBackgroundColor(bg)}
+        val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(bg)}
         navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(10),dp(2),dp(10),dp(12))}
-        navScroll.addView(navigation,HorizontalScrollView.LayoutParams(-2,-2))
+        navScroll.addView(navigation)
         root.addView(navScroll,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         setContentView(root)
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
