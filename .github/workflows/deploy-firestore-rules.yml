@@ -1,4 +1,5 @@
 name: Deploy Foodvexa Firestore Rules
+# Redeploy rules whenever the workflow is updated.
 
 on:
   push:
