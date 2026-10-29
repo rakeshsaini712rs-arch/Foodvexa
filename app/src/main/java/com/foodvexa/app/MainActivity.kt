@@ -732,7 +732,9 @@ private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
  val hasFine=ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
  val providers=try{lm.getProviders(true)}catch(_:Exception){emptyList<String>()}
  val lastKnown=try{providers.mapNotNull{p->try{lm.getLastKnownLocation(p)}catch(_:SecurityException){null}}.maxByOrNull{it.time}}catch(_:Exception){null}
- // Request a fresh device location first; use last-known only as a fallback if the request fails.
+ // Never use a stale cached fix for nearby-shop distances; it can point to a previous area.
+ val freshLastKnown=lastKnown?.takeIf{System.currentTimeMillis()-it.time in 0..120_000L}
+ // Request a fresh device location first; only use a cached fix if it is at most 2 minutes old.
  var requested=false
  val listener=object:android.location.LocationListener{
   override fun onLocationChanged(location:Location){
@@ -755,11 +757,11 @@ private fun updateDistancesForShopCards(shops:List<Pair<String,String>>){
   }catch(_:SecurityException){}catch(_:Exception){}
  }
  if(!requested){
-  if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
+  if(freshLastKnown!=null)calculateShopCardDistances(freshLastKnown,shops)
   else shopDistanceViews.values.forEach{it.text="📍 Location unavailable"}
  }else{
   // Avoid leaving the cards in a loading state if the device cannot return a fresh fix.
-  if(lastKnown!=null)calculateShopCardDistances(lastKnown,shops)
+  if(freshLastKnown!=null)calculateShopCardDistances(freshLastKnown,shops)
  }
 }
 private fun calculateShopCardDistances(current:Location,shops:List<Pair<String,String>>){
