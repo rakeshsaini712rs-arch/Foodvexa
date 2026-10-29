@@ -1,3 +1,4 @@
+// Partner delivery assignment permission fix: deployed Firestore rules must match this client.
 package com.foodvexa.partner
 
 import android.app.Activity
