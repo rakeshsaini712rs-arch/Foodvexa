@@ -68,6 +68,7 @@ class PartnerActivity : Activity() {
             }
         }
         root.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+        setContentView(root)
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
             if(error!=null){products.clear();drawNavigation();renderPartnerContent(navigation,error.localizedMessage?: "Could not load products");return@addSnapshotListener}
             products.clear()
