@@ -60,8 +60,10 @@ class PartnerActivity : Activity() {
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
-        root.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+        val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;fillViewport=false;setBackgroundColor(bg)}
+        navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(10),dp(2),dp(10),dp(12))}
+        navScroll.addView(navigation,HorizontalScrollView.LayoutParams(-2,-2))
+        root.addView(navScroll,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         setContentView(root)
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
             if(error!=null){products.clear();drawNavigation();renderPartnerContent(navigation,error.localizedMessage?: "Could not load products");return@addSnapshotListener}
@@ -78,7 +80,8 @@ class PartnerActivity : Activity() {
         navigation.removeAllViews()
         listOf("Home","Products","Orders","Delivery","Reports").forEach{section->
             val labelText=when(section){"Products"->"MY PRODUCTS";"Orders"->"ORDERS";"Delivery"->"DELIVERY";else->section.uppercase(Locale.ROOT)}
-            navigation.addView(button(labelText,{activeSection=if(section=="Products")"My Products" else section;drawNavigation();renderPartnerContent(navigation)},if((activeSection=="My Products"&&section=="Products")||activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,dp(48),1f).apply{if(section!="Reports")rightMargin=dp(5)})
+            val selected=(activeSection=="My Products"&&section=="Products")||activeSection==section
+            navigation.addView(button(labelText,{activeSection=if(section=="Products")"My Products" else section;drawNavigation();renderPartnerContent(navigation)},if(selected)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(dp(112),dp(48)).apply{rightMargin=dp(6)})
         }
     }
 
