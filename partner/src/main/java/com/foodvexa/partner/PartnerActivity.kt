@@ -27,6 +27,7 @@ class PartnerActivity : Activity() {
     private val db by lazy { FirebaseFirestore.getInstance() }
     private lateinit var body: LinearLayout
     private lateinit var ordersContainer: LinearLayout
+    private lateinit var navigation: LinearLayout
     private lateinit var partnerId: String
     private lateinit var partnerName: String
     private var listener: ListenerRegistration?=null
@@ -59,14 +60,7 @@ class PartnerActivity : Activity() {
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
-        fun drawNavigation(){
-            navigation.removeAllViews()
-            listOf("Home","Products","Orders","Delivery","Reports").forEach{section->
-                val labelText=when(section){"Products"->"MY PRODUCTS";"Orders"->"ORDERS";"Delivery"->"DELIVERY";else->section.uppercase(Locale.ROOT)}
-                navigation.addView(button(labelText,{activeSection=if(section=="Products")"My Products" else section;drawNavigation();renderPartnerContent(navigation)},if((activeSection=="My Products"&&section=="Products")||activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,dp(48),1f).apply{if(section!="Reports")rightMargin=dp(5)})
-            }
-        }
+        navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
         root.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         setContentView(root)
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
@@ -78,6 +72,14 @@ class PartnerActivity : Activity() {
         }
         drawNavigation()
         renderPartnerContent(navigation)
+    }
+
+    private fun drawNavigation(){
+        navigation.removeAllViews()
+        listOf("Home","Products","Orders","Delivery","Reports").forEach{section->
+            val labelText=when(section){"Products"->"MY PRODUCTS";"Orders"->"ORDERS";"Delivery"->"DELIVERY";else->section.uppercase(Locale.ROOT)}
+            navigation.addView(button(labelText,{activeSection=if(section=="Products")"My Products" else section;drawNavigation();renderPartnerContent(navigation)},if((activeSection=="My Products"&&section=="Products")||activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,dp(48),1f).apply{if(section!="Reports")rightMargin=dp(5)})
+        }
     }
 
     private fun renderPartnerContent(navigation:LinearLayout,errorMessage:String?=null){
