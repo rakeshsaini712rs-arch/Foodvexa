@@ -489,7 +489,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   }
   panel.addView(useCurrentShopLocation, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
   val locationNote = TextView(this).apply {
-   text = "Shop par khade hokar tap karein. GPS location address ke saath save hogi."
+   text = "दुकान पर मौजूद होकर यह बटन दबाएँ। दुकान की GPS लोकेशन और पता अपने-आप भर जाएगा।"
    textSize = 11f
    setTextColor(gray)
    setPadding(0, 0, 0, dp(10))
