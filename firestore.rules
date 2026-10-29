@@ -29,7 +29,13 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
     match /deliveryBoys/{uid} {
-      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      // Partners can only query active delivery accounts for assignment.
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == uid)
+        || (signedIn()
+          && resource.data.active == true
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true);
       allow create, update, delete: if isAdmin();
     }
     match /partnerApplications/{applicationId} {
