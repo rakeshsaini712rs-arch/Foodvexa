@@ -1233,7 +1233,6 @@ private fun showShopClosedMessage(){
  Toast.makeText(this,"Foodvexa is currently closed. Orders are accepted daily from 9:00 AM to 9:00 PM.",Toast.LENGTH_LONG).show()
 }
 private fun placeOrderAndShowOrders(){
- if(!isShopOpenNow()){showShopClosedMessage();return}
  val subtotal=cart.entries.sumOf{(name,qty)->findCartProduct(name)?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
@@ -1283,7 +1282,35 @@ private fun placeOrderAndShowOrders(){
  dialog.show()
 }
 private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
- if(!isShopOpenNow()){showShopClosedMessage();return}
+ val partnerIdsForCart=cart.keys.mapNotNull{productPartnerIds[it.lowercase(java.util.Locale.ROOT)]}.distinct()
+ if(partnerIdsForCart.isEmpty()){Toast.makeText(this,"Shop details unavailable. Please refresh menu and try again.",Toast.LENGTH_LONG).show();return}
+ checkPartnerSchedules(partnerIdsForCart){allowed,reason->
+  if(!allowed){Toast.makeText(this,reason,Toast.LENGTH_LONG).show();return@checkPartnerSchedules}
+  createOrderAfterScheduleCheck(customerName,customerMobile,deliveryAddress,scheduledFor)
+ }
+}
+private fun checkPartnerSchedules(ids:List<String>,done:(Boolean,String)->Unit){
+ val db=FirebaseFirestore.getInstance()
+ fun checkAt(index:Int){
+  if(index>=ids.size){done(true,"");return}
+  val id=ids[index]
+  db.collection("partners").document(id).get().addOnSuccessListener{doc->
+   if(!doc.exists()){done(false,"Shop schedule unavailable. Please try again later.");return@addOnSuccessListener}
+   val now=java.time.LocalTime.now(java.time.ZoneId.of("Asia/Kolkata"))
+   val date=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
+   val open=try{java.time.LocalTime.parse(doc.getString("openingTime")?: "09:00")}catch(_:Exception){java.time.LocalTime.of(9,0)}
+   val close=try{java.time.LocalTime.parse(doc.getString("closingTime")?: "21:00")}catch(_:Exception){java.time.LocalTime.of(21,0)}
+   val holidays=doc.get("holidayDates") as? List<*> ?: emptyList<Any>()
+   val closed=doc.getBoolean("manuallyClosed")==true
+   if(closed||date in holidays.map{it.toString()}||now.isBefore(open)||!now.isBefore(close)){
+    val shop=doc.getString("partnerName")?:doc.getString("name")?: "This shop"
+    done(false,"$shop is currently closed or on holiday. Please order when it reopens.")
+   }else checkAt(index+1)
+  }.addOnFailureListener{done(false,"Could not check shop timing. Please try again.")}
+ }
+ checkAt(0)
+}
+private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
  val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->findCartProduct(name)?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
