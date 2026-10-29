@@ -107,8 +107,18 @@ class DeliveryActivity : Activity() {
                         }.addOnFailureListener{pickupAddressView2.text="Could not load published shop profile: "+(it.localizedMessage?: "Firestore permission denied")}
                 }
                 card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
-                card.addView(button("OPEN SHOP IN GOOGLE MAPS",{val a=pickupAddressView2.text.toString().removePrefix("Shop address: ").trim();if(a.isNotBlank()&&a!="Not saved in partner account"&&a!="loading…"&&!a.startsWith("Shop address unavailable")&&!a.startsWith("Could not load"))startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(a))))else Toast.makeText(this,"Shop address is missing. Add pickup/shop address to the partner account.",Toast.LENGTH_LONG).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
-                card.addView(button("OPEN CUSTOMER LOCATION",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("OPEN SHOP IN GOOGLE MAPS",{val a=pickupAddressView2.text.toString().removePrefix("Shop address: ").trim();if(a.isNotBlank()&&a!="Not saved in partner account"&&a!="loading…"&&!a.startsWith("Shop address unavailable")&&!a.startsWith("Could not load"))startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/dir/?api=1&destination="+Uri.encode(if(a.contains("Rajasthan",true))a else "$a, Nawalgarh, Jhunjhunu, Rajasthan, India"))))else Toast.makeText(this,"Shop address is missing. Correct the pickup address in Admin first.",Toast.LENGTH_LONG).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("OPEN CUSTOMER LOCATION",{
+                    val lat=doc.get("customerLatitude") as? Number ?: doc.get("latitude") as? Number
+                    val lng=doc.get("customerLongitude") as? Number ?: doc.get("longitude") as? Number
+                    if(lat!=null && lng!=null && lat.toDouble() in -90.0..90.0 && lng.toDouble() in -180.0..180.0){
+                        startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/dir/?api=1&destination="+lat.toDouble()+","+lng.toDouble())))
+                    }else if(address.isNotBlank()){
+                        val normalized=if(address.contains("Nawalgarh",true)||address.contains("Rajasthan",true))address else "$address, Nawalgarh, Rajasthan, India"
+                        startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/dir/?api=1&destination="+Uri.encode(normalized))))
+                        Toast.makeText(this,"No saved customer map pin; Maps is using the typed address. Verify before travelling.",Toast.LENGTH_LONG).show()
+                    }else Toast.makeText(this,"Customer address unavailable. Ask customer to save a map pin.",Toast.LENGTH_LONG).show()
+                },Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 val choices=listOf("Accepted","Preparing","Ready","Out for delivery","Awaiting customer confirmation")
                 val spinner=Spinner(this);spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,choices);spinner.setSelection(choices.indexOf(status).coerceAtLeast(0))
                 card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(6)})
