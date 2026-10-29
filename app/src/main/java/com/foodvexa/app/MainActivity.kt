@@ -620,6 +620,12 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     "email" to email.text.toString().trim(), "status" to "pending", "approved" to false,
     "source" to "android_app", "createdAt" to FieldValue.serverTimestamp(), "updatedAt" to FieldValue.serverTimestamp()
    )
+   pendingBusinessLocation?.let { loc ->
+    data["latitude"] = loc.latitude
+    data["longitude"] = loc.longitude
+    data["locationSource"] = "device_gps"
+    data["locationCapturedAt"] = FieldValue.serverTimestamp()
+   }
    FirebaseFirestore.getInstance().collection("partnerApplications").add(data)
     .addOnSuccessListener {
      dialog.dismiss()
