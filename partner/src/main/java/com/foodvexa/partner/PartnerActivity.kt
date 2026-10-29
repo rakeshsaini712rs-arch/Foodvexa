@@ -153,11 +153,38 @@ class PartnerActivity : Activity() {
             return
         }
         if(activeSection=="Opening Hours"){
-            body.addView(label("Opening Hours",22f,ink,true))
-            body.addView(label("Current displayed hours",12f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
-            body.addView(label("09:00 AM – 09:00 PM",18f,green,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
-            body.addView(label("Hours are currently displayed from the Partner dashboard. To change the live shop schedule, update the shop settings in Foodvexa Admin.",13f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
-            body.addView(button("BACK TO HOME",{activeSection="Home";drawNavigation();renderPartnerContent(navigation)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(14)})
+            body.addView(label("Opening Hours & Holidays",22f,ink,true))
+            body.addView(label("Set this shop's own timings. Customers cannot place orders during closed hours or holiday dates.",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5);bottomMargin=dp(12)})
+            val openField=EditText(this).apply{hint="Opening time (HH:mm), e.g. 09:00";setSingleLine(true);inputType=android.text.InputType.TYPE_CLASS_TEXT;setText("09:00");setPadding(dp(12),dp(12),dp(12),dp(12));background=shape(Color.WHITE,10)}
+            val closeField=EditText(this).apply{hint="Closing time (HH:mm), e.g. 21:00";setSingleLine(true);inputType=android.text.InputType.TYPE_CLASS_TEXT;setText("21:00");setPadding(dp(12),dp(12),dp(12),dp(12));background=shape(Color.WHITE,10)}
+            val holidaysField=EditText(this).apply{hint="Holiday dates: YYYY-MM-DD, comma separated";minLines=2;gravity=Gravity.TOP;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE;setPadding(dp(12),dp(12),dp(12),dp(12));background=shape(Color.WHITE,10)}
+            val closedCheck=CheckBox(this).apply{text="Temporarily close this shop";setTextColor(ink)}
+            body.addView(openField,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            body.addView(closeField,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            body.addView(holidaysField,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            body.addView(closedCheck,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            db.collection("partners").document(partnerId).get().addOnSuccessListener{doc->
+                if(!doc.exists())return@addOnSuccessListener
+                openField.setText(doc.getString("openingTime")?: "09:00")
+                closeField.setText(doc.getString("closingTime")?: "21:00")
+                holidaysField.setText((doc.get("holidayDates") as? List<*>)?.joinToString(",") { it.toString() } ?: "")
+                closedCheck.isChecked=doc.getBoolean("manuallyClosed")==true
+            }
+            body.addView(button("SAVE TIMING & HOLIDAYS",{
+                val open=openField.text.toString().trim();val close=closeField.text.toString().trim()
+                val timePattern=Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
+                val dates=holidaysField.text.toString().split(",").map{it.trim()}.filter{it.isNotBlank()}
+                if(!timePattern.matches(open)||!timePattern.matches(close)){Toast.makeText(this,"Time HH:mm format mein bharein, e.g. 09:00",Toast.LENGTH_LONG).show();return@button}
+                if(dates.any{!Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(it)}){Toast.makeText(this,"Holiday date YYYY-MM-DD format mein bharein",Toast.LENGTH_LONG).show();return@button}
+                val uid=FirebaseAuth.getInstance().currentUser?.uid?:return@button
+                db.collection("partnerAccounts").document(uid).get().addOnSuccessListener{account->
+                    if(account.getString("partnerId")!=partnerId){Toast.makeText(this,"Partner verification failed",Toast.LENGTH_LONG).show();return@addOnSuccessListener}
+                    db.collection("partners").document(partnerId).update(mapOf("openingTime" to open,"closingTime" to close,"holidayDates" to dates,"manuallyClosed" to closedCheck.isChecked,"scheduleUpdatedAt" to FieldValue.serverTimestamp()))
+                        .addOnSuccessListener{Toast.makeText(this,"Timing and holidays saved",Toast.LENGTH_LONG).show()}
+                        .addOnFailureListener{e->Toast.makeText(this,"Save failed: "+(e.message?: "permission error"),Toast.LENGTH_LONG).show()}
+                }.addOnFailureListener{Toast.makeText(this,"Partner verification failed",Toast.LENGTH_LONG).show()}
+            },orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            body.addView(button("BACK TO HOME",{activeSection="Home";drawNavigation();renderPartnerContent(navigation)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
             return
         }
         if(activeSection=="Profile"){
