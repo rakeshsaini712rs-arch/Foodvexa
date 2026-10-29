@@ -44,6 +44,10 @@ data class Product(val name:String,val price:Int,val category:String,val imageUr
 data class Category(val name:String,val imageUrl:String)
 
 class MainActivity:AppCompatActivity(){
+ private var pendingBusinessAddressField: EditText? = null
+ private var pendingBusinessLocation: Location? = null
+ private val businessLocationPermissionRequest = 9281
+
  companion object{const val SHOP_LOCATION="Khation ki Dhani, Ward No. 16, Ganeshpura, Nawalgarh";private const val VOICE_SEARCH_REQUEST=8642}
   private val pizzaImages=listOf("local://foodvexa/foodvexa_01_onion_tomato_pizza","local://foodvexa/foodvexa_02_paneer_corn_pizza","local://foodvexa/foodvexa_03_cheese_burst_pizza","local://foodvexa/foodvexa_04_jalapeno_cheese_pizza","local://foodvexa/foodvexa_05_mushroom_pizza","local://foodvexa/foodvexa_06_capsicum_onion_pizza","local://foodvexa/foodvexa_07_veggie_paradise_pizza","local://foodvexa/foodvexa_08_mexican_green_wave_pizza","local://foodvexa/foodvexa_09_peri_peri_paneer_pizza","local://foodvexa/foodvexa_10_tandoori_paneer_pizza","local://foodvexa/foodvexa_11_paneer_tikka_pizza","local://foodvexa/foodvexa_12_farmhouse_pizza","local://foodvexa/foodvexa_13_veg_loaded_pizza","local://foodvexa/foodvexa_14_corn_cheese_pizza","local://foodvexa/foodvexa_15_double_cheese_pizza","local://foodvexa/foodvexa_16_classic_cheese_pizza","local://foodvexa/foodvexa_17_margherita_pizza")
   private val foodImages=listOf("local://foodvexa/foodvexa_20_veg_burger","local://foodvexa/foodvexa_21_masala_dosa","https://images.unsplash.com/photo-1626776876729-7d7d3d5c8a5b?auto=format&fit=crop&w=800&q=85","local://foodvexa/foodvexa_19_veg_sandwich","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85","https://commons.wikimedia.org/wiki/Special:Redirect/file/Kachori-1.jpg","https://commons.wikimedia.org/wiki/Special:Redirect/file/Mirchi_Bada_from_Jodhpur_1.jpg","https://images.unsplash.com/photo-1626776876729-7d7d3d5c8a5b?auto=format&fit=crop&w=800&q=85","local://foodvexa/foodvexa_18_maggi","https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=85","https://commons.wikimedia.org/wiki/Special:Redirect/file/Kachori-1.jpg","local://foodvexa/foodvexa_22_vada_pav")
@@ -473,6 +477,28 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val pin = field("6-digit PIN code *", InputType.TYPE_CLASS_NUMBER)
   val address = field("Full business address *", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE, true)
   address.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+  val useCurrentShopLocation = TextView(this).apply {
+   text = "📍 USE SHOP CURRENT LOCATION"
+   textSize = 13f
+   typeface = Typeface.DEFAULT_BOLD
+   gravity = Gravity.CENTER
+   setTextColor(Color.WHITE)
+   background = rounded(orange, 12)
+   setPadding(dp(14), dp(14), dp(14), dp(14))
+   isClickable = true
+  }
+  panel.addView(useCurrentShopLocation, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+  val locationNote = TextView(this).apply {
+   text = "Shop par khade hokar tap karein. GPS location address ke saath save hogi."
+   textSize = 11f
+   setTextColor(gray)
+   setPadding(0, 0, 0, dp(10))
+  }
+  panel.addView(locationNote)
+  useCurrentShopLocation.setOnClickListener {
+   pendingBusinessAddressField = address
+   captureBusinessShopLocation(address, locationNote)
+  }
   val header = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
    setPadding(dp(20), dp(18), dp(20), dp(14))
@@ -612,6 +638,45 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
     }
   }
   dialog.show()
+ }
+ private fun captureBusinessShopLocation(addressField: EditText, note: TextView) {
+  if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+      ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+   ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), businessLocationPermissionRequest)
+   note.text = "Location permission allow karein, phir button dobara tap karein."
+   return
+  }
+  val manager = getSystemService(LOCATION_SERVICE) as LocationManager
+  val providers = try { manager.getProviders(true) } catch (_: Exception) { emptyList<String>() }
+  val provider = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { it in providers }
+  if (provider == null) { note.text = "GPS/Location ON karein aur dobara try karein."; return }
+  note.text = "Current shop location mil rahi hai…"
+  try {
+   @Suppress("DEPRECATION")
+   manager.requestSingleUpdate(provider, object : android.location.LocationListener {
+    override fun onLocationChanged(location: Location) {
+     pendingBusinessLocation = location
+     try {
+      if (Geocoder.isPresent()) {
+       @Suppress("DEPRECATION")
+       val places = Geocoder(this@MainActivity, java.util.Locale("en", "IN")).getFromLocation(location.latitude, location.longitude, 1)
+       val place = places?.firstOrNull()
+       val readable = listOfNotNull(place?.subLocality, place?.thoroughfare, place?.locality, place?.subAdminArea).distinct().joinToString(", ")
+       if (readable.isNotBlank()) addressField.setText(readable)
+      }
+     } catch (_: Exception) { }
+     note.text = "✓ Shop GPS saved for this registration. Lat: %.6f, Long: %.6f".format(java.util.Locale.US, location.latitude, location.longitude)
+    }
+    @Deprecated("Deprecated in Android API")
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+    override fun onProviderEnabled(provider: String) {}
+    override fun onProviderDisabled(provider: String) {}
+   }, Looper.getMainLooper())
+  } catch (_: SecurityException) {
+   note.text = "Location permission allow karke dobara try karein."
+  } catch (_: Exception) {
+   note.text = "Location nahi mil rahi. GPS ON karke shop ke bahar dobara try karein."
+  }
  }
  private fun renderPartnerShopCards(){
  val restaurantMode=prefs.getBoolean("restaurant_hotel_results",false)
@@ -812,6 +877,10 @@ private fun reorderShopCardsByDistance(){
 }
 override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray){
  super.onRequestPermissionsResult(requestCode,permissions,grantResults)
+ if(requestCode==businessLocationPermissionRequest){
+  if(grantResults.any{it==PackageManager.PERMISSION_GRANTED}) pendingBusinessAddressField?.let { field -> Toast.makeText(this,"Permission mil gayi. USE SHOP CURRENT LOCATION dobara tap karein.",Toast.LENGTH_LONG).show() }
+  return
+ }
  if(requestCode==shopLocationPermissionRequest){
   if(grantResults.any{it==PackageManager.PERMISSION_GRANTED}){
    // Refresh the current page so the shop cards can calculate distances with permission.
