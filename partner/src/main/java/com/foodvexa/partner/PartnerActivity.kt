@@ -92,7 +92,7 @@ class PartnerActivity : Activity() {
             shop.addView(shopInfo,LinearLayout.LayoutParams(0,-2,1f))
             shop.addView(button("VIEW SHOP",{activeSection="My Products";renderPartnerContent(navigation)},Color.rgb(255,92,52)).apply{background=shape(Color.rgb(196,48,31),10);textSize=11f},LinearLayout.LayoutParams(-2,-2))
             body.addView(shop,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
-            fun actionCard(title:String,desc:String,section:String,color:Int){
+            fun actionCard(title:String,desc:String,section:String,color:Int):LinearLayout{
                 val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(11),dp(13),dp(9),dp(13));background=shape(Color.WHITE,15);elevation=dp(1).toFloat();isClickable=true;setOnClickListener{activeSection=section;renderPartnerContent(navigation)}}
                 val mark=TextView(this).apply{text=when(title){"My Products"->"▣";"Orders"->"▤";"Assign Delivery Boy"->"➜";else->"▥"};textSize=23f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=shape(color,13)}
                 card.addView(mark,LinearLayout.LayoutParams(dp(44),dp(44)).apply{rightMargin=dp(9)})
