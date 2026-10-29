@@ -79,10 +79,37 @@ class DeliveryActivity : Activity() {
                 card.addView(label("Customer: "+(doc.getString("customerName")?: "Customer"),14f))
                 card.addView(label("Phone: "+(doc.getString("phone")?: "—"),14f))
                 val address=doc.getString("address")?: ""
-                card.addView(label("Address: "+address,14f))
+                card.addView(label("Customer address: "+if(address.isBlank())"Unavailable" else address,14f))
                 card.addView(label("Items: "+(doc.getString("itemsText")?: "—"),13f,Color.DKGRAY))
+                val pickupName=doc.getString("partnerName")?.takeIf{it.isNotBlank()}
+                    ?: doc.getString("shopName")?.takeIf{it.isNotBlank()}
+                    ?: doc.getString("restaurantName")?.takeIf{it.isNotBlank()}
+                    ?: doc.get("items")?.let{items->(items as? List<*>)?.firstNotNullOfOrNull{(it as? Map<*,*>)?.get("partnerName")?.toString()?.takeIf{n->n.isNotBlank()}}}
+                val pickupAddressView=label("Pickup shop: "+(pickupName?: "Shop not recorded on this order"),14f,red,true)
+                card.addView(pickupAddressView)
+                val pickupAddressView2=label("Shop address: loading…",13f,Color.DKGRAY)
+                card.addView(pickupAddressView2)
+                val partnerId=doc.getString("partnerId")?.takeIf{it.isNotBlank()}
+                    ?: doc.get("items")?.let{items->(items as? List<*>)?.firstNotNullOfOrNull{(it as? Map<*,*>)?.get("partnerId")?.toString()?.takeIf{n->n.isNotBlank()}}}
+                if(partnerId.isNullOrBlank()){
+                    pickupAddressView2.text="Shop address unavailable: order has no partner ID."
+                }else{
+                    db.collection("partnerAccounts").whereEqualTo("partnerId",partnerId).limit(1).get()
+                        .addOnSuccessListener{shops->
+                            val shop=shops.documents.firstOrNull()
+                            if(shop==null){
+                                pickupAddressView2.text="Shop address not saved in partner account."
+                            }else{
+                                val name=shop.getString("businessName")?:shop.getString("shopName")?:shop.getString("partnerName")?:pickupName
+                                if(!name.isNullOrBlank())pickupAddressView.text="Pickup shop: "+name
+                                val shopAddress=shop.getString("pickupAddress")?:shop.getString("shopAddress")?:shop.getString("businessAddress")?:shop.getString("address")?:shop.getString("fullAddress")
+                                pickupAddressView2.text="Shop address: "+(shopAddress?.takeIf{it.isNotBlank()}?:"Not saved in partner account")
+                            }
+                        }.addOnFailureListener{pickupAddressView2.text="Could not load shop address. Check Firestore permissions."}
+                }
                 card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
-                card.addView(button("OPEN GOOGLE MAPS",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("OPEN SHOP IN GOOGLE MAPS",{val a=pickupAddressView2.text.toString().removePrefix("Shop address: ").trim();if(a.isNotBlank()&&a!="Not saved in partner account"&&a!="loading…"&&!a.startsWith("Shop address unavailable")&&!a.startsWith("Could not load"))startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(a))))else Toast.makeText(this,"Shop address is missing. Add pickup/shop address to the partner account.",Toast.LENGTH_LONG).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+                card.addView(button("OPEN CUSTOMER LOCATION",{if(address.isNotBlank())startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(address))))else Toast.makeText(this,"Customer address unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 val choices=listOf("Accepted","Preparing","Ready","Out for delivery","Awaiting customer confirmation")
                 val spinner=Spinner(this);spinner.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,choices);spinner.setSelection(choices.indexOf(status).coerceAtLeast(0))
                 card.addView(spinner,LinearLayout.LayoutParams(-1,dp(48)).apply{topMargin=dp(6)})
