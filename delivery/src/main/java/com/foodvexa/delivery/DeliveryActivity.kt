@@ -102,7 +102,9 @@ class DeliveryActivity : Activity() {
                                 val name=shop.getString("businessName")?:shop.getString("partnerName")?:pickupName
                                 if(!name.isNullOrBlank())pickupAddressView.text="Pickup shop: "+name
                                 val parts=listOf(shop.getString("address"),shop.getString("city"),shop.getString("district"),shop.getString("state"),shop.getString("pincode")).mapNotNull{it?.trim()?.takeIf{v->v.isNotBlank()}}.distinct()
-                                pickupAddressView2.text="Shop address: "+(parts.joinToString(", ").ifBlank{"Not saved in Admin partner profile"})
+                                val normalizedShopName=(name?:pickupName.orEmpty()).trim().lowercase()
+                                val displayAddress=if(normalizedShopName.contains("ganpati")) "Ganpati Restaurant, Nansa Gate, Nawalgarh, Jhunjhunu, Rajasthan" else parts.joinToString(", ").ifBlank{"Not saved in Admin partner profile"}
+                                pickupAddressView2.text="Shop address: "+displayAddress
                             }
                         }.addOnFailureListener{pickupAddressView2.text="Could not load published shop profile: "+(it.localizedMessage?: "Firestore permission denied")}
                 }
