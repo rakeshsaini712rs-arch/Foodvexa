@@ -497,7 +497,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   panel.addView(locationNote)
   useCurrentShopLocation.setOnClickListener {
    pendingBusinessAddressField = address
-   captureBusinessShopLocation(address, locationNote)
+   captureBusinessShopLocation(address, locationNote, city, district, state, pin)
   }
   val header = LinearLayout(this).apply {
    orientation = LinearLayout.VERTICAL
@@ -645,7 +645,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   }
   dialog.show()
  }
- private fun captureBusinessShopLocation(addressField: EditText, note: TextView) {
+ private fun captureBusinessShopLocation(addressField: EditText, note: TextView, cityField: EditText, districtField: EditText, stateField: EditText, pinField: EditText) {
   if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
       ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), businessLocationPermissionRequest)
@@ -655,23 +655,35 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
   val manager = getSystemService(LOCATION_SERVICE) as LocationManager
   val providers = try { manager.getProviders(true) } catch (_: Exception) { emptyList<String>() }
   val provider = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { it in providers }
-  if (provider == null) { note.text = "GPS/Location ON karein aur dobara try karein."; return }
-  note.text = "Current shop location mil rahi hai…"
+  if (provider == null) { note.text = "Phone ki Location ON karein. Shop ke bahar khule aasman ke neeche dobara try karein."; return }
+  note.text = "GPS fix le rahe hain… thoda samay lagega."
   try {
    @Suppress("DEPRECATION")
    manager.requestSingleUpdate(provider, object : android.location.LocationListener {
     override fun onLocationChanged(location: Location) {
+     if (location.hasAccuracy() && location.accuracy > 100f) {
+      note.text = "GPS accuracy abhi " + location.accuracy.toInt() + " m hai. Zyada sahi location ke liye Location ON karke shop ke bahar dobara tap karein."
+      return
+     }
      pendingBusinessLocation = location
      try {
       if (Geocoder.isPresent()) {
        @Suppress("DEPRECATION")
        val places = Geocoder(this@MainActivity, java.util.Locale("en", "IN")).getFromLocation(location.latitude, location.longitude, 1)
        val place = places?.firstOrNull()
-       val readable = listOfNotNull(place?.subLocality, place?.thoroughfare, place?.locality, place?.subAdminArea).distinct().joinToString(", ")
-       if (readable.isNotBlank()) addressField.setText(readable)
+       if (place != null) {
+        val streetAddress = listOfNotNull(place.subLocality, place.thoroughfare, place.featureName?.takeIf { it.any(Char::isDigit) }).distinct().joinToString(", ")
+        if (streetAddress.isNotBlank()) addressField.setText(streetAddress)
+        val cityName = place.locality ?: place.subAdminArea
+        if (!cityName.isNullOrBlank()) cityField.setText(cityName)
+        if (!place.subAdminArea.isNullOrBlank()) districtField.setText(place.subAdminArea)
+        if (!place.adminArea.isNullOrBlank()) stateField.setText(place.adminArea)
+        if (!place.postalCode.isNullOrBlank()) pinField.setText(place.postalCode.filter { it.isDigit() }.take(6))
+       }
       }
      } catch (_: Exception) { }
-     note.text = "✓ Shop GPS saved for this registration. Lat: %.6f, Long: %.6f".format(java.util.Locale.US, location.latitude, location.longitude)
+     val accuracy = if (location.hasAccuracy()) "Accuracy: ±" + location.accuracy.toInt() + " m" else "GPS accuracy unavailable"
+     note.text = "✓ Shop GPS captured. " + accuracy + "\nLat: %.6f, Long: %.6f".format(java.util.Locale.US, location.latitude, location.longitude)
     }
     @Deprecated("Deprecated in Android API")
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
