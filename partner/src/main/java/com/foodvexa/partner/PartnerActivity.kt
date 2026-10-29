@@ -176,9 +176,11 @@ class PartnerActivity : Activity() {
             return
         }
         if(activeSection=="Delivery"){
-            body.addView(label("Delivery",22f,ink,true))
-            body.addView(label("Delivery boy assignment is handled by Foodvexa Admin. Contact Admin to assign or change a delivery partner for an order.",14f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
-            body.addView(button("VIEW ORDERS",{activeSection="Orders";drawNavigation();renderPartnerContent(navigation)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
+            body.addView(label("Assign Delivery Boy",22f,ink,true))
+            body.addView(label("Choose an active delivery account by its login email for each order from your shop.",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(10)})
+            ordersContainer=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            body.addView(ordersContainer,LinearLayout.LayoutParams(-1,-2))
+            renderPartnerOrders()
             return
         }
         if(activeSection=="Reports"){
@@ -244,7 +246,9 @@ class PartnerActivity : Activity() {
                 card.addView(label((doc.getString("customerName")?:"Customer")+" · "+(doc.getString("phone")?:""),13f,ink))
                 card.addView(label(doc.getString("itemsText")?: "Items details unavailable",12f,Color.DKGRAY))
                 card.addView(label("₹"+(doc.get("total")?.toString()?: "—")+" · "+(doc.getString("status")?: "New"),13f,green,true))
-                card.addView(label("Delivery assignment: managed by Foodvexa Admin",11f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+                val assignedEmail=doc.getString("deliveryBoyEmail").orEmpty()
+                card.addView(label(if(assignedEmail.isBlank())"Delivery boy: Not assigned" else "Delivery boy: "+assignedEmail,11f,if(assignedEmail.isBlank())Color.GRAY else green),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+                card.addView(button(if(assignedEmail.isBlank())"ASSIGN DELIVERY BOY" else "CHANGE DELIVERY BOY",{assignDeliveryBoy(doc.id,assignedEmail)},Color.rgb(35,105,135)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
                 ordersContainer.addView(card,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             }
         }
@@ -262,6 +266,21 @@ class PartnerActivity : Activity() {
             showOrders()
         }
     }
+    private fun assignDeliveryBoy(orderId:String,currentEmail:String){
+        val field=EditText(this).apply{hint="Delivery boy login email";setText(currentEmail);inputType=InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;isSingleLine=true}
+        AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the login email of an active delivery account created by Foodvexa Admin.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
+            val email=field.text.toString().trim()
+            if(email.isBlank()){Toast.makeText(this,"Enter delivery boy login email.",Toast.LENGTH_LONG).show();return@setPositiveButton}
+            db.collection("deliveryBoys").whereEqualTo("email",email).limit(1).get().addOnSuccessListener{people->
+                val person=people.documents.firstOrNull()
+                if(person==null||person.getBoolean("active")!=true){Toast.makeText(this,"Delivery account not found or inactive.",Toast.LENGTH_LONG).show();return@addOnSuccessListener}
+                db.collection("orders").document(orderId).update(mapOf("deliveryBoyUid" to person.id,"deliveryBoyEmail" to email,"deliveryLocationActive" to false,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{
+                    Toast.makeText(this,"Delivery assigned to "+(person.getString("name")?:email),Toast.LENGTH_LONG).show()
+                }.addOnFailureListener{e->Toast.makeText(this,"Assignment failed: "+(e.localizedMessage?:"check Firestore rules"),Toast.LENGTH_LONG).show()}
+            }.addOnFailureListener{e->Toast.makeText(this,"Could not check delivery account: "+(e.localizedMessage?:""),Toast.LENGTH_LONG).show()}
+        }.show()
+    }
+
     private fun chooseProductImage(){
         val intent=Intent(Intent.ACTION_GET_CONTENT).apply{type="image/*";addCategory(Intent.CATEGORY_OPENABLE)}
         startActivityForResult(Intent.createChooser(intent,"Select product photo"),pickImageRequest)
