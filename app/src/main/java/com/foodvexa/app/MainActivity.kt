@@ -494,7 +494,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    setTextColor(gray)
    setPadding(0, 0, 0, dp(10))
   }
-  panel.addView(locationNote)
+  // Keep location status internal; do not show helper text under the button.
   useCurrentShopLocation.setOnClickListener {
    pendingBusinessAddressField = address
    captureBusinessShopLocation(address, locationNote, city, district, state, pin)
