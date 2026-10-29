@@ -1,4 +1,5 @@
 name: Build Foodvexa Delivery APK
+# Trigger a fresh delivery APK build for direct download.
 
 on:
   push:
