@@ -271,7 +271,7 @@ class PartnerActivity : Activity() {
         AlertDialog.Builder(this).setTitle("Assign delivery boy").setMessage("Enter the login email of an active delivery account created by Foodvexa Admin.").setView(field).setNegativeButton("Cancel",null).setPositiveButton("Assign"){_,_->
             val email=field.text.toString().trim()
             if(email.isBlank()){Toast.makeText(this,"Enter delivery boy login email.",Toast.LENGTH_LONG).show();return@setPositiveButton}
-            db.collection("deliveryBoys").whereEqualTo("email",email).limit(1).get().addOnSuccessListener{people->
+            db.collection("deliveryBoys").whereEqualTo("email",email).whereEqualTo("active",true).limit(1).get().addOnSuccessListener{people->
                 val person=people.documents.firstOrNull()
                 if(person==null||person.getBoolean("active")!=true){Toast.makeText(this,"Delivery account not found or inactive.",Toast.LENGTH_LONG).show();return@addOnSuccessListener}
                 db.collection("orders").document(orderId).update(mapOf("deliveryBoyUid" to person.id,"deliveryBoyEmail" to email,"deliveryLocationActive" to false,"updatedAt" to FieldValue.serverTimestamp())).addOnSuccessListener{
