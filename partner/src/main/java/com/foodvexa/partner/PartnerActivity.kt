@@ -58,7 +58,7 @@ class PartnerActivity : Activity() {
         root.addView(header)
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(24))}
-        scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
+        scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
         val navigation=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(0,dp(2),0,dp(12))}
         fun drawNavigation(){
             navigation.removeAllViews()
@@ -67,7 +67,7 @@ class PartnerActivity : Activity() {
                 navigation.addView(button(labelText,{activeSection=if(section=="Products")"My Products" else section;renderPartnerContent(navigation)},if((activeSection=="My Products"&&section=="Products")||activeSection==section)orange else Color.rgb(75,75,82)),LinearLayout.LayoutParams(0,dp(48),1f).apply{if(section!="Reports")rightMargin=dp(5)})
             }
         }
-        body.addView(navigation,LinearLayout.LayoutParams(-1,-2))
+        root.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         listener=db.collection("menu").whereEqualTo("partnerId",partnerId).addSnapshotListener(this){snap,error->
             if(error!=null){products.clear();drawNavigation();renderPartnerContent(navigation,error.localizedMessage?: "Could not load products");return@addSnapshotListener}
             products.clear()
@@ -81,26 +81,58 @@ class PartnerActivity : Activity() {
 
     private fun renderPartnerContent(navigation:LinearLayout,errorMessage:String?=null){
         body.removeAllViews()
-        body.addView(navigation,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
         if(activeSection=="Home"){
-            body.addView(label("Partner Dashboard",22f,ink,true))
-            body.addView(label("Welcome, "+partnerName+" · Manage your shop in one place.",13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4);bottomMargin=dp(12)})
-            val shop=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(15),dp(16),dp(15));background=shape(orange,16)}
-            shop.addView(label(partnerName,20f,Color.WHITE,true))
-            shop.addView(label("Foodvexa Partner · Shop products and orders",12f,Color.WHITE),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
-            body.addView(shop,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
-            body.addView(label("Quick Actions",18f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            body.addView(label("Dashboard",23f,ink,true))
+            body.addView(label("Welcome back, "+partnerName,13f,Color.GRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3);bottomMargin=dp(12)})
+            val shop=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,intArrayOf(Color.rgb(255,125,20),orange)).apply{cornerRadius=dp(17).toFloat()}}
+            val shopInfo=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+            shopInfo.addView(label(partnerName,20f,Color.WHITE,true))
+            shopInfo.addView(label("● Open  ·  09:00 AM – 09:00 PM",12f,Color.WHITE,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            shop.addView(shopInfo,LinearLayout.LayoutParams(0,-2,1f))
+            shop.addView(button("VIEW SHOP",{activeSection="My Products";renderPartnerContent(navigation)},Color.rgb(255,92,52)).apply{background=shape(Color.rgb(196,48,31),10);textSize=11f},LinearLayout.LayoutParams(-2,-2))
+            body.addView(shop,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(13)})
             fun actionCard(title:String,desc:String,section:String,color:Int){
-                val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(13),dp(13),dp(13));background=shape(Color.WHITE,14);elevation=dp(1).toFloat();isClickable=true;setOnClickListener{activeSection=section;renderPartnerContent(navigation)}}
-                card.addView(label(title,16f,color,true))
-                card.addView(label(desc,12f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-                body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(9)})
+                val card=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(11),dp(13),dp(9),dp(13));background=shape(Color.WHITE,15);elevation=dp(1).toFloat();isClickable=true;setOnClickListener{activeSection=section;renderPartnerContent(navigation)}}
+                val mark=TextView(this).apply{text=when(title){"My Products"->"▣";"Orders"->"▤";"Assign Delivery Boy"->"➜";else->"▥"};textSize=23f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=shape(color,13)}
+                card.addView(mark,LinearLayout.LayoutParams(dp(44),dp(44)).apply{rightMargin=dp(9)})
+                val texts=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+                texts.addView(label(title,14f,ink,true))
+                texts.addView(label(desc,10.5f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
+                card.addView(texts,LinearLayout.LayoutParams(0,-2,1f))
+                card.addView(label("›",25f,Color.DKGRAY,true))
+                return card
             }
-            actionCard("My Products","Add products, edit prices and availability","My Products",orange)
-            actionCard("Orders · Date-wise","Review customer orders grouped by date","Orders",Color.rgb(230,65,86))
-            actionCard("Assign Delivery Boy","Delivery assignments are managed by Foodvexa Admin","Delivery",Color.rgb(28,150,88))
-            actionCard("Reports","Product count and shop activity","Reports",Color.rgb(20,145,220))
-            body.addView(label("My Products: "+products.size,14f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            val row1=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            row1.addView(actionCard("My Products","Manage menu, price and stock","My Products",orange),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
+            row1.addView(actionCard("Orders","View orders date-wise","Orders",Color.rgb(238,66,91)),LinearLayout.LayoutParams(0,-2,1f))
+            body.addView(row1,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+            val row2=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            row2.addView(actionCard("Assign Delivery Boy","Delivery managed by Admin","Delivery",Color.rgb(30,176,100)),LinearLayout.LayoutParams(0,-2,1f).apply{rightMargin=dp(6)})
+            row2.addView(actionCard("Reports","Products and activity","Reports",Color.rgb(30,155,235)),LinearLayout.LayoutParams(0,-2,1f))
+            body.addView(row2,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+            val shortcuts=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            listOf(Triple("Shop Settings","⚙","Reports"),Triple("Opening Hours","◷","Reports"),Triple("Profile","●","Reports"),Triple("App Settings","⚙","Reports")).forEachIndexed{index,item->
+                val tile=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(3),dp(10),dp(3),dp(10));background=shape(Color.WHITE,13);isClickable=true;setOnClickListener{activeSection=item.third;renderPartnerContent(navigation)}}
+                val colors=listOf(Color.rgb(147,55,222),Color.rgb(239,48,95),Color.rgb(27,145,229),Color.rgb(95,101,111))
+                tile.addView(TextView(this).apply{text=item.second;textSize=19f;gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=shape(colors[index],22)},LinearLayout.LayoutParams(dp(38),dp(38)))
+                tile.addView(label(item.first,9.5f,ink,true).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+                shortcuts.addView(tile,LinearLayout.LayoutParams(0,-2,1f).apply{if(index<3)rightMargin=dp(5)})
+            }
+            body.addView(shortcuts,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+            val summary=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(13),dp(13),dp(13));background=shape(Color.WHITE,15)}
+            summary.addView(label("Shop Summary",17f,ink,true))
+            val metrics=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            val metricData=listOf(Triple(products.size.toString(),"Products",orange),Triple(products.count{it.second["available"]!=false}.toString(),"Available",green),Triple(products.count{it.second["available"]==false}.toString(),"Sold out",Color.rgb(220,70,85)),Triple("Live","Menu sync",Color.rgb(30,145,220)))
+            metricData.forEachIndexed{index,m->
+                val cell=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;setPadding(dp(2),dp(10),dp(2),dp(10));background=shape(listOf(0xFFFFF0E9.toInt(),0xFFEAF8EF.toInt(),0xFFFFF0F1.toInt(),0xFFEAF5FF.toInt())[index],10)}
+                cell.addView(label(m.first,20f,m.third,true).apply{gravity=Gravity.CENTER})
+                cell.addView(label(m.second,9.5f,Color.DKGRAY).apply{gravity=Gravity.CENTER})
+                metrics.addView(cell,LinearLayout.LayoutParams(0,-2,1f).apply{if(index<3)rightMargin=dp(5)})
+            }
+            summary.addView(metrics,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+            body.addView(summary,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+            body.addView(label("My Products",17f,ink,true),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(6)})
+            body.addView(button("VIEW ALL PRODUCTS",{activeSection="My Products";renderPartnerContent(navigation)},orange),LinearLayout.LayoutParams(-1,-2))
             return
         }
         if(activeSection=="Delivery"){
