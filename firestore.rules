@@ -85,6 +85,15 @@ service cloud.firestore {
            (resource.data.partnerIds is list && resource.data.partnerIds.hasAny([get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId]))));
       allow update: if isAdmin() ||
         (signedIn()
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true
+          && (resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId
+            || (resource.data.partnerIds is list && resource.data.partnerIds.hasAny([get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId])))
+          && request.resource.data.deliveryBoyUid is string
+          && exists(/databases/$(database)/documents/deliveryBoys/$(request.resource.data.deliveryBoyUid))
+          && get(/databases/$(database)/documents/deliveryBoys/$(request.resource.data.deliveryBoyUid)).data.active == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveryBoyUid', 'deliveryBoyEmail', 'deliveryLocationActive', 'updatedAt'])) ||
+        (signedIn()
           && resource.data.customerUid == request.auth.uid
           && resource.data.status == 'Awaiting customer confirmation'
           && request.resource.data.status == 'Delivered'
