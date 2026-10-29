@@ -94,18 +94,17 @@ class DeliveryActivity : Activity() {
                 if(partnerId.isNullOrBlank()){
                     pickupAddressView2.text="Shop address unavailable: order has no partner ID."
                 }else{
-                    db.collection("partnerAccounts").whereEqualTo("partnerId",partnerId).limit(1).get()
-                        .addOnSuccessListener{shops->
-                            val shop=shops.documents.firstOrNull()
-                            if(shop==null){
-                                pickupAddressView2.text="Shop address not saved in partner account."
+                    db.collection("partners").document(partnerId).get()
+                        .addOnSuccessListener{shop->
+                            if(!shop.exists() || shop.getBoolean("approved")!=true || shop.getBoolean("active")!=true){
+                                pickupAddressView2.text="Shop profile not published/active in Admin."
                             }else{
-                                val name=shop.getString("businessName")?:shop.getString("shopName")?:shop.getString("partnerName")?:pickupName
+                                val name=shop.getString("businessName")?:shop.getString("partnerName")?:pickupName
                                 if(!name.isNullOrBlank())pickupAddressView.text="Pickup shop: "+name
-                                val shopAddress=shop.getString("pickupAddress")?:shop.getString("shopAddress")?:shop.getString("businessAddress")?:shop.getString("address")?:shop.getString("fullAddress")
-                                pickupAddressView2.text="Shop address: "+(shopAddress?.takeIf{it.isNotBlank()}?:"Not saved in partner account")
+                                val parts=listOf(shop.getString("address"),shop.getString("city"),shop.getString("district"),shop.getString("state"),shop.getString("pincode")).mapNotNull{it?.trim()?.takeIf{v->v.isNotBlank()}}.distinct()
+                                pickupAddressView2.text="Shop address: "+(parts.joinToString(", ").ifBlank{"Not saved in Admin partner profile"})
                             }
-                        }.addOnFailureListener{pickupAddressView2.text="Could not load shop address. Check Firestore permissions."}
+                        }.addOnFailureListener{pickupAddressView2.text="Could not load published shop profile: "+(it.localizedMessage?: "Firestore permission denied")}
                 }
                 card.addView(button("CALL CUSTOMER",{val phone=doc.getString("phone").orEmpty();if(phone.isNotBlank())startActivity(Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+Uri.encode(phone))))else Toast.makeText(this,"Customer phone unavailable",Toast.LENGTH_SHORT).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
                 card.addView(button("OPEN SHOP IN GOOGLE MAPS",{val a=pickupAddressView2.text.toString().removePrefix("Shop address: ").trim();if(a.isNotBlank()&&a!="Not saved in partner account"&&a!="loading…"&&!a.startsWith("Shop address unavailable")&&!a.startsWith("Could not load"))startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(a))))else Toast.makeText(this,"Shop address is missing. Add pickup/shop address to the partner account.",Toast.LENGTH_LONG).show()},Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
