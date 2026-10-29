@@ -1,4 +1,5 @@
 name: Build Foodvexa Partner APK
+# Rebuild Partner APK with the latest delivery assignment rules/client changes.
 
 on:
   push:
