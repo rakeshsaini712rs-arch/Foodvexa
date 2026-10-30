@@ -76,6 +76,19 @@ class DeliveryActivity : Activity() {
                 val status=doc.getString("status")?: "New"
                 card.addView(label("Order #"+doc.id.takeLast(7)+" · ₹"+(doc.get("total")?.toString()?: "—"),17f,ink,true))
                 card.addView(label("Status: $status",14f,red,true))
+                val paymentMethod=doc.getString("paymentMethod").orEmpty().trim().uppercase(java.util.Locale.ROOT)
+                val paymentStatus=doc.getString("paymentStatus").orEmpty().trim().uppercase(java.util.Locale.ROOT)
+                val totalText="₹"+(doc.get("total")?.toString()?: "—")
+                val paymentView=when(paymentMethod){
+                    "COD","CASH ON DELIVERY"->label("PAYMENT: COD  •  COLLECT $totalText FROM CUSTOMER",14f,Color.rgb(150,75,0),true).apply{background=rounded(Color.rgb(255,239,210),10);setPadding(dp(10),dp(10),dp(10),dp(10))}
+                    "UPI"->if(paymentStatus in setOf("PAID","SUCCESS","SUCCESSFUL","COMPLETED","VERIFIED")){
+                        label("PAYMENT: UPI PAID  •  DO NOT COLLECT CASH",14f,Color.rgb(20,115,65),true).apply{background=rounded(Color.rgb(220,245,230),10);setPadding(dp(10),dp(10),dp(10),dp(10))}
+                    }else{
+                        label("PAYMENT: UPI PENDING  •  DO NOT MARK AS PAID",14f,Color.rgb(170,35,35),true).apply{background=rounded(Color.rgb(255,230,230),10);setPadding(dp(10),dp(10),dp(10),dp(10))}
+                    }
+                    else->label("PAYMENT: NOT RECORDED  •  CONFIRM WITH ADMIN",13f,Color.rgb(170,35,35),true).apply{background=rounded(Color.rgb(255,230,230),10);setPadding(dp(10),dp(10),dp(10),dp(10))}
+                }
+                card.addView(paymentView,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6);bottomMargin=dp(4)})
                 card.addView(label("Customer: "+(doc.getString("customerName")?: "Customer"),14f))
                 card.addView(label("Phone: "+(doc.getString("phone")?: "—"),14f))
                 val address=doc.getString("address")?: ""
