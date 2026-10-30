@@ -628,6 +628,14 @@ class AdminActivity : Activity() {
     private var partnerIdsLoaded=false
     private var foodvexaCatalogSeedAttempted=false
 
+    private fun menuPartnerMatches(storedName:String?,selectedName:String):Boolean{
+        val stored=storedName?.trim()?.lowercase(java.util.Locale.ROOT).orEmpty()
+        val selected=selectedName.trim().lowercase(java.util.Locale.ROOT)
+        if(stored==selected)return true
+        val ganpatiAliases=setOf("ganpati","ganpati restaurant")
+        return selected in ganpatiAliases && (stored in ganpatiAliases || stored.startsWith("ganpati "))
+    }
+
     private fun menuPage(){
         if(!partnerIdsLoaded){
             db.collection("partners").get().addOnSuccessListener{snapshot->
@@ -649,7 +657,7 @@ class AdminActivity : Activity() {
         partnerNames.forEach { partner ->
             val canonicalId=partnerIdByName[partner.lowercase(java.util.Locale.ROOT)]
             val count=products.count{product->
-                product.second["partnerName"]?.toString()?.trim().equals(partner,true) ||
+                menuPartnerMatches(product.second["partnerName"]?.toString(),partner) ||
                     (!canonicalId.isNullOrBlank() && product.second["partnerId"]?.toString()==canonicalId)
             }
             val item=LinearLayout(this).apply{
@@ -673,7 +681,7 @@ class AdminActivity : Activity() {
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
         val selectedPartnerId=partnerIdByName[selectedPartner.lowercase(java.util.Locale.ROOT)]
         val firestorePartnerProducts=products.filter{product->
-            product.second["partnerName"]?.toString()?.trim().equals(selectedPartner,true) ||
+            menuPartnerMatches(product.second["partnerName"]?.toString(),selectedPartner) ||
                 (!selectedPartnerId.isNullOrBlank() && product.second["partnerId"]?.toString()==selectedPartnerId) ||
                 (selectedPartner.equals("FOODVEXA",true) && product.second["partnerName"]?.toString().isNullOrBlank() && product.second["partnerId"]?.toString().isNullOrBlank())
         }
