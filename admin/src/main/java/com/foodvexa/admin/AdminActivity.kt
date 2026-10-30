@@ -55,13 +55,18 @@ class AdminActivity : Activity() {
         body.addView(c,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(11)})
     }
     override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState)
+        // Keep the system status bar outside the app content on modern Android.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
+        window.statusBarColor=Color.rgb(38,25,30)
+        window.navigationBarColor=bg
+        window.decorView.systemUiVisibility=0
         if(auth.currentUser==null){goLogin();return};showPage("Dashboard")
     }
     override fun onDestroy(){dashboardOrdersListener?.remove();ordersListener?.remove();menuListener?.remove();super.onDestroy()}
     private fun goLogin(){getSharedPreferences("admin_session",MODE_PRIVATE).edit().clear().apply();auth.signOut();startActivity(android.content.Intent(this,LoginActivity::class.java));finish()}
     private fun showPage(target:String){
         page=target
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg)}
+        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setBackgroundColor(bg);fitsSystemWindows=true}
         val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(17),dp(17),dp(12),dp(17));background=shape(Color.rgb(38,25,30),0)}
         val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         brand.addView(text("FOODVEXA ADMIN",20f,Color.WHITE,true))
@@ -69,7 +74,13 @@ class AdminActivity : Activity() {
         top.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
         top.addView(button("LOG OUT",{goLogin()},Color.rgb(90,55,62)))
         root.addView(top)
-        val navScroll=HorizontalScrollView(this).apply{isHorizontalScrollBarEnabled=false;setBackgroundColor(Color.WHITE)}
+        val navScroll=HorizontalScrollView(this).apply{
+            isHorizontalScrollBarEnabled=false
+            isFillViewport=true
+            isFocusable=false
+            descendantFocusability=ViewGroup.FOCUS_BLOCK_DESCENDANTS
+            setBackgroundColor(Color.WHITE)
+        }
         val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(8),dp(8),dp(8))}
         listOf("Dashboard","Orders","Payments","Menu","Partners","Delivery").forEach{item->
             val v=text(item,13f,if(page==item)red else ink,page==item);v.gravity=Gravity.CENTER;v.setPadding(dp(12),dp(12),dp(12),dp(12))
@@ -77,6 +88,7 @@ class AdminActivity : Activity() {
             nav.addView(v,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(4)})
         }
         navScroll.addView(nav);root.addView(navScroll)
+        navScroll.post { navScroll.scrollTo(0,0) }
         val scroll=ScrollView(this)
         body=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(28))}
         scroll.addView(body);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
