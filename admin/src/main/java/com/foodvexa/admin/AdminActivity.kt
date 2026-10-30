@@ -624,16 +624,34 @@ class AdminActivity : Activity() {
     private var selectedMenuCategory="All Products"
     private var menuCategoryListener:ListenerRegistration?=null
     private val partnerCategories=linkedMapOf<String,MutableSet<String>>()
+    private val partnerIdByName=linkedMapOf<String,String>()
+    private var partnerIdsLoaded=false
     private var foodvexaCatalogSeedAttempted=false
 
     private fun menuPage(){
+        if(!partnerIdsLoaded){
+            db.collection("partners").get().addOnSuccessListener{snapshot->
+                partnerIdByName.clear()
+                snapshot.documents.forEach{doc->
+                    val name=doc.getString("businessName")?.trim().takeUnless{it.isNullOrBlank()}
+                        ?: doc.getString("name")?.trim().orEmpty()
+                    if(name.isNotBlank())partnerIdByName[name.lowercase(java.util.Locale.ROOT)]=doc.id
+                }
+                partnerIdsLoaded=true
+                if(page=="Menu" && !isFinishing){body.removeAllViews();menuPage()}
+            }.addOnFailureListener{partnerIdsLoaded=true}
+        }
         body.removeAllViews()
         addLine("Menu Management",22f,ink,true)
         addLine("Select a partner, then manage its categories and products.",13f,Color.GRAY)
         addLine("PARTNERS",12f,Color.GRAY,true)
         val partnerRow=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         partnerNames.forEach { partner ->
-            val count=products.count{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(partner,true)}
+            val canonicalId=partnerIdByName[partner.lowercase(java.util.Locale.ROOT)]
+            val count=products.count{product->
+                product.second["partnerName"]?.toString()?.trim().equals(partner,true) ||
+                    (!canonicalId.isNullOrBlank() && product.second["partnerId"]?.toString()==canonicalId)
+            }
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
                 setPadding(dp(12),dp(11),dp(12),dp(11))
@@ -653,7 +671,12 @@ class AdminActivity : Activity() {
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
-        val firestorePartnerProducts=products.filter{(it.second["partnerName"]?.toString()?.trim()?.takeIf{v->v.isNotBlank()}?: "FOODVEXA").equals(selectedPartner,true)}
+        val selectedPartnerId=partnerIdByName[selectedPartner.lowercase(java.util.Locale.ROOT)]
+        val firestorePartnerProducts=products.filter{product->
+            product.second["partnerName"]?.toString()?.trim().equals(selectedPartner,true) ||
+                (!selectedPartnerId.isNullOrBlank() && product.second["partnerId"]?.toString()==selectedPartnerId) ||
+                (selectedPartner.equals("FOODVEXA",true) && product.second["partnerName"]?.toString().isNullOrBlank() && product.second["partnerId"]?.toString().isNullOrBlank())
+        }
         val fallback=if(selectedPartner.equals("FOODVEXA",true))foodvexaFallbackProducts().filter{f->
             firestorePartnerProducts.none{it.second["name"]?.toString()?.equals(f.second["name"]?.toString(),true)==true}
         } else emptyList()
