@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="Foodvexa Partner" android:usesCleartextTraffic="false">
+    <application
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:label="Foodvexa Partner"
+        android:icon="@drawable/foodvexa_logo"
+        android:roundIcon="@drawable/foodvexa_logo"
+        android:usesCleartextTraffic="false">
         <activity android:name=".PartnerActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="true">
             <intent-filter>
