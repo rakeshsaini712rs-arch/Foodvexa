@@ -3,8 +3,8 @@
     <application
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:label="Foodvexa Partner"
-        android:icon="@drawable/foodvexa_logo"
-        android:roundIcon="@drawable/foodvexa_logo"
+        android:icon="@drawable/foodvexa_partner_logo"
+        android:roundIcon="@drawable/foodvexa_partner_logo"
         android:usesCleartextTraffic="false">
         <activity android:name=".PartnerActivity" android:exported="false" />
         <activity android:name=".LoginActivity" android:exported="true">
