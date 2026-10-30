@@ -71,7 +71,7 @@ class AdminActivity : Activity() {
         val top=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(dp(17),dp(17),dp(12),dp(17));background=shape(Color.rgb(38,25,30),0)}
         val brand=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
         brand.addView(text("FOODVEXA ADMIN",20f,Color.WHITE,true))
-        brand.addView(text("SAMOSA KING · NAWALGARH",11f,Color.LTGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+        brand.addView(text("FOODVEXA · ADMIN PANEL",11f,Color.LTGRAY,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
         top.addView(brand,LinearLayout.LayoutParams(0,-2,1f))
         top.addView(button("LOG OUT",{goLogin()},Color.rgb(90,55,62)))
         root.addView(top)
