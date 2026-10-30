@@ -99,12 +99,8 @@ class LocationGateActivity : AppCompatActivity() {
                                 .putBoolean("location_is_gps", true)
                                 .apply()
                         } else {
-                            // Keep a previously resolved address if a fresh GPS fix is unavailable.
-                            android.widget.Toast.makeText(
-                                this,
-                                "Current location nahi mili. Phone ki Location aur Precise location ON karein.",
-                                android.widget.Toast.LENGTH_LONG
-                            ).show()
+                            // GPS may be disabled or unavailable. Keep the saved delivery address
+                            // and continue silently; location must never block the customer app.
                         }
                         continueToApp(forceLogin, loggedIn)
                     }
@@ -143,6 +139,16 @@ class LocationGateActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_LOCATION) obtainLocation()
+        if (requestCode == REQUEST_LOCATION) {
+            val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
+            if (granted) {
+                obtainLocation()
+            } else {
+                val prefs = getSharedPreferences("foodvexa", MODE_PRIVATE)
+                val forceLogin = prefs.getBoolean("force_login", false)
+                val loggedIn = FirebaseAuth.getInstance().currentUser != null
+                continueToApp(forceLogin, loggedIn)
+            }
+        }
     }
 }
