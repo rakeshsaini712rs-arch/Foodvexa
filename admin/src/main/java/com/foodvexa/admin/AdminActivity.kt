@@ -679,7 +679,14 @@ class AdminActivity : Activity() {
 
         addLine("CATEGORIES · $selectedPartner",16f,ink,true)
         val isGanpatiSharedMenu=selectedPartner.equals("Ganpati Restaurant",true)
-        val selectedPartnerId=partnerIdByName[selectedPartner.lowercase(java.util.Locale.ROOT)]
+
+        val selectedPartnerId=if(selectedPartner.equals("FOODVEXA",true))"Ca0bbPeuKwHtklbRSWME" else partnerIdByName[selectedPartner.lowercase(java.util.Locale.ROOT)]
+        if(selectedPartner.equals("FOODVEXA",true)){
+            body.addView(button("IMPORT FOODVEXA MENU",{
+                importFoodvexaMenu()
+            },green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+            addLine("Import adds missing catalog items to this Partner ID only. Existing Foodvexa items and other partners are left unchanged.",12f,Color.GRAY)
+        }
         val firestorePartnerProducts=products.filter{product->
             menuPartnerMatches(product.second["partnerName"]?.toString(),selectedPartner) ||
                 (!selectedPartnerId.isNullOrBlank() && product.second["partnerId"]?.toString()==selectedPartnerId) ||
@@ -792,6 +799,71 @@ class AdminActivity : Activity() {
                 }
                 if(page=="Menu"){body.removeAllViews();menuPage()}
             }
+        }
+    }
+
+
+    private fun importFoodvexaMenu(){
+        val targetPartnerId="Ca0bbPeuKwHtklbRSWME"
+        val targetPartnerName="FOODVEXA"
+        Toast.makeText(this,"Checking existing Foodvexa products…",Toast.LENGTH_SHORT).show()
+        db.collection("menu").get().addOnSuccessListener{snapshot->
+            if(page!="Menu"||isFinishing)return@addOnSuccessListener
+            val existing=snapshot.documents.filter{it.getString("partnerId")==targetPartnerId}
+                .mapNotNull{it.getString("name")?.trim()?.lowercase(java.util.Locale.ROOT)}.toMutableSet()
+            val catalog=foodvexaFallbackProducts().map{it.second}.distinctBy{
+                it["name"]?.toString()?.trim()?.lowercase(java.util.Locale.ROOT).orEmpty()
+            }
+            val missing=catalog.filter{item->
+                val name=item["name"]?.toString()?.trim()?.lowercase(java.util.Locale.ROOT).orEmpty()
+                name.isNotBlank() && name !in existing
+            }
+            if(missing.isEmpty()){
+                Toast.makeText(this,"Foodvexa menu is already imported. No duplicates added.",Toast.LENGTH_LONG).show()
+                showPage("Menu")
+                return@addOnSuccessListener
+            }
+            val batches=missing.chunked(400)
+            fun writeBatch(index:Int,added:Int){
+                if(index>=batches.size){
+                    Toast.makeText(this,"Foodvexa import complete: $added new products added. Existing products were kept.",Toast.LENGTH_LONG).show()
+                    products.clear()
+                    showPage("Menu")
+                    return
+                }
+                val batch=db.batch()
+                batches[index].forEach{source->
+                    val name=source["name"]?.toString()?.trim().orEmpty()
+                    val category=source["category"]?.toString()?.trim().orEmpty()
+                    val price=(source["price"] as? Number)?.toDouble()?:0.0
+                    if(name.isNotBlank()&&category.isNotBlank()&&price>=0){
+                        val ref=db.collection("menu").document()
+                        val data=hashMapOf<String,Any>(
+                            "name" to name,
+                            "category" to category,
+                            "price" to price,
+                            "imageUrl" to (source["imageUrl"]?.toString()?.takeIf{it.startsWith("https://")}?: ""),
+                            "available" to true,
+                            "partnerId" to targetPartnerId,
+                            "partnerName" to targetPartnerName,
+                            "updatedAt" to FieldValue.serverTimestamp()
+                        )
+                        batch.set(ref,data)
+                    }
+                }
+                batch.commit().addOnSuccessListener{writeBatch(index+1,added+batches[index].size)}
+                    .addOnFailureListener{e->
+                        Toast.makeText(this,"Import stopped. "+(e.localizedMessage?: "Firebase write failed"),Toast.LENGTH_LONG).show()
+                    }
+            }
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Import Foodvexa menu")
+                .setMessage("Add ${missing.size} missing products to Foodvexa Partner ID only? Existing items and other partners will not be changed.")
+                .setNegativeButton("CANCEL",null)
+                .setPositiveButton("IMPORT"){_,_->writeBatch(0,0)}
+                .show()
+        }.addOnFailureListener{e->
+            Toast.makeText(this,"Could not check existing products: "+(e.localizedMessage?: "Firebase read failed"),Toast.LENGTH_LONG).show()
         }
     }
 
