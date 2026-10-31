@@ -682,10 +682,13 @@ class AdminActivity : Activity() {
 
         val selectedPartnerId=if(selectedPartner.equals("FOODVEXA",true))"Ca0bbPeuKwHtklbRSWME" else partnerIdByName[selectedPartner.lowercase(java.util.Locale.ROOT)]
         if(selectedPartner.equals("FOODVEXA",true)){
+            body.addView(button("REMOVE DUPLICATE IMPORTS",{
+                removeDuplicateFoodvexaImports()
+            },red),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
             body.addView(button("IMPORT FOODVEXA MENU",{
                 importFoodvexaMenu()
             },green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
-            addLine("Import adds missing catalog items to this Partner ID only. Existing Foodvexa items and other partners are left unchanged.",12f,Color.GRAY)
+            addLine("Duplicate cleanup keeps the original Foodvexa catalog, assigns it the Foodvexa Partner ID, and leaves other partners unchanged.",12f,Color.GRAY)
         }
         val firestorePartnerProducts=products.filter{product->
             menuPartnerMatches(product.second["partnerName"]?.toString(),selectedPartner) ||
@@ -802,6 +805,62 @@ class AdminActivity : Activity() {
         }
     }
 
+
+
+    private fun removeDuplicateFoodvexaImports(){
+        val targetPartnerId="Ca0bbPeuKwHtklbRSWME"
+        db.collection("menu").get().addOnSuccessListener{snapshot->
+            if(page!="Menu"||isFinishing)return@addOnSuccessListener
+            val originals=snapshot.documents.filter{doc->
+                doc.getString("partnerName")?.trim()?.equals("FOODVEXA",true)==true &&
+                    doc.getString("partnerId").isNullOrBlank() &&
+                    !doc.getString("name").isNullOrBlank()
+            }.groupBy{it.getString("name")!!.trim().lowercase(java.util.Locale.ROOT)}
+            val duplicates=snapshot.documents.filter{doc->
+                doc.getString("partnerId")==targetPartnerId &&
+                    originals.containsKey(doc.getString("name")?.trim()?.lowercase(java.util.Locale.ROOT).orEmpty())
+            }
+            if(duplicates.isEmpty()){
+                Toast.makeText(this,"No matching duplicate imports found. No products changed.",Toast.LENGTH_LONG).show()
+                return@addOnSuccessListener
+            }
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Remove duplicate Foodvexa imports?")
+                .setMessage("Found ${duplicates.size} newer Foodvexa-ID records that duplicate original Foodvexa products. The original records will be kept and linked to the Foodvexa Partner ID. Other partners and non-matching products will not be changed.")
+                .setNegativeButton("CANCEL",null)
+                .setPositiveButton("REMOVE DUPLICATES"){_,_->
+                    val originalsToLink=originals.values.flatten()
+                    val operations=mutableListOf<()->Unit>()
+                    val batches=mutableListOf<com.google.firebase.firestore.WriteBatch>()
+                    var batch=db.batch();var count=0
+                    fun nextWrite(){
+                        if(count>=450){batches.add(batch);batch=db.batch();count=0}
+                    }
+                    originalsToLink.forEach{doc->
+                        nextWrite()
+                        batch.update(doc.reference,"partnerId",targetPartnerId,"updatedAt",FieldValue.serverTimestamp())
+                        count++
+                    }
+                    duplicates.forEach{doc->
+                        nextWrite()
+                        batch.delete(doc.reference)
+                        count++
+                    }
+                    if(count>0)batches.add(batch)
+                    fun commitAt(index:Int){
+                        if(index>=batches.size){
+                            Toast.makeText(this,"Cleanup complete: ${duplicates.size} duplicate records removed; original Foodvexa products linked.",Toast.LENGTH_LONG).show()
+                            products.clear();showPage("Menu");return
+                        }
+                        batches[index].commit().addOnSuccessListener{commitAt(index+1)}
+                            .addOnFailureListener{e->Toast.makeText(this,"Cleanup stopped: "+(e.localizedMessage?: "Firebase write failed"),Toast.LENGTH_LONG).show()}
+                    }
+                    commitAt(0)
+                }.show()
+        }.addOnFailureListener{e->
+            Toast.makeText(this,"Could not check duplicates: "+(e.localizedMessage?: "Firebase read failed"),Toast.LENGTH_LONG).show()
+        }
+    }
 
     private fun importFoodvexaMenu(){
         val targetPartnerId="Ca0bbPeuKwHtklbRSWME"
