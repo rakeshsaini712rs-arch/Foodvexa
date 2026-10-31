@@ -50,9 +50,9 @@ private fun completeOrder(payment:String,total:Int){
     if(cart.isEmpty()){Toast.makeText(this,"Cart is empty",Toast.LENGTH_SHORT).show();return}
     val user=FirebaseAuth.getInstance().currentUser
     if(user==null){Toast.makeText(this,"Please login again before ordering",Toast.LENGTH_LONG).show();return}
-    val address=prefs.getString("delivery_address","").orEmpty()
+    val address=prefs.getString("location","").orEmpty()
+        .ifBlank{prefs.getString("delivery_address","").orEmpty()}
         .ifBlank{prefs.getString("profile_address","").orEmpty()}
-        .ifBlank{prefs.getString("location","").orEmpty()}
         .ifBlank{SHOP_LOCATION}
     val subtotal=cart.entries.sumOf{(name,qty)->products.firstOrNull{it.name==name}?.price?.times(qty)?:0}
     val summary=cart.entries.mapNotNull{(name,qty)->products.firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\\n")
@@ -113,7 +113,7 @@ private fun showCart(){
     list.addView(this@MainActivity.label("Delivery details",22f,true,Color.WHITE),this@MainActivity.margin(0,10,0,6))
     fun field(h:String)=EditText(this@MainActivity).apply{hint=h;textSize=15f;setSingleLine(true);setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);setPadding(dp(16),0,dp(16),0);background=rounded(Color.TRANSPARENT,14);setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(90,75,65)));layoutParams=LinearLayout.LayoutParams(-1,dp(42)).apply{topMargin=dp(3);bottomMargin=dp(3)}}
     list.addView(field("Your name").apply{setText(prefs.getString("profile_name","").orEmpty())});list.addView(field("Phone number").apply{setText(prefs.getString("profile_mobile","").orEmpty())})
-    list.addView(EditText(this@MainActivity).apply{hint="Delivery address";setText(prefs.getString("profile_address",prefs.getString("location",SHOP_LOCATION)).orEmpty());textSize=17f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP;setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2;background=rounded(Color.TRANSPARENT,14);layoutParams=LinearLayout.LayoutParams(-1,dp(60)).apply{topMargin=dp(3);bottomMargin=dp(5)}})
+    list.addView(EditText(this@MainActivity).apply{hint="Delivery address";setText(prefs.getString("location","").orEmpty().ifBlank{prefs.getString("delivery_address","").orEmpty().ifBlank{prefs.getString("profile_address",SHOP_LOCATION).orEmpty()}});textSize=17f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY);gravity=Gravity.TOP;setPadding(dp(16),dp(12),dp(16),dp(12));minLines=2;background=rounded(Color.TRANSPARENT,14);layoutParams=LinearLayout.LayoutParams(-1,dp(60)).apply{topMargin=dp(3);bottomMargin=dp(5)}})
     list.addView(this@MainActivity.primaryButton("📍  Choose your current location"){Toast.makeText(this,"Precise location permission is required to use current location",Toast.LENGTH_LONG).show()}.apply{background=rounded(Color.rgb(46,190,126),14)},LinearLayout.LayoutParams(-1,dp(44)))
     list.addView(this@MainActivity.label("✓  Current location selected",15f,true,Color.rgb(76,210,145)),this@MainActivity.margin(0,5,0,6))
     list.addView(this@MainActivity.primaryButton("🛒  BUY NOW"){if(cart.isEmpty())Toast.makeText(this@MainActivity,"Cart is empty",Toast.LENGTH_SHORT).show() else placeOrderAndShowOrders()}.apply{background=rounded(Color.rgb(46,190,126),14)},LinearLayout.LayoutParams(-1,dp(48)))
