@@ -1142,6 +1142,7 @@ class AdminActivity : Activity() {
         val capField=field("Maximum discount (₹)","50",android.text.InputType.TYPE_CLASS_NUMBER)
         val startField=field("Start date YYYY-MM-DD (optional)")
         val endField=field("End date YYYY-MM-DD (optional)")
+        val bannerField=field("Offer banner image URL (optional)")
         val enabled=CheckBox(this).apply{text="Offer is active";isChecked=true}
         panel.addView(enabled)
         body.addView(panel,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
@@ -1154,6 +1155,7 @@ class AdminActivity : Activity() {
             capField.setText((doc.getLong("maxDiscount")?:50L).toString())
             startField.setText(doc.getString("startDate").orEmpty())
             endField.setText(doc.getString("endDate").orEmpty())
+            bannerField.setText(doc.getString("bannerUrl").orEmpty())
             enabled.isChecked=doc.getBoolean("enabled")?:true
         }
         body.addView(button("SAVE OFFER",{
@@ -1171,7 +1173,7 @@ class AdminActivity : Activity() {
                 Toast.makeText(this,"Use valid dates in YYYY-MM-DD format.",Toast.LENGTH_LONG).show();return@button
             }
             val data=hashMapOf<String,Any>("title" to title,"message" to message,"couponCode" to code,"discountPercent" to percent,"maxDiscount" to cap,"enabled" to enabled.isChecked,"updatedAt" to FieldValue.serverTimestamp())
-            data["startDate"]=start;data["endDate"]=end
+            data["startDate"]=start;data["endDate"]=end;data["bannerUrl"]=bannerField.text.toString().trim()
             db.collection("promotions").document("active").set(data).addOnSuccessListener{Toast.makeText(this,"Offer saved successfully.",Toast.LENGTH_LONG).show()}.addOnFailureListener{Toast.makeText(this,"Offer save failed: "+(it.localizedMessage?: ""),Toast.LENGTH_LONG).show()}
         }),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         card("DEFAULT COUPON","HAPPYDIWALI","10% discount · Maximum ₹50")
