@@ -40,7 +40,7 @@ import android.location.LocationManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
-data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min",val unit:String="Piece")
+data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min",val unit:String=if(category.equals("Sweets",true))"KG" else "Piece")
 data class Category(val name:String,val imageUrl:String)
 
 class MainActivity:AppCompatActivity(){
@@ -1076,8 +1076,12 @@ filtered.forEachIndexed{index,p->
     card.addView(label("• $availabilityLabel",10.5f,true,availabilityColor),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;minimumHeight=dp(38)}
     bottom.addView(label("₹${p.price}/${if(p.unit.equals("KG",true))"kg" else "piece"}",11.5f,true,Color.WHITE).apply{setSingleLine(true);ellipsize=android.text.TextUtils.TruncateAt.END;includeFontPadding=false},LinearLayout.LayoutParams(0,dp(36),0.92f))
-    val qty=cart[p.name]?:0
-    if(qty==0){
+    val qty=if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true))cart.filterKeys{it==p.name||it.startsWith(p.name+"::")}.values.sum() else (cart[p.name]?:0)
+    if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true)){
+        val choose=primaryButton(if(qty>0)"Choose weight · $qty" else "Choose weight"){if(!isProductSoldOut(p))showSweetWeightPicker(p)}
+        choose.setTextSize(11f);choose.isEnabled=!isProductSoldOut(p)
+        bottom.addView(choose,LinearLayout.LayoutParams(0,dp(32),1.08f))
+    }else if(qty==0){
         if(isProductSoldOut(p)){
             val sold=TextView(this).apply{text=availabilityLabel;textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(if(availabilityLabel=="Coming Soon")Color.rgb(180,115,25) else Color.rgb(190,35,50),24)}
             bottom.addView(sold,LinearLayout.LayoutParams(0,dp(36),1.08f))
@@ -1145,7 +1149,12 @@ filtered.forEachIndexed{index,p->
  private val ganpatiAvailabilityStatus=mutableMapOf<String,String>()
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
- private fun findCartProduct(name:String):Product? = currentMenuProducts().firstOrNull{it.name.equals(name,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(name,true)} ?: products.firstOrNull{it.name.equals(name,true)}
+ private fun findCartProduct(name:String):Product? {
+  val halfKg=name.endsWith("::500g",true)
+  val baseName=if(halfKg)name.removeSuffix("::500g") else name
+  val p=currentMenuProducts().firstOrNull{it.name.equals(baseName,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(baseName,true)} ?: products.firstOrNull{it.name.equals(baseName,true)} ?: return null
+  return if(halfKg) p.copy(name=p.name+" (500 g)",price=p.price/2,unit="500 g") else p
+ }
  private fun productStatus(p:Product):String {
   val key=p.name.lowercase(java.util.Locale.ROOT)
   val saved=if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailabilityStatus[key] else productAvailabilityStatus[key]
@@ -1330,7 +1339,7 @@ private fun checkPartnerSchedules(ids:List<String>,done:(Boolean,String)->Unit){
  checkAt(0)
 }
 private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
- val summary=cart.entries.mapNotNull{(name,qty)->currentMenuProducts().firstOrNull{it.name==name}?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
+ val summary=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->p.name+" × "+qty+" = ₹"+(p.price*qty)}}.joinToString("\n")
  val subtotal=cart.entries.sumOf{(name,qty)->findCartProduct(name)?.price?.times(qty)?:0}
  if(subtotal<=0){Toast.makeText(this,"Your cart is empty",Toast.LENGTH_SHORT).show();return}
  if(subtotal<150){Toast.makeText(this,"Minimum order is ₹150. Please add ₹${150-subtotal} more to your cart.",Toast.LENGTH_LONG).show();return}
@@ -1386,6 +1395,14 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
    android.app.AlertDialog.Builder(this).setTitle("Order save failed").setMessage(details).setPositiveButton("OK",null).show()
    Toast.makeText(this,"Order save nahi hua. Error screen par dekhein.",Toast.LENGTH_LONG).show()
   }
+}
+private fun showSweetWeightPicker(p:Product){
+ if(isProductSoldOut(p)){Toast.makeText(this,"This product is not available.",Toast.LENGTH_SHORT).show();return}
+ val options=arrayOf("500 ग्राम  ·  ₹${p.price/2}","1 KG  ·  ₹${p.price}")
+ android.app.AlertDialog.Builder(this).setTitle(p.name+" – वजन चुनें").setItems(options){_,which->
+  val key=if(which==0)p.name+"::500g" else p.name
+  cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,if(which==0)"500 ग्राम जोड़ा गया" else "1 KG जोड़ा गया",Toast.LENGTH_SHORT).show();renderProducts()
+ }.setNegativeButton("Cancel",null).show()
 }
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){if(isProductSoldOut(p)){Toast.makeText(this,if(productStatus(p)=="Coming Soon")"Coming Soon — ordering not started yet." else "This product is sold out.",Toast.LENGTH_LONG).show();return};cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
