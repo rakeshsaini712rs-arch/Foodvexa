@@ -1068,14 +1068,16 @@ filtered.forEachIndexed{index,p->
     }
     card.addView(freshnessTicker,LinearLayout.LayoutParams(-1,dp(23)).apply{topMargin=dp(3)})
     card.addView(label(p.name,12.5f,true,Color.WHITE).apply{maxLines=2;ellipsize=android.text.TextUtils.TruncateAt.END},margin(0,2,0,0))
-    val soldOut=isProductSoldOut(p)
-    card.addView(label(if(soldOut)"• Sold Out" else "• Available",10.5f,true,if(soldOut)Color.rgb(230,55,65) else Color.rgb(50,205,120)),margin(0,4,0,0))
+    val availabilityLabel=productStatus(p)
+    val soldOut=availabilityLabel!="Available"
+    val availabilityColor=when(availabilityLabel){"Available"->Color.rgb(50,205,120);"Coming Soon"->Color.rgb(255,190,70);else->Color.rgb(230,55,65)}
+    card.addView(label("• $availabilityLabel",10.5f,true,availabilityColor),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
     bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
         if(isProductSoldOut(p)){
-            val sold=TextView(this).apply{text=status;textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
+            val sold=TextView(this).apply{text=availabilityLabel;textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(if(availabilityLabel=="Coming Soon")Color.rgb(180,115,25) else Color.rgb(190,35,50),24)}
             bottom.addView(sold,LinearLayout.LayoutParams(0,dp(30),1.08f))
         }else{
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
@@ -1142,10 +1144,14 @@ filtered.forEachIndexed{index,p->
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
  private fun findCartProduct(name:String):Product? = currentMenuProducts().firstOrNull{it.name.equals(name,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(name,true)} ?: products.firstOrNull{it.name.equals(name,true)}
- private fun isProductSoldOut(p:Product):Boolean {
+ private fun productStatus(p:Product):String {
   val key=p.name.lowercase(java.util.Locale.ROOT)
-  return if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailability[key]==false else productAvailability[key]==false
+  val saved=if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailabilityStatus[key] else productAvailabilityStatus[key]
+  if(saved=="Available" || saved=="Sold Out" || saved=="Coming Soon") return saved
+  val available=if(selectedPartnerShop=="Ganpati Restaurant") ganpatiAvailability[key] else productAvailability[key]
+  return if(available==false) "Sold Out" else "Available"
  }
+ private fun isProductSoldOut(p:Product):Boolean = productStatus(p)!="Available"
 private fun loadSharedMenu(){
  menuListener?.remove();menuListener=FirebaseFirestore.getInstance().collection("menu").addSnapshotListener{snapshot,error->
   if(error!=null){
@@ -1176,6 +1182,7 @@ private fun loadSharedMenu(){
    }
   }
   productAvailability.clear()
+  productAvailabilityStatus.clear()
   productPartnerIds.clear()
   productPartnerNames.clear()
   snapshot.documents.forEach{doc->
@@ -1191,9 +1198,11 @@ private fun loadSharedMenu(){
   foodvexaByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
-   val available=doc.getBoolean("available")!=false
+   val savedStatus=doc.getString("availabilityStatus")?.trim()?.takeIf{it=="Available" || it=="Sold Out" || it=="Coming Soon"}
+   val available=savedStatus?.let{it=="Available"} ?: (doc.getBoolean("available")!=false)
    val idx=base.indexOfFirst{it.name.equals(name,true)}
    productAvailability[name.lowercase(java.util.Locale.ROOT)]=available
+   productAvailabilityStatus[name.lowercase(java.util.Locale.ROOT)]=savedStatus?:if(available)"Available" else "Sold Out"
    val rawPrice=doc.get("price") as? Number
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
@@ -1209,13 +1218,16 @@ private fun loadSharedMenu(){
   // Once an Admin edit creates a Ganpati-owned record, that record takes precedence
   // only inside Ganpati's page; it never overwrites Foodvexa's product.
   ganpatiAvailability.clear()
+  ganpatiAvailabilityStatus.clear()
   val ganpatiLive=mutableListOf<Product>()
   ganpatiByName.values.forEach{doc->
    val name=doc.getString("name")?.trim().orEmpty()
    if(name.isBlank())return@forEach
-   val available=doc.getBoolean("available")!=false
+   val savedStatus=doc.getString("availabilityStatus")?.trim()?.takeIf{it=="Available" || it=="Sold Out" || it=="Coming Soon"}
+   val available=savedStatus?.let{it=="Available"} ?: (doc.getBoolean("available")!=false)
    val idx=base.indexOfFirst{it.name.equals(name,true)}
    ganpatiAvailability[name.lowercase(java.util.Locale.ROOT)]=available
+   ganpatiAvailabilityStatus[name.lowercase(java.util.Locale.ROOT)]=savedStatus?:if(available)"Available" else "Sold Out"
    val rawPrice=doc.get("price") as? Number
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
