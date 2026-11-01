@@ -1310,7 +1310,7 @@ private fun placeOrderAndShowOrders(){
  dialog.show()
 }
 private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
- val partnerIdsForCart=cart.keys.mapNotNull{productPartnerIds[it.lowercase(java.util.Locale.ROOT)]}.distinct()
+ val partnerIdsForCart=cart.keys.mapNotNull{productPartnerIds[it.removeSuffix("::500g").lowercase(java.util.Locale.ROOT)]}.distinct()
  if(partnerIdsForCart.isEmpty()){Toast.makeText(this,"Shop details unavailable. Please refresh menu and try again.",Toast.LENGTH_LONG).show();return}
  checkPartnerSchedules(partnerIdsForCart){allowed,reason->
   if(!allowed){Toast.makeText(this,reason,Toast.LENGTH_LONG).show();return@checkPartnerSchedules}
@@ -1352,7 +1352,7 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->
   val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"unit" to p.unit,"lineTotal" to p.price*qty)
-  val key=p.name.lowercase(java.util.Locale.ROOT)
+  val key=name.removeSuffix("::500g").lowercase(java.util.Locale.ROOT)
   productPartnerIds[key]?.let{item["partnerId"]=it}
   productPartnerNames[key]?.takeIf{it.isNotBlank()}?.let{item["partnerName"]=it}
   item
