@@ -83,7 +83,7 @@ class AdminActivity : Activity() {
             setBackgroundColor(Color.WHITE)
         }
         val nav=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;setPadding(dp(8),dp(8),dp(8),dp(8))}
-        listOf("Dashboard","Orders","Payments","Menu","Partners","Delivery").forEach{item->
+        listOf("Dashboard","Orders","Payments","Menu","Partners","Delivery","Offers").forEach{item->
             val v=text(item,13f,if(page==item)red else ink,page==item);v.gravity=Gravity.CENTER;v.setPadding(dp(12),dp(12),dp(12),dp(12))
             v.background=shape(if(page==item)Color.rgb(255,239,241) else Color.WHITE,10);v.setOnClickListener{showPage(item)}
             nav.addView(v,LinearLayout.LayoutParams(-2,-2).apply{rightMargin=dp(4)})
@@ -103,6 +103,7 @@ class AdminActivity : Activity() {
             "Menu"->menuPage()
             "Partners"->partnerApplicationsPage()
             "Delivery"->deliveryPage()
+            "Offers"->offersPage()
         }
     }
     private fun backendNotice(){
@@ -1124,6 +1125,59 @@ class AdminActivity : Activity() {
                 }.addOnFailureListener{Toast.makeText(this,"Save failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
             }.show()
     }
+
+    private fun offersPage(){
+        addLine("Customer Offers & Coupons",22f,ink,true)
+        addLine("Manage the popup shown when customers open Foodvexa.",13f,Color.GRAY)
+        val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
+        fun field(hintText:String,value:String="",inputType:Int=android.text.InputType.TYPE_CLASS_TEXT):EditText{
+            val e=EditText(this).apply{hint=hintText;setText(value);setSingleLine(true);this.inputType=inputType}
+            panel.addView(e,LinearLayout.LayoutParams(-1,dp(52)).apply{bottomMargin=dp(7)})
+            return e
+        }
+        val titleField=field("Offer title","Happy Diwali Special")
+        val messageField=field("Offer message","Get 10% OFF on your order")
+        val codeField=field("Coupon code","HAPPYDIWALI")
+        val percentField=field("Discount percentage","10",android.text.InputType.TYPE_CLASS_NUMBER)
+        val capField=field("Maximum discount (₹)","50",android.text.InputType.TYPE_CLASS_NUMBER)
+        val startField=field("Start date YYYY-MM-DD (optional)")
+        val endField=field("End date YYYY-MM-DD (optional)")
+        val enabled=CheckBox(this).apply{text="Offer is active";isChecked=true}
+        panel.addView(enabled)
+        body.addView(panel,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
+        db.collection("promotions").document("active").get().addOnSuccessListener{doc->
+            if(!doc.exists()||page!="Offers")return@addOnSuccessListener
+            titleField.setText(doc.getString("title")?:titleField.text)
+            messageField.setText(doc.getString("message")?:messageField.text)
+            codeField.setText(doc.getString("couponCode")?:codeField.text)
+            percentField.setText((doc.getLong("discountPercent")?:10L).toString())
+            capField.setText((doc.getLong("maxDiscount")?:50L).toString())
+            startField.setText(doc.getString("startDate").orEmpty())
+            endField.setText(doc.getString("endDate").orEmpty())
+            enabled.isChecked=doc.getBoolean("enabled")?:true
+        }
+        body.addView(button("SAVE OFFER",{
+            val title=titleField.text.toString().trim()
+            val message=messageField.text.toString().trim()
+            val code=codeField.text.toString().trim().uppercase(java.util.Locale.ROOT)
+            val percent=percentField.text.toString().toIntOrNull()
+            val cap=capField.text.toString().toIntOrNull()
+            val start=startField.text.toString().trim()
+            val end=endField.text.toString().trim()
+            if(title.isBlank()||code.isBlank()||percent==null||percent !in 1..100||cap==null||cap<1||cap>50){
+                Toast.makeText(this,"Enter valid title, coupon, percentage and max discount (up to ₹50).",Toast.LENGTH_LONG).show();return@button
+            }
+            if((start.isNotBlank()&&!start.matches(Regex("\\d{4}-\\d{2}-\\d{2}")))||(end.isNotBlank()&&!end.matches(Regex("\\d{4}-\\d{2}-\\d{2}")))||(start.isNotBlank()&&end.isNotBlank()&&start>end)){
+                Toast.makeText(this,"Use valid dates in YYYY-MM-DD format.",Toast.LENGTH_LONG).show();return@button
+            }
+            val data=hashMapOf<String,Any>("title" to title,"message" to message,"couponCode" to code,"discountPercent" to percent,"maxDiscount" to cap,"enabled" to enabled.isChecked,"updatedAt" to FieldValue.serverTimestamp())
+            data["startDate"]=start;data["endDate"]=end
+            db.collection("promotions").document("active").set(data).addOnSuccessListener{Toast.makeText(this,"Offer saved successfully.",Toast.LENGTH_LONG).show()}.addOnFailureListener{Toast.makeText(this,"Offer save failed: "+(it.localizedMessage?: ""),Toast.LENGTH_LONG).show()}
+        }),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
+        card("DEFAULT COUPON","HAPPYDIWALI","10% discount · Maximum ₹50")
+        addLine("Customers must enter the coupon at checkout. The discount is calculated on the item subtotal; delivery fee is separate.",12f,Color.GRAY)
+    }
+
     private fun deliveryPage(){
         addLine("Delivery Instructions",22f,ink,true)
         card("COD","Collect the order total","Collect cash from the customer and mark the order as delivered after delivery.")
