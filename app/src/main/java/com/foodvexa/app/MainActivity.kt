@@ -913,7 +913,7 @@ private fun correctedImageUrl(p:Product):String {
     // silently reappear on the customer menu.
     val name=p.name.trim().lowercase(java.util.Locale.ROOT)
     if(name=="dahi vada" || name=="dahi bhale") return "local://sweets/dahi_vada"
-    if(name=="dil kasual" || name=="dil kushal" || name=="dil kushaal") return "local://sweets/dil_kasual"
+    if(name.replace(Regex("[^a-z]"),"").startsWith("dil") && name.replace(Regex("[^a-z]"),"").contains("k")) return "local://sweets/dil_kasual"
     // Use the freshly uploaded, professionally cropped local photos for Snacks.
     // Unknown Snacks products remain image-free so stale Firestore URLs cannot return.
     if(p.category.equals("Snacks",ignoreCase=true)) return when(name){
