@@ -1474,17 +1474,45 @@ private fun showActiveOfferPopup(){
    val code=data["couponCode"]?.toString()?.takeIf{it.isNotBlank()}?:"HAPPYDIWALI"
    val percent=(data["discountPercent"] as? Number)?.toInt()?:10
    val cap=(data["maxDiscount"] as? Number)?.toInt()?:50
-   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(22),dp(22),dp(22),dp(18));background=GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(244,48,31),Color.rgb(255,111,25))).apply{cornerRadius=dp(22).toFloat()}}
-   panel.addView(label("✦  FOODVEXA  ✦",16f,true,Color.WHITE),LinearLayout.LayoutParams(-1,-2))
-   panel.addView(label(title,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,14,0,4))
-   panel.addView(label(message,19f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,4,0,10))
-   panel.addView(label("FLAT $percent% OFF  ·  UP TO ₹$cap",22f,true,Color.YELLOW).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,0,0,12))
+   val panel=LinearLayout(this).apply{
+    orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL
+    setPadding(dp(18),dp(18),dp(18),dp(16))
+    background=GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(48,0,43),Color.rgb(91,0,48),Color.rgb(38,0,48))).apply{
+     cornerRadius=dp(24).toFloat();setStroke(dp(2),Color.rgb(245,177,48))
+    }
+   }
+   panel.addView(label("✦  FOODVEXA  ✦",17f,true,Color.rgb(255,211,82)).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(-1,-2))
+   panel.addView(label("Taste the Happiness",12f,false,Color.WHITE).apply{gravity=Gravity.CENTER},margin(0,1,0,8))
+   panel.addView(label("🪔  Happy Diwali  🪔",27f,true,Color.rgb(255,205,73)).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,8,0,3))
+   panel.addView(label("SPECIAL FESTIVE OFFER",13f,true,Color.WHITE).apply{
+    gravity=Gravity.CENTER;background=GradientDrawable().apply{setColor(Color.rgb(171,20,34));cornerRadius=dp(18).toFloat();setStroke(dp(1),Color.rgb(255,190,58))};setPadding(dp(18),dp(7),dp(18),dp(7))
+   },margin(0,5,0,12))
+   panel.addView(label("FLAT $percent% OFF",30f,true,Color.rgb(255,211,73)).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,0,0,1))
+   panel.addView(label("UP TO ₹$cap OFF",19f,true,Color.WHITE).apply{gravity=Gravity.CENTER},margin(0,0,0,7))
+   panel.addView(label(message,15f,false,Color.rgb(255,235,220)).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,0,0,10))
    val bannerUrl=data["bannerUrl"]?.toString().orEmpty()
-   if(bannerUrl.startsWith("https://")){val banner=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};panel.addView(banner,LinearLayout.LayoutParams(-1,dp(125)).apply{topMargin=dp(8);bottomMargin=dp(8)});loadImage(banner,bannerUrl)}
-   panel.addView(label("Use Coupon Code",14f,false,Color.WHITE).apply{gravity=Gravity.CENTER})
-   panel.addView(label(code,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER;background=rounded(Color.rgb(160,28,25),12);setPadding(dp(15),dp(10),dp(15),dp(10))},margin(0,6,0,14))
-   val dialog=AlertDialog.Builder(this).setView(panel).setNegativeButton("NOT NOW",null).setPositiveButton("ORDER NOW",null).create()
-   dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss();showCart()}}
+   if(bannerUrl.startsWith("https://")){val banner=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};panel.addView(banner,LinearLayout.LayoutParams(-1,dp(112)).apply{topMargin=dp(4);bottomMargin=dp(10)});loadImage(banner,bannerUrl)}
+   panel.addView(label("USE COUPON CODE",13f,true,Color.WHITE).apply{gravity=Gravity.CENTER},margin(0,2,0,6))
+   val couponRow=LinearLayout(this).apply{
+    orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL
+    background=GradientDrawable().apply{setColor(Color.rgb(112,8,38));cornerRadius=dp(12).toFloat();setStroke(dp(2),Color.rgb(255,205,45))}
+    setPadding(dp(12),dp(9),dp(10),dp(9))
+   }
+   couponRow.addView(label(code,20f,true,Color.rgb(255,221,69)).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(0,dp(42),1f))
+   val copy=TextView(this).apply{text="▢  COPY";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);setTextColor(Color.WHITE);gravity=Gravity.CENTER;background=rounded(Color.rgb(176,35,39),9);setPadding(dp(10),dp(8),dp(10),dp(8))}
+   couponRow.addView(copy,LinearLayout.LayoutParams(-2,dp(40)))
+   copy.setOnClickListener{
+    val clipboard=getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Foodvexa coupon",code))
+    Toast.makeText(this,"Coupon code copied: $code",Toast.LENGTH_SHORT).show()
+   }
+   panel.addView(couponRow,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(2);bottomMargin=dp(12)})
+   val dialog=AlertDialog.Builder(this).setView(panel).setNegativeButton("NOT NOW",null).setPositiveButton("🛒  ORDER NOW",null).create()
+   dialog.setOnShowListener{
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.rgb(255,190,48))
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.rgb(110,65,115))
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss();showCart()}
+   }
    dialog.show()
   }.addOnFailureListener{android.util.Log.w("FoodvexaOffer","Could not load active offer",it)}
 }
