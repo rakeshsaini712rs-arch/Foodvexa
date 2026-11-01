@@ -1103,14 +1103,19 @@ class AdminActivity : Activity() {
         val price=EditText(this).apply{hint="Price (₹)";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true;setText(product?.get("price")?.toString().orEmpty())}
         val image=EditText(this).apply{hint="Product image URL (optional)";isSingleLine=true;setText(product?.get("imageUrl")?.toString().orEmpty())}
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(5)})}
-        val available=CheckBox(this).apply{text="Available";isChecked=product?.get("available")!=false}
-        panel.addView(available)
+        val availability=Spinner(this).apply{
+            adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
+            val current=product?.get("availabilityStatus")?.toString()?:if(product?.get("available")==false)"Sold Out" else "Available"
+            setSelection(listOf("Available","Sold Out","Coming Soon").indexOf(current).coerceAtLeast(0))
+        }
+        panel.addView(text("PRODUCT STATUS",12f,ink,true))
+        panel.addView(availability,LinearLayout.LayoutParams(-1,dp(48)))
         android.app.AlertDialog.Builder(this).setTitle(if(id==null)"Add product · $selectedPartner" else "Edit product · $selectedPartner")
             .setView(panel).setNegativeButton("Cancel",null).setPositiveButton("Save"){_,_->
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
                 val savePartner=if(selectedPartner.equals("Ganpati Restaurant",true)) "Ganpati Restaurant" else "FOODVEXA"
-                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to available.isChecked,"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
+                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to (availability.selectedItem.toString()=="Available"),"availabilityStatus" to availability.selectedItem.toString(),"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
                 // Keep each partner's product in its own stable Firestore document.
                 // Never write a Ganpati edit into the shared Foodvexa/fallback record.
                 val productKey=n.lowercase(java.util.Locale.ROOT).replace(Regex("[^a-z0-9]+"),"-").trim('-')
