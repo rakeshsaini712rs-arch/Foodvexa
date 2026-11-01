@@ -1477,6 +1477,8 @@ private fun showActiveOfferPopup(){
    panel.addView(label(title,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,14,0,4))
    panel.addView(label(message,19f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,4,0,10))
    panel.addView(label("FLAT $percent% OFF  ·  UP TO ₹$cap",22f,true,Color.YELLOW).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,0,0,12))
+   val bannerUrl=data["bannerUrl"]?.toString().orEmpty()
+   if(bannerUrl.startsWith("https://")){val banner=ImageView(this).apply{scaleType=ImageView.ScaleType.CENTER_CROP};panel.addView(banner,LinearLayout.LayoutParams(-1,dp(125)).apply{topMargin=dp(8);bottomMargin=dp(8)});loadImage(banner,bannerUrl)}
    panel.addView(label("Use Coupon Code",14f,false,Color.WHITE).apply{gravity=Gravity.CENTER})
    panel.addView(label(code,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER;background=rounded(Color.rgb(160,28,25),12);setPadding(dp(15),dp(10),dp(15),dp(10))},margin(0,6,0,14))
    val dialog=AlertDialog.Builder(this).setView(panel).setNegativeButton("NOT NOW",null).setPositiveButton("ORDER NOW",null).create()
@@ -1521,10 +1523,10 @@ private fun showCart(){
    details.addView(label(p.name,16f,true,primaryText))
    details.addView(label("₹${p.price} each  •  ₹${p.price*qty}",13f,false,secondaryText),margin(0,4,0,0))
    card.addView(details,LinearLayout.LayoutParams(0,-2,1f))
-   val minus=quantityButton("−"){if((cart[name]?:0)>1)cart[name]=(cart[name]?:0)-1 else cart.remove(name);saveCart();updateCartBadge();showCart()}
+   val minus=quantityButton("−"){if((cart[name]?:0)>1)cart[name]=(cart[name]?:0)-1 else cart.remove(name);appliedCouponCode="";appliedDiscount=0;saveCart();updateCartBadge();showCart()}
    card.addView(minus,LinearLayout.LayoutParams(dp(40),dp(40)))
    card.addView(label(qty.toString(),16f,true,primaryText).apply{gravity=Gravity.CENTER},LinearLayout.LayoutParams(dp(32),dp(38)))
-   val plus=quantityButton("+"){cart[name]=(cart[name]?:0)+1;saveCart();updateCartBadge();showCart()}
+   val plus=quantityButton("+"){cart[name]=(cart[name]?:0)+1;appliedCouponCode="";appliedDiscount=0;saveCart();updateCartBadge();showCart()}
    card.addView(plus,LinearLayout.LayoutParams(dp(40),dp(40)))
    content.addView(card,margin(0,0,0,10))
   }
@@ -1544,7 +1546,7 @@ private fun showCart(){
  val payableTotal=(subtotal-appliedDiscount).coerceAtLeast(0)+deliveryFee
  content.addView(label("Discount: −₹$appliedDiscount",14f,true,if(appliedDiscount>0)Color.rgb(36,170,105) else secondaryText),margin(0,0,0,5))
  content.addView(label("Total: ₹$payableTotal",22f,true,primaryText),margin(0,0,0,14))
- content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+deliveryFee}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
+ content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${(subtotal-appliedDiscount).coerceAtLeast(0)+deliveryFee}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
  orderStatusListener?.remove()
  orderStatusListener=null
