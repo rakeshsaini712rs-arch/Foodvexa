@@ -360,7 +360,7 @@ class PartnerActivity : Activity() {
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(6)})}
         panel.addView(button("SELECT PHOTO FROM GALLERY",{chooseProductImage()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
         val availability=Spinner(this).apply{
-            adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
+            adapter=ArrayAdapter(this@PartnerActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
             val current=old?.get("availabilityStatus")?.toString()?:if(old?.get("available")==false)"Sold Out" else "Available"
             setSelection(listOf("Available","Sold Out","Coming Soon").indexOf(current).coerceAtLeast(0))
         }
