@@ -236,10 +236,14 @@ class PartnerActivity : Activity() {
             val name=p["name"]?.toString()?: "Unnamed product"
             card.addView(label(name,17f,ink,true))
             card.addView(label((p["category"]?.toString()?: "Uncategorized")+"  ·  ₹"+(p["price"]?.toString()?: "0"),14f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
-            val available=p["available"]!=false
-            card.addView(label(if(available)"Available" else "Sold out",12f,if(available)green else Color.RED,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
+            val currentStatus=p["availabilityStatus"]?.toString()?.takeIf{it in listOf("Available","Sold Out","Coming Soon")}?:if(p["available"]==false)"Sold Out" else "Available"
+            val statusColor=when(currentStatus){"Available"->green;"Coming Soon"->Color.rgb(190,120,20);else->Color.RED}
+            card.addView(label(currentStatus,12f,statusColor,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(4)})
             card.addView(button("EDIT PRICE / DETAILS",{productDialog(id,p)},orange),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10);bottomMargin=dp(6)})
-            card.addView(button(if(available)"REQUEST SOLD OUT" else "REQUEST AVAILABLE",{submitAvailabilityChange(id,p,!available)},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2))
+            card.addView(button("REQUEST STATUS CHANGE",{
+                val choices=arrayOf("Available","Sold Out","Coming Soon")
+                android.app.AlertDialog.Builder(this).setTitle("Request product status").setItems(choices){_,which->submitAvailabilityChange(id,p,choices[which])}.show()
+            },Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2))
             body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(10)})
         }
     }
@@ -336,13 +340,14 @@ class PartnerActivity : Activity() {
             Toast.makeText(this,"Image upload failed: "+(e.localizedMessage?:"Check Firebase Storage setup and rules."),Toast.LENGTH_LONG).show()
         }
     }
-    private fun submitAvailabilityChange(id:String,old:Map<String,Any>,available:Boolean){
+    private fun submitAvailabilityChange(id:String,old:Map<String,Any>,status:String){
         val product=HashMap<String,Any>()
         old.forEach{(k,v)->if(v!=null)product[k]=v}
-        product["available"]=available
+        product["availabilityStatus"]=status
+        product["available"]=status=="Available"
         product["updatedAt"]=FieldValue.serverTimestamp()
         val change=hashMapOf<String,Any>("partnerId" to partnerId,"partnerName" to partnerName,"productId" to id,"isNewProduct" to false,"product" to product,"status" to "pending","submittedAt" to FieldValue.serverTimestamp())
-        db.collection("partnerProductChanges").add(change).addOnSuccessListener{Toast.makeText(this,"Availability change sent for admin approval.",Toast.LENGTH_LONG).show()}.addOnFailureListener{Toast.makeText(this,"Request failed: "+(it.localizedMessage?:""),Toast.LENGTH_LONG).show()}
+        db.collection("partnerProductChanges").add(change).addOnSuccessListener{Toast.makeText(this,"$status request sent for admin approval.",Toast.LENGTH_LONG).show()}.addOnFailureListener{Toast.makeText(this,"Request failed: "+(it.localizedMessage?:""),Toast.LENGTH_LONG).show()}
     }
     private fun productDialog(id:String?,old:Map<String,Any>?){
         val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(8),dp(18),0)}
