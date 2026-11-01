@@ -1150,10 +1150,14 @@ filtered.forEachIndexed{index,p->
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
  private fun findCartProduct(name:String):Product? {
-  val halfKg=name.endsWith("::500g",true)
-  val baseName=if(halfKg)name.removeSuffix("::500g") else name
+  val parts=name.split("::",limit=2)
+  val baseName=parts[0]
+  val grams=parts.getOrNull(1)?.removeSuffix("g")?.toIntOrNull()
   val p=currentMenuProducts().firstOrNull{it.name.equals(baseName,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(baseName,true)} ?: products.firstOrNull{it.name.equals(baseName,true)} ?: return null
-  return if(halfKg) p.copy(name=p.name+" (500 g)",price=p.price/2,unit="500 g") else p
+  if(grams==null)return p
+  val weightLabel=if(grams%1000==0) (grams/1000).toString()+" KG" else if(grams>1000) (grams/1000).toString()+"."+((grams%1000)/100).toString()+" KG" else grams.toString()+" g"
+  val scaledPrice=(p.price*grams+500)/1000
+  return p.copy(name=p.name+" ("+weightLabel+")",price=scaledPrice,unit=weightLabel)
  }
  private fun productStatus(p:Product):String {
   val key=p.name.lowercase(java.util.Locale.ROOT)
@@ -1310,7 +1314,7 @@ private fun placeOrderAndShowOrders(){
  dialog.show()
 }
 private fun submitOrder(customerName:String,customerMobile:String,deliveryAddress:String,scheduledFor:String=""){
- val partnerIdsForCart=cart.keys.mapNotNull{productPartnerIds[it.removeSuffix("::500g").lowercase(java.util.Locale.ROOT)]}.distinct()
+ val partnerIdsForCart=cart.keys.mapNotNull{productPartnerIds[it.substringBefore("::").lowercase(java.util.Locale.ROOT)]}.distinct()
  if(partnerIdsForCart.isEmpty()){Toast.makeText(this,"Shop details unavailable. Please refresh menu and try again.",Toast.LENGTH_LONG).show();return}
  checkPartnerSchedules(partnerIdsForCart){allowed,reason->
   if(!allowed){Toast.makeText(this,reason,Toast.LENGTH_LONG).show();return@checkPartnerSchedules}
@@ -1352,7 +1356,7 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->
   val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"unit" to p.unit,"lineTotal" to p.price*qty)
-  val key=name.removeSuffix("::500g").lowercase(java.util.Locale.ROOT)
+  val key=name.substringBefore("::").lowercase(java.util.Locale.ROOT)
   productPartnerIds[key]?.let{item["partnerId"]=it}
   productPartnerNames[key]?.takeIf{it.isNotBlank()}?.let{item["partnerName"]=it}
   item
@@ -1398,11 +1402,36 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
 }
 private fun showSweetWeightPicker(p:Product){
  if(isProductSoldOut(p)){Toast.makeText(this,"This product is not available.",Toast.LENGTH_SHORT).show();return}
- val options=arrayOf("500 ग्राम  ·  ₹${p.price/2}","1 KG  ·  ₹${p.price}")
- android.app.AlertDialog.Builder(this).setTitle(p.name+" – वजन चुनें").setItems(options){_,which->
-  val key=if(which==0)p.name+"::500g" else p.name
-  cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,if(which==0)"500 ग्राम जोड़ा गया" else "1 KG जोड़ा गया",Toast.LENGTH_SHORT).show();renderProducts()
- }.setNegativeButton("Cancel",null).show()
+ val gramsInput=EditText(this).apply{
+  hint="वजन ग्राम में लिखें (न्यूनतम 500)"
+  inputType=android.text.InputType.TYPE_CLASS_NUMBER
+  setText("500")
+  selectAll()
+ }
+ val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(8),dp(22),0)}
+ panel.addView(gramsInput,LinearLayout.LayoutParams(-1,dp(54)))
+ panel.addView(label("न्यूनतम 500 ग्राम • अधिकतम की कोई सीमा नहीं",12f,false,secondaryText),margin(0,4,0,0))
+ val preview=label("कीमत: ₹"+((p.price*500+500)/1000),15f,true,primaryText)
+ panel.addView(preview,margin(0,8,0,0))
+ gramsInput.addTextChangedListener(object:android.text.TextWatcher{
+  override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
+  override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
+   val g=s?.toString()?.toIntOrNull()
+   preview.text=if(g!=null&&g>=500)"कीमत: ₹"+((p.price*g+500)/1000) else "न्यूनतम 500 ग्राम दर्ज करें"
+  }
+  override fun afterTextChanged(s:android.text.Editable?){}
+ })
+ android.app.AlertDialog.Builder(this).setTitle(p.name+" – वजन चुनें").setView(panel)
+  .setPositiveButton("Add to Cart",null).setNegativeButton("Cancel",null).create().also{dialog->
+   dialog.setOnShowListener{dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener{
+    val grams=gramsInput.text.toString().toIntOrNull()
+    if(grams==null||grams<500){gramsInput.error="कम से कम 500 ग्राम चुनें";return@setOnClickListener}
+    val key=p.name+"::"+grams+"g"
+    cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge();dialog.dismiss()
+    Toast.makeText(this,grams.toString()+" ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show();renderProducts()
+   }}
+   dialog.show()
+  }
 }
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){if(isProductSoldOut(p)){Toast.makeText(this,if(productStatus(p)=="Coming Soon")"Coming Soon — ordering not started yet." else "This product is sold out.",Toast.LENGTH_LONG).show();return};cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
