@@ -533,7 +533,8 @@ class AdminActivity : Activity() {
             snap.documents.forEach{doc->
                 val product=doc.get("product") as? Map<String,Any>?:emptyMap()
                 addLine((doc.getString("partnerName")?:"Partner")+" · "+(product["name"]?.toString()?:"Product")+" · ₹"+(product["price"]?.toString()?:"—"),15f,ink,true)
-                addLine("Category: "+(product["category"]?.toString()?:"—")+"  ·  "+if(product["available"]==false)"Sold out request" else "Available",12f,Color.GRAY)
+                val requestedStatus=product["availabilityStatus"]?.toString()?:if(product["available"]==false)"Sold Out" else "Available"
+                addLine("Category: "+(product["category"]?.toString()?:"—")+"  ·  Requested status: "+requestedStatus,12f,Color.GRAY)
                 body.addView(button("APPROVE & PUBLISH",{
                     val productId=doc.getString("productId").orEmpty()
                     val ref=if(productId.isBlank())db.collection("menu").document() else db.collection("menu").document(productId)
@@ -735,47 +736,42 @@ class AdminActivity : Activity() {
             val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(13),dp(12),dp(13),dp(12));background=shape();elevation=dp(1).toFloat()}
             card.addView(text(p["name"]?.toString()?: "Unnamed product",15f,ink,true))
             card.addView(text((p["category"]?.toString()?: "Uncategorized")+" · ₹"+(p["price"]?.toString()?: "—"),13f,Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(3)})
-            val available=p["available"]!=false
-            card.addView(text(if(available)"● AVAILABLE" else "● SOLD OUT",12f,if(available)green else red,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+            val currentStatus=p["availabilityStatus"]?.toString()?.takeIf{it in listOf("Available","Sold Out","Coming Soon")}?:if(p["available"]==false)"Sold Out" else "Available"
+            val statusColor=when(currentStatus){"Available"->green;"Coming Soon"->Color.rgb(190,120,20);else->red}
+            card.addView(text("● "+currentStatus.uppercase(),12f,statusColor,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
             val actions=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-            actions.addView(button(if(available)"MARK SOLD OUT" else "MARK AVAILABLE",{
-                val productName=p["name"]?.toString()?.trim().orEmpty()
-                val nextAvailable=!available
-                val sourcePartner=p["partnerName"]?.toString()?.trim().orEmpty()
-                val ref=db.collection("menu").document(id.removePrefix("fallback:"))
-                val effectivePartner=if(selectedPartner.equals("Ganpati Restaurant",true))"Ganpati Restaurant" else sourcePartner.takeIf{it.isNotBlank()}?:selectedPartner
-                val data=HashMap(p).apply{put("available",nextAvailable);put("partnerName",effectivePartner);put("updatedAt",FieldValue.serverTimestamp())}
-                if(selectedPartner.equals("Ganpati Restaurant",true) && !sourcePartner.equals("Ganpati Restaurant",true)){
-                    val copyRef=db.collection("menu").document(productName.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()+"-ganpati")
-                    copyRef.set(data).addOnSuccessListener{Toast.makeText(this,"Ganpati availability changed separately; Foodvexa unchanged.",Toast.LENGTH_SHORT).show();showPage("Menu")}
-                        .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-                    return@button
-                }
-                // Update only the selected partner's matching products.
-                db.collection("menu").get()
-                    .addOnSuccessListener{snapshot->
+            actions.addView(button("CHANGE PRODUCT STATUS",{
+                val choices=arrayOf("Available","Sold Out","Coming Soon")
+                android.app.AlertDialog.Builder(this).setTitle("Set product status").setItems(choices){_,which->
+                    val nextStatus=choices[which]
+                    val nextAvailable=nextStatus=="Available"
+                    val productName=p["name"]?.toString()?.trim().orEmpty()
+                    val sourcePartner=p["partnerName"]?.toString()?.trim().orEmpty()
+                    val ref=db.collection("menu").document(id.removePrefix("fallback:"))
+                    val effectivePartner=if(selectedPartner.equals("Ganpati Restaurant",true))"Ganpati Restaurant" else sourcePartner.takeIf{it.isNotBlank()}?:selectedPartner
+                    val data=HashMap(p).apply{put("available",nextAvailable);put("availabilityStatus",nextStatus);put("partnerName",effectivePartner);put("updatedAt",FieldValue.serverTimestamp())}
+                    if(selectedPartner.equals("Ganpati Restaurant",true) && !sourcePartner.equals("Ganpati Restaurant",true)){
+                        val copyRef=db.collection("menu").document(productName.lowercase().replace(Regex("[^a-z0-9]+"),"-").trim('-')+"-"+System.currentTimeMillis()+"-ganpati")
+                        copyRef.set(data).addOnSuccessListener{Toast.makeText(this,"Ganpati status changed separately; Foodvexa unchanged.",Toast.LENGTH_SHORT).show();showPage("Menu")}
+                            .addOnFailureListener{Toast.makeText(this,"Status update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                        return@setItems
+                    }
+                    db.collection("menu").get().addOnSuccessListener{snapshot->
                         val partnerKey=(p["partnerName"]?.toString()?.takeIf{it.isNotBlank()}?:selectedPartner).trim()
                         val matches=snapshot.documents.filter{doc->
                             val storedPartner=doc.getString("partnerName")?.trim().orEmpty()
-                            val samePartner=storedPartner.equals(partnerKey,true) ||
-                                (storedPartner.isBlank() && selectedPartner.equals("FOODVEXA",true))
-                            doc.getString("name")?.trim().equals(productName,true) && samePartner
+                            val samePartner=storedPartner.equals(partnerKey,true)||(storedPartner.isBlank()&&selectedPartner.equals("FOODVEXA",true))
+                            doc.getString("name")?.trim().equals(productName,true)&&samePartner
                         }
                         val batch=db.batch()
                         if(matches.isEmpty()){
-                            if(id.startsWith("fallback:"))batch.set(ref,data)
-                            else batch.set(ref,data,com.google.firebase.firestore.SetOptions.merge())
-                        }else{
-                            matches.forEach{doc->
-                                batch.update(doc.reference,mapOf("available" to nextAvailable,"updatedAt" to FieldValue.serverTimestamp()))
-                            }
-                        }
-                        batch.commit()
-                            .addOnSuccessListener{Toast.makeText(this,if(nextAvailable)"Product is available." else "Product marked sold out.",Toast.LENGTH_SHORT).show();showPage("Menu")}
-                            .addOnFailureListener{Toast.makeText(this,"Availability update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-                    }
-                    .addOnFailureListener{Toast.makeText(this,"Could not check menu records: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
-            },if(available)Color.rgb(110,75,75) else green),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
+                            if(id.startsWith("fallback:"))batch.set(ref,data) else batch.set(ref,data,com.google.firebase.firestore.SetOptions.merge())
+                        }else matches.forEach{doc->batch.update(doc.reference,mapOf("available" to nextAvailable,"availabilityStatus" to nextStatus,"updatedAt" to FieldValue.serverTimestamp()))}
+                        batch.commit().addOnSuccessListener{Toast.makeText(this,"Product status set to $nextStatus.",Toast.LENGTH_SHORT).show();showPage("Menu")}
+                            .addOnFailureListener{Toast.makeText(this,"Status update failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                    }.addOnFailureListener{Toast.makeText(this,"Could not check menu records: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
+                }.show()
+            },Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("EDIT / PRICE",{productDialog(id,p)},Color.rgb(55,90,135)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(7)})
             actions.addView(button("DELETE",{android.app.AlertDialog.Builder(this).setTitle("Delete product?").setMessage("Delete "+(p["name"]?.toString()?: "this product")+" permanently?").setNegativeButton("Cancel",null).setPositiveButton("Delete"){_,_->
                 db.collection("menu").document(id).delete().addOnSuccessListener{Toast.makeText(this,"Product deleted.",Toast.LENGTH_SHORT).show()}.addOnFailureListener{Toast.makeText(this,"Delete failed: "+it.localizedMessage,Toast.LENGTH_LONG).show()}
