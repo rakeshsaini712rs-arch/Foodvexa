@@ -1075,7 +1075,7 @@ filtered.forEachIndexed{index,p->
     val qty=cart[p.name]?:0
     if(qty==0){
         if(isProductSoldOut(p)){
-            val sold=TextView(this).apply{text="Sold Out";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
+            val sold=TextView(this).apply{text=status;textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(Color.rgb(190,35,50),24)}
             bottom.addView(sold,LinearLayout.LayoutParams(0,dp(30),1.08f))
         }else{
         val add=primaryButton("Add to Cart"){addToCart(p);renderProducts()}
@@ -1134,9 +1134,11 @@ filtered.forEachIndexed{index,p->
  }
  private fun saveLocation(value:String,label:String,landmark:String=""){val v=value.trim();if(v.isBlank()||v.length<10||!v.contains(Regex("[,0-9]"))){Toast.makeText(this,"Please enter your complete address, including house/shop number, street or area, and city.",Toast.LENGTH_LONG).show();return};val full=if(landmark.trim().isBlank())v else "$v\nLandmark: ${landmark.trim()}";val e=prefs.edit().putString("location",full).putString("location_label",label).putString("delivery_landmark",landmark.trim());when(label){"Home"->e.putString("home_address",full);"Work"->e.putString("work_address",full);"Delivery"->e.putString("delivery_address",full)};e.apply();showHome()}
  private val productAvailability=mutableMapOf<String,Boolean>()
+ private val productAvailabilityStatus=mutableMapOf<String,String>()
  private val productPartnerIds=mutableMapOf<String,String>()
  private val productPartnerNames=mutableMapOf<String,String>()
  private val ganpatiAvailability=mutableMapOf<String,Boolean>()
+ private val ganpatiAvailabilityStatus=mutableMapOf<String,String>()
  private var ganpatiMenuProducts:List<Product> = emptyList()
  private fun currentMenuProducts():List<Product> = if(selectedPartnerShop=="Ganpati Restaurant") ganpatiMenuProducts else products
  private fun findCartProduct(name:String):Product? = currentMenuProducts().firstOrNull{it.name.equals(name,true)} ?: ganpatiMenuProducts.firstOrNull{it.name.equals(name,true)} ?: products.firstOrNull{it.name.equals(name,true)}
@@ -1366,7 +1368,7 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
    Toast.makeText(this,"Order save nahi hua. Error screen par dekhein.",Toast.LENGTH_LONG).show()
   }
 }
-private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
+private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){if(isProductSoldOut(p)){Toast.makeText(this,if(productStatus(p)=="Coming Soon")"Coming Soon — ordering not started yet." else "This product is sold out.",Toast.LENGTH_LONG).show();return};cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
 private val paymentStatus:String get()=prefs.getString("payment_status","Pending").orEmpty()
 private fun hideKeyboard(){try{val imm=getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager;val v=currentFocus ?: root;imm.hideSoftInputFromWindow(v.windowToken,0);v.clearFocus()}catch(_:Exception){}}
 private fun bannerGrid():HorizontalScrollView{
