@@ -1100,7 +1100,7 @@ class AdminActivity : Activity() {
         val image=EditText(this).apply{hint="Product image URL (optional)";isSingleLine=true;setText(product?.get("imageUrl")?.toString().orEmpty())}
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(5)})}
         val availability=Spinner(this).apply{
-            adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
+            adapter=ArrayAdapter(this@AdminActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
             val current=product?.get("availabilityStatus")?.toString()?:if(product?.get("available")==false)"Sold Out" else "Available"
             setSelection(listOf("Available","Sold Out","Coming Soon").indexOf(current).coerceAtLeast(0))
         }
