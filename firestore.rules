@@ -14,6 +14,10 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
     }
+    match /promotions/{promotionId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
     match /app_config/update {
       allow read: if true;
       allow write: if false;
