@@ -1078,9 +1078,9 @@ filtered.forEachIndexed{index,p->
     bottom.addView(label("₹${p.price}/${if(p.unit.equals("KG",true))"kg" else "piece"}",11.5f,true,Color.WHITE).apply{setSingleLine(true);ellipsize=android.text.TextUtils.TruncateAt.END;includeFontPadding=false},LinearLayout.LayoutParams(0,dp(36),0.92f))
     val qty=if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true))cart.filterKeys{it==p.name||it.startsWith(p.name+"::")}.values.sum() else (cart[p.name]?:0)
     if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true)){
-        val choose=primaryButton(if(qty>0)"Choose weight · $qty" else "Choose weight"){if(!isProductSoldOut(p))showSweetWeightPicker(p)}
-        choose.setTextSize(11f);choose.isEnabled=!isProductSoldOut(p)
-        bottom.addView(choose,LinearLayout.LayoutParams(0,dp(32),1.08f))
+        val add=primaryButton("Add to Cart"){if(!isProductSoldOut(p))showSweetWeightPicker(p)}
+        add.setTextSize(12f);add.isEnabled=!isProductSoldOut(p)
+        bottom.addView(add,LinearLayout.LayoutParams(0,dp(32),1.08f))
     }else if(qty==0){
         if(isProductSoldOut(p)){
             val sold=TextView(this).apply{text=availabilityLabel;textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD);gravity=Gravity.CENTER;setTextColor(Color.WHITE);background=rounded(if(availabilityLabel=="Coming Soon")Color.rgb(180,115,25) else Color.rgb(190,35,50),24)}
