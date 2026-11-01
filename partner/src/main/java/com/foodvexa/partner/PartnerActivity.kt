@@ -356,8 +356,12 @@ class PartnerActivity : Activity() {
         val category=field("Category",old?.get("category")?.toString().orEmpty())
         val price=field("Price in ₹",old?.get("price")?.toString().orEmpty(),InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
         val image=field("Image URL (optional)",old?.get("imageUrl")?.toString().orEmpty())
+        val unitOptions=listOf("Piece","KG")
+        val unit=Spinner(this).apply{adapter=ArrayAdapter(this@PartnerActivity,android.R.layout.simple_spinner_dropdown_item,unitOptions);setSelection(unitOptions.indexOf(old?.get("unit")?.toString()?.uppercase()?.let{if(it=="KG")"KG" else "Piece"}?: "Piece").coerceAtLeast(0))}
         imageUrlField=image
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(6)})}
+        panel.addView(TextView(this).apply{text="SELLING UNIT";textSize=12f;setTypeface(typeface,android.graphics.Typeface.BOLD)})
+        panel.addView(unit,LinearLayout.LayoutParams(-1,dp(48)))
         panel.addView(button("SELECT PHOTO FROM GALLERY",{chooseProductImage()},Color.rgb(75,75,82)),LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(8)})
         val availability=Spinner(this).apply{
             adapter=ArrayAdapter(this@PartnerActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
@@ -370,7 +374,7 @@ class PartnerActivity : Activity() {
             dialog.setOnShowListener{dialog.getButton(-1).setOnClickListener{
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val pr=price.text.toString().trim().toDoubleOrNull()
                 if(n.isBlank()||cat.isBlank()||pr==null||pr<0){Toast.makeText(this,"Enter product name, category and a valid price.",Toast.LENGTH_LONG).show();return@setOnClickListener}
-                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to pr,"imageUrl" to image.text.toString().trim(),"available" to (availability.selectedItem.toString()=="Available"),"availabilityStatus" to availability.selectedItem.toString(),"partnerId" to partnerId,"partnerName" to partnerName,"updatedAt" to FieldValue.serverTimestamp())
+                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to pr,"imageUrl" to image.text.toString().trim(),"available" to (availability.selectedItem.toString()=="Available"),"availabilityStatus" to availability.selectedItem.toString(),"unit" to unit.selectedItem.toString(),"partnerId" to partnerId,"partnerName" to partnerName,"updatedAt" to FieldValue.serverTimestamp())
                 val change=hashMapOf<String,Any>("partnerId" to partnerId,"partnerName" to partnerName,"productId" to (id?: ""),"isNewProduct" to (id==null),"product" to data,"status" to "pending","submittedAt" to FieldValue.serverTimestamp())
                 dialog.getButton(-1).isEnabled=false
                 db.collection("partnerProductChanges").add(change).addOnSuccessListener{dialog.dismiss();Toast.makeText(this,"Submitted for admin review.",Toast.LENGTH_LONG).show()}.addOnFailureListener{dialog.getButton(-1).isEnabled=true;Toast.makeText(this,"Submit failed: "+(it.localizedMessage?:"check partner access"),Toast.LENGTH_LONG).show()}
