@@ -1218,7 +1218,7 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   val unit=doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
+   val unit=if(category.equals("Sweets",true))"KG" else doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
    foodvexaLive.add(Product(name,price,category,image,unit=unit))
   }
   val foodvexaNames=foodvexaLive.map{it.name}
@@ -1244,7 +1244,7 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   val unit=doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
+   val unit=if(category.equals("Sweets",true))"KG" else doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
    ganpatiLive.add(Product(name,price,category,image,unit=unit))
   }
   // Publish only approved Ganpati-owned menu records into the Ganpati Restaurant card.
