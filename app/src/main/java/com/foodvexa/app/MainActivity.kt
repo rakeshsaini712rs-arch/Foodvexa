@@ -40,7 +40,7 @@ import android.location.LocationManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
-data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min")
+data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min",val unit:String="Piece")
 data class Category(val name:String,val imageUrl:String)
 
 class MainActivity:AppCompatActivity(){
@@ -1073,7 +1073,7 @@ filtered.forEachIndexed{index,p->
     val availabilityColor=when(availabilityLabel){"Available"->Color.rgb(50,205,120);"Coming Soon"->Color.rgb(255,190,70);else->Color.rgb(230,55,65)}
     card.addView(label("• $availabilityLabel",10.5f,true,availabilityColor),margin(0,4,0,0))
     val bottom=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
-    bottom.addView(label("₹${p.price}",15f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
+    bottom.addView(label("₹${p.price} / ${if(p.unit.equals("KG",true))"kg" else "piece"}",13.5f,true,Color.WHITE),LinearLayout.LayoutParams(0,dp(30),0.92f))
     val qty=cart[p.name]?:0
     if(qty==0){
         if(isProductSoldOut(p)){
@@ -1207,7 +1207,8 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   foodvexaLive.add(Product(name,price,category,image))
+   val unit=doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
+   foodvexaLive.add(Product(name,price,category,image,unit=unit))
   }
   val foodvexaNames=foodvexaLive.map{it.name}
   products.clear()
@@ -1232,7 +1233,8 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   ganpatiLive.add(Product(name,price,category,image))
+   val unit=doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
+   ganpatiLive.add(Product(name,price,category,image,unit=unit))
   }
   // Publish only approved Ganpati-owned menu records into the Ganpati Restaurant card.
   ganpatiMenuProducts=ganpatiLive
@@ -1338,7 +1340,7 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
  val total=subtotal-discount+deliveryFee
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->
-  val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)
+  val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"unit" to p.unit,"lineTotal" to p.price*qty)
   val key=p.name.lowercase(java.util.Locale.ROOT)
   productPartnerIds[key]?.let{item["partnerId"]=it}
   productPartnerNames[key]?.takeIf{it.isNotBlank()}?.let{item["partnerName"]=it}
