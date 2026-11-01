@@ -1099,7 +1099,11 @@ class AdminActivity : Activity() {
         val category=EditText(this).apply{hint="Category";isSingleLine=true;setText(product?.get("category")?.toString()?:if(selectedMenuCategory=="All Products")"" else selectedMenuCategory)}
         val price=EditText(this).apply{hint="Price (₹)";inputType=android.text.InputType.TYPE_CLASS_NUMBER;isSingleLine=true;setText(product?.get("price")?.toString().orEmpty())}
         val image=EditText(this).apply{hint="Product image URL (optional)";isSingleLine=true;setText(product?.get("imageUrl")?.toString().orEmpty())}
+        val unitOptions=listOf("Piece","KG")
+        val unit=Spinner(this).apply{adapter=ArrayAdapter(this@AdminActivity,android.R.layout.simple_spinner_dropdown_item,unitOptions);setSelection(unitOptions.indexOf(product?.get("unit")?.toString()?.uppercase()?.let{if(it=="KG")"KG" else "Piece"}?: "Piece").coerceAtLeast(0))}
         listOf(name,category,price,image).forEach{panel.addView(it,LinearLayout.LayoutParams(-1,dp(50)).apply{bottomMargin=dp(5)})}
+        panel.addView(text("SELLING UNIT",12f,ink,true))
+        panel.addView(unit,LinearLayout.LayoutParams(-1,dp(48)))
         val availability=Spinner(this).apply{
             adapter=ArrayAdapter(this@AdminActivity,android.R.layout.simple_spinner_dropdown_item,listOf("Available","Sold Out","Coming Soon"))
             val current=product?.get("availabilityStatus")?.toString()?:if(product?.get("available")==false)"Sold Out" else "Available"
@@ -1112,7 +1116,7 @@ class AdminActivity : Activity() {
                 val n=name.text.toString().trim();val cat=category.text.toString().trim();val p=price.text.toString().toIntOrNull();val url=image.text.toString().trim()
                 if(n.isBlank()||cat.isBlank()||p==null||p<0){Toast.makeText(this,"Enter a name, category, and valid price.",Toast.LENGTH_LONG).show();return@setPositiveButton}
                 val savePartner=if(selectedPartner.equals("Ganpati Restaurant",true)) "Ganpati Restaurant" else "FOODVEXA"
-                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to (availability.selectedItem.toString()=="Available"),"availabilityStatus" to availability.selectedItem.toString(),"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
+                val data=hashMapOf<String,Any>("name" to n,"category" to cat,"price" to p,"imageUrl" to url,"available" to (availability.selectedItem.toString()=="Available"),"availabilityStatus" to availability.selectedItem.toString(),"unit" to unit.selectedItem.toString(),"partnerName" to savePartner,"updatedAt" to FieldValue.serverTimestamp())
                 // Keep each partner's product in its own stable Firestore document.
                 // Never write a Ganpati edit into the shared Foodvexa/fallback record.
                 val productKey=n.lowercase(java.util.Locale.ROOT).replace(Regex("[^a-z0-9]+"),"-").trim('-')
