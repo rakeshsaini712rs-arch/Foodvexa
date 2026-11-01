@@ -54,7 +54,7 @@ class MainActivity:AppCompatActivity(){
  private val products=mutableListOf<Product>().apply{add(Product("Veg Burger",80,"Fast Food",foodImages[0]));add(Product("Masala Dosa",90,"Fast Food",foodImages[1]));add(Product("Veg Sandwich",70,"Fast Food",foodImages[3]));add(Product("Samosa",20,"Snacks",""));add(Product("Kachori",30,"Snacks",""));add(Product("Mirchi Bada",30,"Snacks",""));add(Product("Maggi",50,"Fast Food",foodImages[8]));add(Product("Vada Pav",50,"Fast Food",foodImages[11]));add(Product("Dahi Vada",60,"Chaat Special","local://sweets/dahi_vada"));add(Product("Indian Thali",120,"Meals","https://commons.wikimedia.org/wiki/Special:Redirect/file/Indian_Thali.jpg"));add(Product("Chole Bhature",80,"Meals",foodImages[2]));add(Product("Chole Kulche",60,"Meals",foodImages[7]));add(Product("Idli",60,"Meals",foodImages[10]));add(Product("Vada",50,"Meals","https://www.coimbatoretiffinstories.com/assets/meduvada.png"));add(Product("Masala Idli",60,"Meals","https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=85"));add(Product("Vada Pav",50,"Meals",foodImages[11]));add(Product("Veg Sandwich",60,"Meals",foodImages[3]));add(Product("Paneer Sandwich",80,"Meals","https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=85"));add(Product("Pav Bhaji",80,"Meals","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Veg Noodles",80,"Meals","https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=85"));add(Product("Veg Fried Rice",90,"Meals","https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=85"));add(Product("Chilli Potato",80,"Meals","https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=85"));add(Product("Black Forest Cake",350,"Birthday Special","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85"));add(Product("White Forest Cake",350,"Birthday Special","https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=800&q=85"));add(Product("Chocolate Cake",400,"Birthday Special","https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=85"));add(Product("Strawberry Cake",400,"Birthday Special","https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=800&q=85"));add(Product("Mango Cake",400,"Birthday Special","https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=800&q=85"));add(Product("Pineapple Cake",350,"Birthday Special","https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=85"));add(Product("Butterscotch Cake",400,"Birthday Special","local://sweets/butterscotch_cake"));add(Product("Oreo Cake",450,"Birthday Special","https://images.unsplash.com/photo-1571115177098-24ec42ed204d?auto=format&fit=crop&w=800&q=85"));add(Product("Red Velvet Cake",500,"Birthday Special","local://sweets/red_velvet_cake"));add(Product("KitKat Chocolate Cake",500,"Birthday Special","https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=85"));add(Product("Cupcake",30,"Birthday Special","https://images.unsplash.com/photo-1652284918100-1fd4a60e7356?auto=format&fit=crop&w=800&q=85"));add(Product("Cold Drink 200 ml",20,"Beverages","local://foodvexa/soft_drinks_assorted"));add(Product("Cold Drink 500 ml",40,"Beverages","local://foodvexa/soft_drinks_assorted"));add(Product("Cold Drink 1 L",60,"Beverages","local://foodvexa/soft_drinks_assorted"));add(Product("Cold Drink 2 L",90,"Beverages","local://foodvexa/soft_drinks_assorted"));add(Product("Mango Juice",40,"Beverages","local://foodvexa/mango_shake"));add(Product("Orange Juice",40,"Beverages","local://foodvexa/orange_juice"));add(Product("Pineapple Juice",40,"Beverages","local://foodvexa/pineapple_juice"));add(Product("Mosambi Juice",50,"Beverages","local://foodvexa/sweet_lime_juice"));add(Product("Watermelon Juice",40,"Beverages","local://foodvexa/watermelon_mint_juice"));add(Product("Mango Shake",60,"Beverages","local://foodvexa/mango_shake"));add(Product("Banana Shake",50,"Beverages","local://foodvexa/banana_milkshake"));add(Product("Chocolate Shake",70,"Beverages","local://foodvexa/chocolate_shake"));add(Product("Strawberry Shake",70,"Beverages","local://foodvexa/strawberry_shake"));add(Product("Oreo Shake",80,"Beverages","local://foodvexa/oreo_milkshake"));add(Product("Water Bottle 500 ml",10,"Beverages","local://foodvexa/bisleri_water_bottle"));add(Product("Water Bottle 1 L",20,"Beverages","local://foodvexa/bisleri_water_bottle"));add(Product("Besan Laddu",200,"Sweets","local://sweets/besan_laddu"));add(Product("Bundi Ladoo",400,"Sweets","local://sweets/bundi_ladoo"));add(Product("Motichoor Laddu",400,"Sweets","local://sweets/motichoor_laddu"));add(Product("Boondi",300,"Sweets","local://sweets/boondi"));add(Product("Gulab Jamun",250,"Sweets","local://sweets/gulab_jamun"));add(Product("Rasgulla",250,"Sweets","local://sweets/rasgulla"));add(Product("Jalebi",300,"Sweets","local://sweets/jalebi"));add(Product("Balushahi",300,"Sweets","local://sweets/balushahi"));add(Product("Milk Cake",500,"Sweets","local://sweets/milk_cake"));add(Product("Peda",450,"Sweets","local://sweets/peda"));add(Product("Kaju Katli",700,"Sweets","local://sweets/kaju_katli"));add(Product("Cham Cham",350,"Sweets","local://sweets/cham_cham"));add(Product("Kaju Roll",700,"Sweets","local://sweets/kaju_roll"));add(Product("Kaju Pista Roll",750,"Sweets","local://sweets/kaju_pista_roll"));add(Product("Gajar Halwa",350,"Sweets","local://sweets/gajar_halwa"));add(Product("Moong Dal Halwa",450,"Sweets","local://sweets/moong_dal_halwa"));add(Product("Kalakand",500,"Sweets","local://sweets/kalakand"));add(Product("Rasmalai",500,"Sweets","local://sweets/rasmalai"));add(Product("Rabri",400,"Sweets","local://sweets/rabri"));add(Product("Shahi Tukda",350,"Sweets","local://sweets/shahi_tukda"));add(Product("Rajbhog",20,"Sweets","local://sweets/rajbhog"));val names=listOf("Margherita Pizza","Classic Cheese Pizza","Double Cheese Pizza","Corn Cheese Pizza","Veg Loaded Pizza","Farmhouse Pizza","Paneer Tikka Pizza","Tandoori Paneer Pizza","Peri Peri Paneer Pizza","Mexican Green Wave Pizza","Veggie Paradise Pizza","Capsicum & Onion Pizza","Mushroom Pizza","Jalapeño Cheese Pizza","Cheese Burst Pizza","Paneer & Corn Pizza","Onion & Tomato Pizza");val prices=listOf(129,149,179,169,199,219,229,239,239,219,199,179,199,189,229,219,159);names.forEachIndexed{i,n->add(Product(n,prices[i],"Fast Food",pizzaImages[i]));};add(Product("Shahi Paneer",120,"Special Sabji","https://vaatsalyafoods.com/assets/images/Shahi_Paneer%20Medium.jpeg"));add(Product("Kadai Paneer",120,"Special Sabji","https://vaatsalyafoods.com/assets/images/Kadhai_Paneer%20Medium.jpeg"));add(Product("Paneer Butter Masala",130,"Special Sabji","https://images.unsplash.com/photo-1631452180539-96aca7d48617?auto=format&fit=crop&w=800&q=85"));add(Product("Matar Paneer",110,"Special Sabji","https://vaatsalyafoods.com/assets/images/Matar_Paneer%20Medium.jpeg"));add(Product("Palak Paneer",110,"Special Sabji","https://vaatsalyafoods.com/assets/images/Toddler_Palak_Paneer%20Medium.jpeg"));add(Product("Malai Kofta",120,"Special Sabji","https://vaatsalyafoods.com/assets/images/Malai_Kofta%20Medium.jpeg"));add(Product("Mix Veg",100,"Special Sabji","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Aloo Gobi",90,"Special Sabji","https://vaatsalyafoods.com/assets/images/Aloo_Gobhi%20Medium.jpeg"));add(Product("Dal Makhani",100,"Special Sabji","https://vaatsalyafoods.com/assets/images/Dal_Makhani%20Medium.jpeg"));add(Product("Dal Tadka",90,"Special Sabji","https://images.unsplash.com/photo-1626500155537-93690c24099f?auto=format&fit=crop&w=800&q=85"));add(Product("Chole Masala",90,"Special Sabji","https://vaatsalyafoods.com/assets/images/Chole%20Medium.jpeg"));add(Product("Rajma Masala",100,"Special Sabji","https://vaatsalyafoods.com/assets/images/Rajma%20Medium.jpeg"));add(Product("Sev Tamatar",90,"Special Sabji","https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=85"));add(Product("Gatte Ki Sabji",100,"Special Sabji","https://vaatsalyafoods.com/assets/images/Gatta_Rajasthani%20Medium.jpeg"));add(Product("Ker Sangri",120,"Special Sabji","https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=85"));add(Product("Aloo Pyaz",90,"Special Sabji","https://vaatsalyafoods.com/assets/images/Aloo_Matar%20Medium.jpeg"));add(Product("Bhindi Masala",100,"Special Sabji","https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&w=800&q=85"));add(Product("Baingan Bharta",100,"Special Sabji","https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=85"));add(Product("Dum Aloo",110,"Special Sabji","https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=84"));add(Product("Mushroom Masala",120,"Special Sabji","https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=800&q=85"));add(Product("Methi Matar Malai",120,"Special Sabji","https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=84"));add(Product("Paneer Tikka Masala",130,"Special Sabji","https://images.unsplash.com/photo-1631452180539-96aca7d48617?auto=format&fit=crop&w=800&q=84"));add(Product("Achari Paneer",120,"Special Sabji","https://images.unsplash.com/photo-1631452180775-5e8d5f1f1c0f?auto=format&fit=crop&w=800&q=84"));add(Product("Chilli Paneer",130,"Special Sabji","https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=800&q=84"));add(Product("Mushroom Do Pyaza",120,"Special Sabji","https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=800&q=85"));add(Product("Kaju Curry",140,"Special Sabji","https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=800&q=85"));add(Product("Navratan Korma",130,"Special Sabji","https://images.unsplash.com/photo-1585937421612-70a008356fbe?auto=format&fit=crop&w=800&q=84"));add(Product("Veg Kolhapuri",110,"Special Sabji","https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=84"));add(Product("Handi Paneer",130,"Special Sabji","https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=800&q=83"));add(Product("Paneer Do Pyaza",120,"Special Sabji","https://images.unsplash.com/photo-1631452180775-5e8d5f1f1c0f?auto=format&fit=crop&w=800&q=83"));add(Product("Dum Paneer",130,"Special Sabji","https://images.unsplash.com/photo-1631452180539-96aca7d48617?auto=format&fit=crop&w=800&q=83"));add(Product("Corn Palak",110,"Special Sabji","https://vaatsalyafoods.com/assets/images/Saag%20Medium.jpeg"));add(Product("Aloo Matar",90,"Special Sabji","https://vaatsalyafoods.com/assets/images/Aloo_Matar%20Medium.jpeg"));add(Product("Matar Mushroom",120,"Special Sabji","https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=800&q=84"));add(Product("Lasooni Palak",110,"Special Sabji","https://vaatsalyafoods.com/assets/images/Saag%20Medium.jpeg"));}
  private val builtInProducts=products.toList()
  private val categories=listOf(Category("Restaurant / Hotel","local://foodvexa/category_restaurant_hotel"),Category("Deals & Offers","local://foodvexa/category_deals_offers"),Category("All","local://foodvexa/category_all_food"),Category("Fast Food","local://foodvexa/category_fast_food"),Category("Snacks","local://foodvexa/category_snacks"),Category("Chaat Special","local://foodvexa/category_chaat_special"),Category("Meals","local://meals/indian_thali"),Category("Birthday Special","local://foodvexa/category_birthday_special"),Category("Beverages","local://foodvexa/category_beverages"),Category("Sweets","local://foodvexa/category_sweets"),Category("Special Sabji","local://sabji/paneer_recipe_01"))
- private val cart=linkedMapOf<String,Int>();private lateinit var root:FrameLayout;private lateinit var content:LinearLayout;private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;private var categoryRow:LinearLayout?=null;private var stickyCategoryRow:LinearLayout?=null;private var orderStatusListener:ListenerRegistration?=null;private var menuListener:ListenerRegistration?=null;private var orderCardsContainer:LinearLayout?=null;private val prefs by lazy{getSharedPreferences("foodvexa",MODE_PRIVATE)};private var selectedCategory="Deals & Offers";private var selectedPartnerShop="";private var query="";
+ private val cart=linkedMapOf<String,Int>();private var promoPopupShown=false;private var appliedCouponCode="";private var appliedDiscount=0;private lateinit var root:FrameLayout;private lateinit var content:LinearLayout;private var searchBox:EditText?=null;private var cartNavLabel:TextView?=null;private var categoryRow:LinearLayout?=null;private var stickyCategoryRow:LinearLayout?=null;private var orderStatusListener:ListenerRegistration?=null;private var menuListener:ListenerRegistration?=null;private var orderCardsContainer:LinearLayout?=null;private val prefs by lazy{getSharedPreferences("foodvexa",MODE_PRIVATE)};private var selectedCategory="Deals & Offers";private var selectedPartnerShop="";private var query="";
 private fun updatePartnerCategoryVisibility(){
  val keep=setOf("Restaurant / Hotel","Deals & Offers","All","Snacks","Sweets")
  val row=categoryRow
@@ -119,7 +119,7 @@ private val orange=Color.rgb(255,90,54);private val green=Color.rgb(7,59,50);pri
    .setCancelable(true)
    .show()
  }
-});val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);checkForAppUpdate();loadCart();preloadCategoryImages();showHome()}
+});val forceLogin=getSharedPreferences("foodvexa",MODE_PRIVATE).getBoolean("force_login",false);if(forceLogin||FirebaseAuth.getInstance().currentUser==null){startActivity(Intent(this,LoginActivity::class.java).apply{putExtra("force_login",true);flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK});finish();return};window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);setContentView(R.layout.activity_main);root=findViewById(R.id.root);checkForAppUpdate();loadCart();preloadCategoryImages();showHome();root.post{showActiveOfferPopup()}}
  override fun onStart(){super.onStart();if(::root.isInitialized)loadSharedMenu()}
  override fun onStop(){menuListener?.remove();menuListener=null;super.onStop()}
  private fun setupBase(selectedNav:Int=0){setupHomeBase(selectedNav)}
@@ -1334,7 +1334,8 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
  val address=deliveryAddress
  if(user==null){Toast.makeText(this,"Please login again",Toast.LENGTH_LONG).show();return}
  val deliveryFee=if(subtotal>500) 0 else 30
- val total=subtotal+deliveryFee
+ val discount=appliedDiscount.coerceIn(0,50).coerceAtMost(subtotal)
+ val total=subtotal-discount+deliveryFee
  val orderRecord=summary+"\n\nDelivery fee: "+(if(deliveryFee==0) "FREE" else "₹"+deliveryFee)+"\nDelivery: "+(scheduledFor.ifBlank{"As soon as possible"})+"\nPayment: Cash on Delivery\nTotal: ₹"+total
  val items=cart.entries.mapNotNull{(name,qty)->findCartProduct(name)?.let{p->
   val item=hashMapOf<String,Any>("name" to p.name,"quantity" to qty,"price" to p.price,"lineTotal" to p.price*qty)
@@ -1353,6 +1354,8 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
   "itemsText" to summary,
   "partnerIds" to items.mapNotNull{it["partnerId"]?.toString()}.distinct(),
   "subtotal" to subtotal,
+  "couponCode" to appliedCouponCode,
+  "discount" to discount,
   "deliveryFee" to deliveryFee,
   "total" to total,
   "paymentMethod" to (if(paymentMethod.contains("UPI", ignoreCase=true)) "UPI" else "COD"),
@@ -1370,7 +1373,7 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
   .addOnSuccessListener{
    val orders=try{JSONArray(prefs.getString("orders","[]").orEmpty())}catch(_:Exception){JSONArray()}
    orders.put(orderRecord);prefs.edit().putString("orders",orders.toString()).putString("last_order",orderRecord).apply()
-   cart.clear();saveCart();updateCartBadge()
+   cart.clear();appliedCouponCode="";appliedDiscount=0;saveCart();updateCartBadge()
    Toast.makeText(this,"Order successfully placed",Toast.LENGTH_LONG).show();showOrders()
   }
   .addOnFailureListener{e->
@@ -1449,6 +1452,56 @@ private fun dealsOffersDialog(){
  panel.addView(label("Partner restaurant offers will appear here when available.",14f,false,secondaryText).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(12)})
  AlertDialog.Builder(this).setView(panel).setPositiveButton("Done",null).show()
 }
+
+private fun offerIsInDateRange(data:Map<String,Any>):Boolean{
+ val today=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Kolkata")).toString()
+ val start=data["startDate"]?.toString().orEmpty()
+ val end=data["endDate"]?.toString().orEmpty()
+ return (start.isBlank()||today>=start)&&(end.isBlank()||today<=end)
+}
+private fun showActiveOfferPopup(){
+ if(promoPopupShown||isFinishing||isDestroyed)return
+ promoPopupShown=true
+ FirebaseFirestore.getInstance().collection("promotions").document("active").get()
+  .addOnSuccessListener{doc->
+   if(isFinishing||isDestroyed||!doc.exists())return@addOnSuccessListener
+   val data=doc.data?:return@addOnSuccessListener
+   if(data["enabled"]!=true||!offerIsInDateRange(data))return@addOnSuccessListener
+   val title=data["title"]?.toString()?.takeIf{it.isNotBlank()}?:"Special Offer"
+   val message=data["message"]?.toString()?.takeIf{it.isNotBlank()}?:"Get 10% OFF on your order"
+   val code=data["couponCode"]?.toString()?.takeIf{it.isNotBlank()}?:"HAPPYDIWALI"
+   val percent=(data["discountPercent"] as? Number)?.toInt()?:10
+   val cap=(data["maxDiscount"] as? Number)?.toInt()?:50
+   val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER_HORIZONTAL;setPadding(dp(22),dp(22),dp(22),dp(18));background=GradientDrawable(GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(244,48,31),Color.rgb(255,111,25))).apply{cornerRadius=dp(22).toFloat()}}
+   panel.addView(label("✦  FOODVEXA  ✦",16f,true,Color.WHITE),LinearLayout.LayoutParams(-1,-2))
+   panel.addView(label(title,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,14,0,4))
+   panel.addView(label(message,19f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,4,0,10))
+   panel.addView(label("FLAT $percent% OFF  ·  UP TO ₹$cap",22f,true,Color.YELLOW).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER},margin(0,0,0,12))
+   panel.addView(label("Use Coupon Code",14f,false,Color.WHITE).apply{gravity=Gravity.CENTER})
+   panel.addView(label(code,25f,true,Color.WHITE).apply{gravity=Gravity.CENTER;textAlignment=View.TEXT_ALIGNMENT_CENTER;background=rounded(Color.rgb(160,28,25),12);setPadding(dp(15),dp(10),dp(15),dp(10))},margin(0,6,0,14))
+   val dialog=AlertDialog.Builder(this).setView(panel).setNegativeButton("NOT NOW",null).setPositiveButton("ORDER NOW",null).create()
+   dialog.setOnShowListener{dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener{dialog.dismiss();showCart()}}
+   dialog.show()
+  }.addOnFailureListener{android.util.Log.w("FoodvexaOffer","Could not load active offer",it)}
+}
+private fun applyOfferCoupon(code:String,subtotal:Int,result:(Boolean,String)->Unit){
+ val entered=code.trim().uppercase(java.util.Locale.ROOT)
+ if(entered.isBlank()){result(false,"Enter coupon code.");return}
+ FirebaseFirestore.getInstance().collection("promotions").document("active").get()
+  .addOnSuccessListener{doc->
+   val data=doc.data
+   if(data==null||data["enabled"]!=true||!offerIsInDateRange(data)){result(false,"This offer is not active.");return@addOnSuccessListener}
+   val actual=data["couponCode"]?.toString().orEmpty().uppercase(java.util.Locale.ROOT)
+   if(entered!=actual){result(false,"Invalid coupon code.");return@addOnSuccessListener}
+   val percent=(data["discountPercent"] as? Number)?.toInt()?:10
+   val cap=(data["maxDiscount"] as? Number)?.toInt()?:50
+   if(percent !in 1..100||cap !in 1..50){result(false,"Offer configuration is invalid.");return@addOnSuccessListener}
+   appliedCouponCode=actual
+   appliedDiscount=((subtotal*percent)/100).coerceAtMost(cap)
+   result(true,"Coupon applied! You saved ₹$appliedDiscount.")
+  }.addOnFailureListener{result(false,"Could not verify coupon. Please try again.")}
+}
+
 private fun showCart(){
  setupBase(3)
  content.addView(label("Your Cart",24f,true,primaryText),margin(0,8,0,12))
@@ -1477,10 +1530,20 @@ private fun showCart(){
   }
  }
  content.addView(label("Subtotal: ₹$subtotal",20f,true,primaryText),margin(0,10,0,6))
+ val couponInput=EditText(this).apply{hint="Enter coupon code";setSingleLine(true);setText(appliedCouponCode);setTextColor(primaryText);setHintTextColor(secondaryText);setPadding(dp(12),dp(8),dp(12),dp(8));background=rounded(if(isLightTheme)Color.WHITE else Color.rgb(45,44,49),10)}
+ content.addView(couponInput,margin(0,0,0,7))
+ content.addView(primaryButton(if(appliedDiscount>0)"REMOVE COUPON" else "APPLY COUPON"){
+  if(appliedDiscount>0){appliedCouponCode="";appliedDiscount=0;showCart()}
+  else applyOfferCoupon(couponInput.text.toString(),subtotal){ok,msg->Toast.makeText(this,msg,Toast.LENGTH_LONG).show();if(ok)showCart()}
+ },margin(0,0,0,8))
+ if(appliedDiscount>0){content.addView(label("Coupon $appliedCouponCode applied: −₹$appliedDiscount",14f,true,Color.rgb(36,170,105)),margin(0,0,0,7))}
+
  if(subtotal<150) content.addView(label("Minimum order ₹150 • Add ₹${150-subtotal} more to place order",14f,true,orange),margin(0,0,0,8))
  val deliveryFee=if(subtotal<=0) 0 else if(subtotal>500) 0 else 30
  content.addView(label(if(subtotal<=0) "Delivery fee: ₹0" else if(deliveryFee==0) "Delivery fee: FREE" else "Delivery fee: ₹$deliveryFee",14f,false,secondaryText),margin(0,0,0,6))
- content.addView(label("Total: ₹${subtotal+deliveryFee}",22f,true,primaryText),margin(0,0,0,14))
+ val payableTotal=(subtotal-appliedDiscount).coerceAtLeast(0)+deliveryFee
+ content.addView(label("Discount: −₹$appliedDiscount",14f,true,if(appliedDiscount>0)Color.rgb(36,170,105) else secondaryText),margin(0,0,0,5))
+ content.addView(label("Total: ₹$payableTotal",22f,true,primaryText),margin(0,0,0,14))
  content.addView(primaryButton(if(subtotal<150) "ADD ₹${150-subtotal} MORE TO ORDER" else "PLACE ORDER  •  ₹${subtotal+deliveryFee}"){if(subtotal<150){selectedCategory="All";query="";showHome(0);content.post{val heading=(0 until content.childCount).mapNotNull{content.getChildAt(it) as? TextView}.firstOrNull{it.text.toString()=="Popular near you"};(content.parent as? ScrollView)?.smoothScrollTo(0,heading?.top?:0)}}else placeOrderAndShowOrders()},LinearLayout.LayoutParams(-1,dp(48)))
 }private fun showOrders(){
  orderStatusListener?.remove()
