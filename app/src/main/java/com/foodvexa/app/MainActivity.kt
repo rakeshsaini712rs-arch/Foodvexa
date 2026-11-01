@@ -40,7 +40,7 @@ import android.location.LocationManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
-data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min",val unit:String=if(category.equals("Sweets",true))"KG" else "Piece")
+data class Product(val name:String,val price:Int,val category:String,val imageUrl:String,val eta:String="20–30 min",val unit:String="Piece")
 data class Category(val name:String,val imageUrl:String)
 
 class MainActivity:AppCompatActivity(){
@@ -1078,8 +1078,28 @@ filtered.forEachIndexed{index,p->
     bottom.addView(label("₹${p.price}/${if(p.unit.equals("KG",true))"kg" else "piece"}",11.5f,true,Color.WHITE).apply{setSingleLine(true);ellipsize=android.text.TextUtils.TruncateAt.END;includeFontPadding=false},LinearLayout.LayoutParams(0,dp(36),0.92f))
     val qty=if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true))cart.filterKeys{it==p.name||it.startsWith(p.name+"::")}.values.sum() else (cart[p.name]?:0)
     if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true)){
-        val add=primaryButton("Add to Cart"){if(!isProductSoldOut(p))showSweetWeightPicker(p)}
-        add.setTextSize(12f);add.isEnabled=!isProductSoldOut(p)
+        val gramsInput=EditText(this).apply{
+            hint="ग्राम";setText("500");selectAll()
+            inputType=android.text.InputType.TYPE_CLASS_NUMBER
+            textSize=11f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY)
+            gravity=Gravity.CENTER
+            background=rounded(Color.rgb(48,35,25),8)
+            setPadding(dp(4),0,dp(4),0)
+            filters=arrayOf(android.text.InputFilter.LengthFilter(7))
+        }
+        bottom.addView(gramsInput,LinearLayout.LayoutParams(dp(62),dp(32)).apply{rightMargin=dp(5)})
+        val add=primaryButton("Add to Cart"){
+            if(!isProductSoldOut(p)){
+                val grams=gramsInput.text.toString().toIntOrNull()
+                if(grams==null||grams<500){gramsInput.error="कम से कम 500 ग्राम";Toast.makeText(this,"कम से कम 500 ग्राम दर्ज करें",Toast.LENGTH_SHORT).show()}
+                else{
+                    val key=p.name+"::"+grams+"g"
+                    cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge()
+                    Toast.makeText(this,grams.toString()+" ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        add.setTextSize(11f);add.isEnabled=!isProductSoldOut(p)
         bottom.addView(add,LinearLayout.LayoutParams(0,dp(32),1.08f))
     }else if(qty==0){
         if(isProductSoldOut(p)){
@@ -1222,7 +1242,7 @@ private fun loadSharedMenu(){
    val price=(rawPrice?.toInt()?:base.getOrNull(idx)?.price?:0).coerceAtLeast(0)
    val category=doc.getString("category")?.trim()?.takeIf{it.isNotBlank()}?:base.getOrNull(idx)?.category?:"Snacks"
    val image=doc.getString("imageUrl")?.takeIf{it.startsWith("https://")}?:base.getOrNull(idx)?.imageUrl.orEmpty()
-   val unit=if(category.equals("Sweets",true))"KG" else doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
+   val unit=doc.getString("unit")?.takeIf{it.equals("KG",true)}?:"Piece"
    foodvexaLive.add(Product(name,price,category,image,unit=unit))
   }
   val foodvexaNames=foodvexaLive.map{it.name}
@@ -1398,39 +1418,6 @@ private fun createOrderAfterScheduleCheck(customerName:String,customerMobile:Str
    android.util.Log.e("FoodvexaOrder","Firestore order write failed; uid="+(FirebaseAuth.getInstance().currentUser?.uid?: "null"),e)
    android.app.AlertDialog.Builder(this).setTitle("Order save failed").setMessage(details).setPositiveButton("OK",null).show()
    Toast.makeText(this,"Order save nahi hua. Error screen par dekhein.",Toast.LENGTH_LONG).show()
-  }
-}
-private fun showSweetWeightPicker(p:Product){
- if(isProductSoldOut(p)){Toast.makeText(this,"This product is not available.",Toast.LENGTH_SHORT).show();return}
- val gramsInput=EditText(this).apply{
-  hint="वजन ग्राम में लिखें (न्यूनतम 500)"
-  inputType=android.text.InputType.TYPE_CLASS_NUMBER
-  setText("500")
-  selectAll()
- }
- val panel=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(22),dp(8),dp(22),0)}
- panel.addView(gramsInput,LinearLayout.LayoutParams(-1,dp(54)))
- panel.addView(label("न्यूनतम 500 ग्राम • अधिकतम की कोई सीमा नहीं",12f,false,secondaryText),margin(0,4,0,0))
- val preview=label("कीमत: ₹"+((p.price*500+500)/1000),15f,true,primaryText)
- panel.addView(preview,margin(0,8,0,0))
- gramsInput.addTextChangedListener(object:android.text.TextWatcher{
-  override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int){}
-  override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int){
-   val g=s?.toString()?.toIntOrNull()
-   preview.text=if(g!=null&&g>=500)"कीमत: ₹"+((p.price*g+500)/1000) else "न्यूनतम 500 ग्राम दर्ज करें"
-  }
-  override fun afterTextChanged(s:android.text.Editable?){}
- })
- android.app.AlertDialog.Builder(this).setTitle(p.name+" – वजन चुनें").setView(panel)
-  .setPositiveButton("Add to Cart",null).setNegativeButton("Cancel",null).create().also{dialog->
-   dialog.setOnShowListener{dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener{
-    val grams=gramsInput.text.toString().toIntOrNull()
-    if(grams==null||grams<500){gramsInput.error="कम से कम 500 ग्राम चुनें";return@setOnClickListener}
-    val key=p.name+"::"+grams+"g"
-    cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge();dialog.dismiss()
-    Toast.makeText(this,grams.toString()+" ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show();renderProducts()
-   }}
-   dialog.show()
   }
 }
 private fun updateCartBadge(){val count=cart.values.sum();cartNavLabel?.text=if(count>0)"CART ($count)" else "CART"};private fun addToCart(p:Product){if(isProductSoldOut(p)){Toast.makeText(this,if(productStatus(p)=="Coming Soon")"Coming Soon — ordering not started yet." else "This product is sold out.",Toast.LENGTH_LONG).show();return};cart[p.name]=(cart[p.name]?:0)+1;saveCart();updateCartBadge();Toast.makeText(this,"${p.name} added",Toast.LENGTH_SHORT).show()};private fun loadCart(){cart.clear();val o=JSONObject(prefs.getString("cart","{}")?:"{}");o.keys().forEach{cart[it]=o.optInt(it,0)}};private fun saveCart(){prefs.edit().putString("cart",JSONObject(cart as Map<*,*>).toString()).apply()};private val paymentMethod:String get()=prefs.getString("payment_method","COD").orEmpty()
