@@ -2,11 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    // Shop hours are 09:00-21:00 Asia/Kolkata.
-    // Firestore request.time uses UTC: 03:30 inclusive to 15:30 exclusive.
+    // Current Foodvexa shop hours are 08:00-21:00 Asia/Kolkata.
+    // Firestore request.time uses UTC: 02:30 inclusive to 15:30 exclusive.
     function isWithinShopHours() {
-      return (request.time.hours() > 3 && request.time.hours() < 15) ||
-        (request.time.hours() == 3 && request.time.minutes() >= 30) ||
+      return (request.time.hours() > 2 && request.time.hours() < 15) ||
+        (request.time.hours() == 2 && request.time.minutes() >= 30) ||
         (request.time.hours() == 15 && request.time.minutes() < 30);
     }
     function isAdmin() {
