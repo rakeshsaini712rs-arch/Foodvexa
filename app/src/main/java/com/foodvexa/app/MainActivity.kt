@@ -1080,9 +1080,9 @@ filtered.forEachIndexed{index,p->
     if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true)){
         val add=primaryButton("Add to Cart"){
             if(!isProductSoldOut(p)){
-                val key=p.name+"::500g"
+                val key=p.name
                 cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge()
-                Toast.makeText(this,"500 ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show()
+                Toast.makeText(this,"1 KG Cart में जोड़ दिया",Toast.LENGTH_SHORT).show()
             }
         }
         add.setTextSize(12f);add.isEnabled=!isProductSoldOut(p)
