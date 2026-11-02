@@ -1078,28 +1078,14 @@ filtered.forEachIndexed{index,p->
     bottom.addView(label("₹${p.price}/${if(p.unit.equals("KG",true))"kg" else "piece"}",11.5f,true,Color.WHITE).apply{setSingleLine(true);ellipsize=android.text.TextUtils.TruncateAt.END;includeFontPadding=false},LinearLayout.LayoutParams(0,dp(36),0.92f))
     val qty=if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true))cart.filterKeys{it==p.name||it.startsWith(p.name+"::")}.values.sum() else (cart[p.name]?:0)
     if(p.category.equals("Sweets",true)&&p.unit.equals("KG",true)){
-        val gramsInput=EditText(this).apply{
-            hint="ग्राम";setText("500");selectAll()
-            inputType=android.text.InputType.TYPE_CLASS_NUMBER
-            textSize=11f;setTextColor(Color.WHITE);setHintTextColor(Color.LTGRAY)
-            gravity=Gravity.CENTER
-            background=rounded(Color.rgb(48,35,25),8)
-            setPadding(dp(4),0,dp(4),0)
-            filters=arrayOf(android.text.InputFilter.LengthFilter(7))
-        }
-        bottom.addView(gramsInput,LinearLayout.LayoutParams(dp(62),dp(32)).apply{rightMargin=dp(5)})
         val add=primaryButton("Add to Cart"){
             if(!isProductSoldOut(p)){
-                val grams=gramsInput.text.toString().toIntOrNull()
-                if(grams==null||grams<500){gramsInput.error="कम से कम 500 ग्राम";Toast.makeText(this,"कम से कम 500 ग्राम दर्ज करें",Toast.LENGTH_SHORT).show()}
-                else{
-                    val key=p.name+"::"+grams+"g"
-                    cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge()
-                    Toast.makeText(this,grams.toString()+" ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show()
-                }
+                val key=p.name+"::500g"
+                cart[key]=(cart[key]?:0)+1;saveCart();updateCartBadge()
+                Toast.makeText(this,"500 ग्राम Cart में जोड़ दिया",Toast.LENGTH_SHORT).show()
             }
         }
-        add.setTextSize(11f);add.isEnabled=!isProductSoldOut(p)
+        add.setTextSize(12f);add.isEnabled=!isProductSoldOut(p)
         bottom.addView(add,LinearLayout.LayoutParams(0,dp(32),1.08f))
     }else if(qty==0){
         if(isProductSoldOut(p)){
