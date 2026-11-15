@@ -16,11 +16,15 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageMetadata
 import java.util.concurrent.TimeUnit
 
 class DeliveryActivity : Activity() {
     private val db by lazy { FirebaseFirestore.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
+    private val storage by lazy { FirebaseStorage.getInstance() }
+    private var selectedPhotoUri: Uri? = null
     private val red = Color.rgb(190,25,42)
     private val ink = Color.rgb(32,34,40)
     private lateinit var root: LinearLayout
@@ -75,7 +79,12 @@ class DeliveryActivity : Activity() {
         val accountNumber=field("Bank account number *");accountNumber.inputType=2;root.addView(accountNumber,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val ifsc=field("IFSC code *");root.addView(ifsc,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val accountHolder=field("Account holder name *");root.addView(accountHolder,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
-        val photoNote=label("Passport-size photo: upload securely during Admin verification.",12f,Color.GRAY);root.addView(photoNote,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+        val photoLabel=label("Passport-size photo *",14f,ink,true)
+        root.addView(photoLabel,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+        root.addView(button("SELECT PASSPORT-SIZE PHOTO",{
+            val pick=Intent(Intent.ACTION_GET_CONTENT).apply{type="image/*";addCategory(Intent.CATEGORY_OPENABLE)}
+            startActivityForResult(Intent.createChooser(pick,"Select passport-size photo"),9001)
+        },Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
         val availability=field("Preferred working time (e.g. 10 AM - 8 PM)");root.addView(availability,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val msg=label("",13f,red)
         root.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
@@ -84,8 +93,8 @@ class DeliveryActivity : Activity() {
             val ci=city.text.toString().trim();val a=address.text.toString().trim();val v=vehicle.text.toString().trim()
             val vn=vehicleNumber.text.toString().trim();val aa=aadhaar.text.toString().trim()
             val bn=bankName.text.toString().trim();val an=accountNumber.text.toString().trim();val fi=ifsc.text.toString().trim();val ah=accountHolder.text.toString().trim()
-            if(n.length<2||!p.matches(Regex("\\d{10}"))||!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()||ci.isBlank()||a.isBlank()||v.isBlank()||vn.isBlank()||!aa.matches(Regex("\\d{4}"))||bn.isBlank()||an.isBlank()||fi.isBlank()||ah.isBlank()){
-                msg.text="Please complete all required fields correctly.";return@button
+            if(n.length<2||!p.matches(Regex("\\d{10}"))||!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()||ci.isBlank()||a.isBlank()||v.isBlank()||vn.isBlank()||!aa.matches(Regex("\\d{4}"))||bn.isBlank()||an.isBlank()||fi.isBlank()||ah.isBlank()||selectedPhotoUri==null){
+                msg.text=if(selectedPhotoUri==null)"Please select a passport-size photo." else "Please complete all required fields correctly.";return@button
             }
             val data=hashMapOf<String,Any>(
                 "name" to n,"phone" to p,"email" to e,"city" to ci,"address" to a,"vehicleType" to v,
@@ -95,18 +104,38 @@ class DeliveryActivity : Activity() {
                 "status" to "pending","approved" to false,"createdAt" to FieldValue.serverTimestamp()
             )
             isEnabled=false
-            db.collection("deliveryApplications").add(data).addOnSuccessListener{
-                msg.setTextColor(Color.rgb(24,132,83))
-                msg.text="Application submitted successfully. Foodvexa Admin will review your application."
-                name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;vehicleNumber.isEnabled=false;licence.isEnabled=false;aadhaar.isEnabled=false;bankName.isEnabled=false;accountNumber.isEnabled=false;ifsc.isEnabled=false;accountHolder.isEnabled=false;availability.isEnabled=false
-            }.addOnFailureListener{
-                isEnabled=true
-                msg.text="Application could not be submitted. Please try again."
-            }
+            msg.text="Submitting application…"
+            auth.signInAnonymously().addOnSuccessListener{anonResult->
+                val anonUid=anonResult.user?.uid.orEmpty()
+                if(anonUid.isBlank()){isEnabled=true;msg.text="Secure upload session could not be created.";return@addOnSuccessListener}
+                data["photoUploaderUid"]=anonUid
+                db.collection("deliveryApplications").add(data).addOnSuccessListener{docRef->
+                    val uri=selectedPhotoUri
+                    if(uri==null){docRef.delete();auth.signOut();isEnabled=true;msg.text="Passport photo is required.";return@addOnSuccessListener}
+                    val path="delivery-applications/"+anonUid+"/"+docRef.id+".jpg"
+                    val metadata=StorageMetadata.Builder().setContentType("image/jpeg").build()
+                    storage.reference.child(path).putFile(uri,metadata).addOnSuccessListener{
+                        docRef.update(mapOf("photoPath" to path,"photoStatus" to "uploaded")).addOnSuccessListener{
+                            auth.signOut()
+                            msg.setTextColor(Color.rgb(24,132,83))
+                            msg.text="Application submitted successfully. Foodvexa Admin will review your application."
+                            name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;vehicleNumber.isEnabled=false;licence.isEnabled=false;aadhaar.isEnabled=false;bankName.isEnabled=false;accountNumber.isEnabled=false;ifsc.isEnabled=false;accountHolder.isEnabled=false;availability.isEnabled=false
+                        }.addOnFailureListener{docRef.delete();auth.signOut();isEnabled=true;msg.text="Application saved but photo record failed. Please try again."}
+                    }.addOnFailureListener{docRef.delete();auth.signOut();isEnabled=true;msg.text="Photo upload failed. Please choose a smaller image and try again."}
+                }.addOnFailureListener{auth.signOut();isEnabled=true;msg.text="Application could not be submitted. Please try again."}
+            }.addOnFailureListener{isEnabled=true;msg.text="Secure photo upload could not start. Please try again."}
         })
         root.addView(submit,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
         root.addView(button("BACK TO LOGIN",{showLogin()},Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
     }
+    override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?){
+        super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode==9001 && resultCode==RESULT_OK){
+            selectedPhotoUri=data?.data
+            if(selectedPhotoUri!=null) Toast.makeText(this,"Passport photo selected.",Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun authorize(uid:String,onDenied:((String)->Unit)?=null){
         db.collection("deliveryBoys").document(uid).get().addOnSuccessListener{d->
             if(d.exists()&&d.getBoolean("active")==true){showOrders(uid,d.getString("name")?: "Delivery Partner")}
