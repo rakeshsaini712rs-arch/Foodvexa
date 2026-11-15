@@ -51,7 +51,50 @@ class DeliveryActivity : Activity() {
         val msg=label("",13f,red)
         root.addView(button("LOGIN", { val e=email.text.toString().trim(); val p=pass.text.toString(); if(e.isBlank()||p.isBlank()){msg.text="Enter login ID and password";return@button}; auth.signInWithEmailAndPassword(e,p).addOnSuccessListener{u->u.user?.uid?.let{authorize(it){err->msg.text=err}}}.addOnFailureListener{msg.text="Login failed. Check ID/password."} }))
         root.addView(msg)
-        root.addView(label("Your account must be created and activated by Foodvexa Admin.",12f,Color.GRAY))
+        root.addView(button("APPLY TO BECOME A DELIVERY PARTNER", { showApplicationForm() }, Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
+        root.addView(label("New delivery partners must submit an application. Foodvexa Admin will review and approve it before login access is activated.",12f,Color.GRAY))
+    }
+    private fun field(hint:String):EditText=EditText(this).apply{
+        this.hint=hint;isSingleLine=true;setTextColor(ink);setHintTextColor(Color.GRAY)
+        background=rounded(Color.WHITE);setPadding(dp(12),dp(10),dp(12),dp(10))
+    }
+    private fun showApplicationForm(){
+        base("Delivery Partner Application")
+        root.addView(label("Join Foodvexa as a Delivery Partner",20f,ink,true))
+        root.addView(label("Submit your details below. Admin approval is required before you can log in.",13f,Color.GRAY))
+        val name=field("Full name *");root.addView(name,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(12)})
+        val phone=field("Mobile number *");phone.inputType=2;root.addView(phone,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val email=field("Email address *");email.inputType=33;root.addView(email,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val city=field("City / town *");root.addView(city,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val address=field("Full address *");root.addView(address,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val vehicle=field("Vehicle type (Bike / Scooter / Cycle / Other) *");root.addView(vehicle,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val licence=field("Driving licence number (if applicable)");root.addView(licence,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val availability=field("Preferred working time (e.g. 10 AM - 8 PM)");root.addView(availability,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val msg=label("",13f,red)
+        root.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
+        val submit=button("SUBMIT APPLICATION",{
+            val n=name.text.toString().trim();val p=phone.text.toString().trim();val e=email.text.toString().trim()
+            val ci=city.text.toString().trim();val a=address.text.toString().trim();val v=vehicle.text.toString().trim()
+            if(n.length<2||!p.matches(Regex("\\d{10}"))||!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()||ci.isBlank()||a.isBlank()||v.isBlank()){
+                msg.text="Please complete all required fields correctly.";return@button
+            }
+            val data=hashMapOf<String,Any>(
+                "name" to n,"phone" to p,"email" to e,"city" to ci,"address" to a,"vehicleType" to v,
+                "licenceNumber" to licence.text.toString().trim(),"availability" to availability.text.toString().trim(),
+                "status" to "pending","approved" to false,"createdAt" to FieldValue.serverTimestamp()
+            )
+            isEnabled=false
+            db.collection("deliveryApplications").add(data).addOnSuccessListener{
+                msg.setTextColor(Color.rgb(24,132,83))
+                msg.text="Application submitted successfully. Foodvexa Admin will review your application."
+                name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;licence.isEnabled=false;availability.isEnabled=false
+            }.addOnFailureListener{
+                isEnabled=true
+                msg.text="Application could not be submitted. Please try again."
+            }
+        })
+        root.addView(submit,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
+        root.addView(button("BACK TO LOGIN",{showLogin()},Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
     }
     private fun authorize(uid:String,onDenied:((String)->Unit)?=null){
         db.collection("deliveryBoys").document(uid).get().addOnSuccessListener{d->
