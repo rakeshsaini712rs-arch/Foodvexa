@@ -1212,6 +1212,17 @@ class AdminActivity : Activity() {
                     card.addView(text("Vehicle: "+(doc.getString("vehicleType")?:"—"),13f))
                     card.addView(text("Licence: "+(doc.getString("licenceNumber")?.takeIf{it.isNotBlank()}?:"Not provided"),13f))
                     card.addView(text("Availability: "+(doc.getString("availability")?.takeIf{it.isNotBlank()}?:"Not specified"),13f))
+                    val photoPath=doc.getString("photoPath").orEmpty()
+                    if(photoPath.isNotBlank()){
+                        card.addView(button("VIEW PASSPORT PHOTO",{
+                            FirebaseStorage.getInstance().reference.child(photoPath).getBytes(5L*1024L*1024L).addOnSuccessListener{bytes->
+                                val bitmap=android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.size)
+                                if(bitmap==null){Toast.makeText(this,"Could not open passport photo.",Toast.LENGTH_SHORT).show();return@addOnSuccessListener}
+                                val image=ImageView(this).apply{setImageBitmap(bitmap);adjustViewBounds=true;setPadding(dp(8),dp(8),dp(8),dp(8))}
+                                android.app.AlertDialog.Builder(this).setTitle("Passport-size photo").setView(image).setPositiveButton("CLOSE",null).show()
+                            }.addOnFailureListener{Toast.makeText(this,"Photo could not be loaded: "+(it.localizedMessage?: "Storage permission denied"),Toast.LENGTH_LONG).show()}
+                        },Color.rgb(40,105,160)),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+                    }
                     if(s=="pending"){
                         val password=EditText(this).apply{
                             hint="Set login password (minimum 6 characters)"
