@@ -1185,9 +1185,83 @@ class AdminActivity : Activity() {
     }
 
     private fun deliveryPage(){
-        addLine("Delivery Instructions",22f,ink,true)
-        card("COD","Collect the order total","Collect cash from the customer and mark the order as delivered after delivery.")
-        card("UPI VERIFIED","No cash to collect","Do not collect cash for orders with verified UPI payments.")
-        addLine("Instructions are based on the order record. Live delivery-partner assignment and location tracking require a separate delivery app and permissions.",13f,Color.DKGRAY)
+        addLine("Delivery Partner Applications",22f,ink,true)
+        addLine("People can apply from the Delivery app. Review each application here and activate approved applicants.",13f,Color.GRAY)
+        db.collection("deliveryApplications").orderBy("createdAt",com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener(this){snap,error->
+                body.removeAllViews()
+                addLine("Delivery Partner Applications",22f,ink,true)
+                addLine("Review applications before giving login access.",13f,Color.GRAY)
+                if(error!=null){
+                    addLine("Could not load applications: "+(error.localizedMessage?: "Permission denied"),13f,red,true)
+                    return@addSnapshotListener
+                }
+                val docs=snap?.documents.orEmpty()
+                val pending=docs.count{it.getString("status")=="pending"}
+                addLine("Pending applications: $pending",14f,if(pending>0)red else green,true)
+                if(docs.isEmpty()){addLine("No delivery partner applications yet.",14f,Color.GRAY);return@addSnapshotListener}
+                docs.forEach{doc->
+                    val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(14),dp(14),dp(14),dp(14));background=shape();elevation=dp(1).toFloat()}
+                    val s=doc.getString("status")?:"pending"
+                    card.addView(text(doc.getString("name")?:"Applicant",18f,ink,true))
+                    card.addView(text("Status: \${s.uppercase()}",13f,if(s=="approved")green else if(s=="rejected")red else Color.rgb(170,95,0),true))
+                    card.addView(text("Mobile: "+(doc.getString("phone")?:"—"),13f))
+                    card.addView(text("Email: "+(doc.getString("email")?:"—"),13f))
+                    card.addView(text("City: "+(doc.getString("city")?:"—"),13f))
+                    card.addView(text("Address: "+(doc.getString("address")?:"—"),13f))
+                    card.addView(text("Vehicle: "+(doc.getString("vehicleType")?:"—"),13f))
+                    card.addView(text("Licence: "+(doc.getString("licenceNumber")?.takeIf{it.isNotBlank()}?:"Not provided"),13f))
+                    card.addView(text("Availability: "+(doc.getString("availability")?.takeIf{it.isNotBlank()}?:"Not specified"),13f))
+                    if(s=="pending"){
+                        val password=EditText(this).apply{
+                            hint="Set login password (minimum 6 characters)"
+                            isSingleLine=true;inputType=129;setTextColor(ink);background=shape(Color.WHITE);setPadding(dp(12),dp(10),dp(12),dp(10))
+                        }
+                        card.addView(password,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+                        val msg=text("",12f,red)
+                        card.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(5)})
+                        card.addView(button("APPROVE & ACTIVATE",{
+                            val p=password.text.toString()
+                            val email=doc.getString("email").orEmpty().trim()
+                            if(p.length<6){msg.text="Password must be at least 6 characters.";return@button}
+                            if(email.isBlank()){msg.text="Applicant email is missing.";return@button}
+                            val secondaryAppName="foodvexa_delivery_admin_auth"
+                            val secondaryApp=try{com.google.firebase.FirebaseApp.getInstance(secondaryAppName)}catch(_:Exception){
+                                com.google.firebase.FirebaseApp.initializeApp(this,com.google.firebase.FirebaseApp.getInstance().options,secondaryAppName)
+                            }
+                            val secondaryAuth=com.google.firebase.auth.FirebaseAuth.getInstance(secondaryApp)
+                            password.isEnabled=false
+                            secondaryAuth.createUserWithEmailAndPassword(email,p).addOnSuccessListener{result->
+                                val uid=result.user?.uid
+                                if(uid==null){msg.text="Could not create delivery login.";password.isEnabled=true;return@addOnSuccessListener}
+                                val boy=hashMapOf<String,Any>(
+                                    "name" to (doc.getString("name")?:"Delivery Partner"),
+                                    "phone" to (doc.getString("phone")?:""),
+                                    "email" to email,
+                                    "active" to true,
+                                    "approved" to true,
+                                    "applicationId" to doc.id,
+                                    "city" to (doc.getString("city")?:""),
+                                    "vehicleType" to (doc.getString("vehicleType")?:""),
+                                    "createdAt" to FieldValue.serverTimestamp()
+                                )
+                                db.collection("deliveryBoys").document(uid).set(boy).addOnSuccessListener{
+                                    doc.reference.update(mapOf("status" to "approved","approved" to true,"approvedAt" to FieldValue.serverTimestamp(),"deliveryBoyUid" to uid))
+                                        .addOnSuccessListener{msg.setTextColor(green);msg.text="Approved. Login ID: $email";secondaryAuth.signOut()}
+                                        .addOnFailureListener{msg.text="Login created, but application update failed: "+(it.localizedMessage?:"");secondaryAuth.signOut()}
+                                }.addOnFailureListener{msg.text="Could not activate delivery account: "+(it.localizedMessage?:"");password.isEnabled=true;secondaryAuth.signOut()}
+                            }.addOnFailureListener{msg.text="Login creation failed: "+(it.localizedMessage?:"Email may already be registered.");password.isEnabled=true;secondaryAuth.signOut()}
+                        }),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
+                        card.addView(button("REJECT APPLICATION",{
+                            doc.reference.update(mapOf("status" to "rejected","approved" to false,"reviewedAt" to FieldValue.serverTimestamp()))
+                                .addOnSuccessListener{msg.setTextColor(red);msg.text="Application rejected."}
+                                .addOnFailureListener{msg.text="Could not reject application."}
+                        },Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+                    }else if(s=="approved"){
+                        card.addView(text("This applicant has an active Delivery login.",12f,green,true),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(7)})
+                    }
+                    body.addView(card,LinearLayout.LayoutParams(-1,-2).apply{bottomMargin=dp(12)})
+                }
+            }
     }
 }
