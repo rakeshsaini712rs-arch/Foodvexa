@@ -32,6 +32,127 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
+    match /deliveryApplications/{applicationId} {
+      // Anyone may submit a delivery-partner application; only Admin can review it.
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.approved == false
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 1
+        && request.resource.data.phone is string
+        && request.resource.data.phone.matches('^[0-9]{10}
+      // Partners can only query active delivery accounts for assignment.
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == uid)
+        || (signedIn()
+          && resource.data.active == true
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true);
+      allow create, update, delete: if isAdmin();
+    }
+    match /partnerApplications/{applicationId} {
+      allow create: if signedIn()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.approved == false
+        && request.resource.data.businessName is string
+        && request.resource.data.businessName.size() > 1
+        && request.resource.data.ownerName is string
+        && request.resource.data.phone is string
+        && request.resource.data.phone.matches('^[0-9]{10}$')
+        && request.resource.data.city is string
+        && request.resource.data.state is string
+        && request.resource.data.pincode is string
+        && request.resource.data.pincode.matches('^[0-9]{6}$');
+      allow read, update, delete: if isAdmin();
+    }
+    match /partners/{partnerId} {
+      // Public active shop profile and schedule are needed for customer availability and delivery pickup.
+      allow read: if (resource.data.approved == true && resource.data.active == true) || isAdmin()
+        || (signedIn() && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId == partnerId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (signedIn()
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId == partnerId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['openingTime','closingTime','holidayDates','manuallyClosed','scheduleUpdatedAt']));
+    }
+    match /partnerAccounts/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isAdmin();
+    }
+    match /partnerProductChanges/{changeId} {
+      allow create: if signedIn() &&
+        exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+        request.resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId &&
+        request.resource.data.partnerName == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerName &&
+        request.resource.data.status == 'pending';
+      allow read: if isAdmin() ||
+        (signedIn() && resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    match /orders/{orderId} {
+      allow create: if isWithinShopHours()
+        && signedIn()
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.status == 'New'
+        && request.resource.data.paymentMethod in ['COD', 'UPI'];
+      allow read: if isAdmin() ||
+        (signedIn() && resource.data.customerUid == request.auth.uid) ||
+        (signedIn() && resource.data.deliveryBoyUid == request.auth.uid &&
+          exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true) ||
+        (signedIn() &&
+          exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true &&
+          (resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId ||
+           (resource.data.partnerIds is list && resource.data.partnerIds.hasAny([get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId]))));
+      allow update: if isAdmin() ||
+        (signedIn()
+          && exists(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.active == true
+          && (resource.data.partnerId == get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId
+            || (resource.data.partnerIds is list && resource.data.partnerIds.hasAny([get(/databases/$(database)/documents/partnerAccounts/$(request.auth.uid)).data.partnerId])))
+          && request.resource.data.deliveryBoyUid is string
+          && exists(/databases/$(database)/documents/deliveryBoys/$(request.resource.data.deliveryBoyUid))
+          && get(/databases/$(database)/documents/deliveryBoys/$(request.resource.data.deliveryBoyUid)).data.active == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deliveryBoyUid', 'deliveryBoyEmail', 'deliveryLocationActive', 'updatedAt'])) ||
+        (signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status == 'Awaiting customer confirmation'
+          && request.resource.data.status == 'Delivered'
+          && request.resource.data.customerConfirmedDelivery == true
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'customerConfirmedDelivery', 'customerConfirmedAt', 'updatedAt'])) ||
+        (signedIn() &&
+          resource.data.deliveryBoyUid == request.auth.uid &&
+          exists(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/deliveryBoys/$(request.auth.uid)).data.active == true &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'deliveryLatitude', 'deliveryLongitude', 'deliveryLocationUpdatedAt', 'deliveryLocationActive', 'deliveryLocationEndedAt']) &&
+          request.resource.data.status in ['Accepted', 'Preparing', 'Ready', 'Out for delivery', 'Awaiting customer confirmation']) ||
+        (signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status in ['New', 'new', 'Pending', 'pending', 'Accepted', 'accepted', 'Accept', 'accept']
+          && request.resource.data.status == 'Cancelled'
+          && request.resource.data.cancelledBy == 'customer'
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'cancelledBy', 'cancelledAt', 'updatedAt']));
+      allow delete: if false;
+    }
+  }
+}
+)
+        && request.resource.data.email is string
+        && request.resource.data.city is string
+        && request.resource.data.city.size() > 0
+        && request.resource.data.address is string
+        && request.resource.data.address.size() > 0
+        && request.resource.data.vehicleType is string
+        && request.resource.data.vehicleType.size() > 0;
+      allow read, update, delete: if isAdmin();
+    }
     match /deliveryBoys/{uid} {
       // Partners can only query active delivery accounts for assignment.
       allow read: if isAdmin()
