@@ -68,26 +68,37 @@ class DeliveryActivity : Activity() {
         val city=field("City / town *");root.addView(city,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val address=field("Full address *");root.addView(address,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val vehicle=field("Vehicle type (Bike / Scooter / Cycle / Other) *");root.addView(vehicle,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val vehicleNumber=field("Vehicle number *");root.addView(vehicleNumber,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val licence=field("Driving licence number (if applicable)");root.addView(licence,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val aadhaar=field("Aadhaar number (last 4 digits only) *");aadhaar.inputType=2;root.addView(aadhaar,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val bankName=field("Bank name *");root.addView(bankName,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val accountNumber=field("Bank account number *");accountNumber.inputType=2;root.addView(accountNumber,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val ifsc=field("IFSC code *");root.addView(ifsc,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val accountHolder=field("Account holder name *");root.addView(accountHolder,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
+        val photoNote=label("Passport-size photo: upload securely during Admin verification.",12f,Color.GRAY);root.addView(photoNote,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
         val availability=field("Preferred working time (e.g. 10 AM - 8 PM)");root.addView(availability,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val msg=label("",13f,red)
         root.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
         val submit=button("SUBMIT APPLICATION",{
             val n=name.text.toString().trim();val p=phone.text.toString().trim();val e=email.text.toString().trim()
             val ci=city.text.toString().trim();val a=address.text.toString().trim();val v=vehicle.text.toString().trim()
-            if(n.length<2||!p.matches(Regex("\\d{10}"))||!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()||ci.isBlank()||a.isBlank()||v.isBlank()){
+            val vn=vehicleNumber.text.toString().trim();val aa=aadhaar.text.toString().trim()
+            val bn=bankName.text.toString().trim();val an=accountNumber.text.toString().trim();val fi=ifsc.text.toString().trim();val ah=accountHolder.text.toString().trim()
+            if(n.length<2||!p.matches(Regex("\\d{10}"))||!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()||ci.isBlank()||a.isBlank()||v.isBlank()||vn.isBlank()||!aa.matches(Regex("\\d{4}"))||bn.isBlank()||an.isBlank()||fi.isBlank()||ah.isBlank()){
                 msg.text="Please complete all required fields correctly.";return@button
             }
             val data=hashMapOf<String,Any>(
                 "name" to n,"phone" to p,"email" to e,"city" to ci,"address" to a,"vehicleType" to v,
-                "licenceNumber" to licence.text.toString().trim(),"availability" to availability.text.toString().trim(),
+                "vehicleNumber" to vn,"licenceNumber" to licence.text.toString().trim(),"aadhaarLast4" to aa,
+                "bankName" to bn,"accountNumber" to an,"ifsc" to fi,"accountHolderName" to ah,
+                "availability" to availability.text.toString().trim(),
                 "status" to "pending","approved" to false,"createdAt" to FieldValue.serverTimestamp()
             )
             isEnabled=false
             db.collection("deliveryApplications").add(data).addOnSuccessListener{
                 msg.setTextColor(Color.rgb(24,132,83))
                 msg.text="Application submitted successfully. Foodvexa Admin will review your application."
-                name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;licence.isEnabled=false;availability.isEnabled=false
+                name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;vehicleNumber.isEnabled=false;licence.isEnabled=false;aadhaar.isEnabled=false;bankName.isEnabled=false;accountNumber.isEnabled=false;ifsc.isEnabled=false;accountHolder.isEnabled=false;availability.isEnabled=false
             }.addOnFailureListener{
                 isEnabled=true
                 msg.text="Application could not be submitted. Please try again."
