@@ -120,7 +120,7 @@ class DeliveryActivity : Activity() {
                             auth.signOut()
                             msg.setTextColor(Color.rgb(24,132,83))
                             msg.text="Application submitted successfully. Foodvexa Admin will review your application."
-                            name.submit.isEnabled=false;phone.submit.isEnabled=false;email.submit.isEnabled=false;city.submit.isEnabled=false;address.submit.isEnabled=false;vehicle.submit.isEnabled=false;vehicleNumber.submit.isEnabled=false;licence.submit.isEnabled=false;aadhaar.submit.isEnabled=false;bankName.submit.isEnabled=false;accountNumber.submit.isEnabled=false;ifsc.submit.isEnabled=false;accountHolder.submit.isEnabled=false;availability.submit.isEnabled=false
+                            name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;vehicleNumber.isEnabled=false;licence.isEnabled=false;aadhaar.isEnabled=false;bankName.isEnabled=false;accountNumber.isEnabled=false;ifsc.isEnabled=false;accountHolder.isEnabled=false;availability.isEnabled=false
                         }.addOnFailureListener{docRef.delete();auth.signOut();submit.isEnabled=true;msg.text="Application saved but photo record failed. Please try again."}
                     }.addOnFailureListener{docRef.delete();auth.signOut();submit.isEnabled=true;msg.text="Photo upload failed. Please choose a smaller image and try again."}
                 }.addOnFailureListener{auth.signOut();submit.isEnabled=true;msg.text="Application could not be submitted. Please try again."}
