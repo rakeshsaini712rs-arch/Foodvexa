@@ -88,7 +88,8 @@ class DeliveryActivity : Activity() {
         val availability=field("Preferred working time (e.g. 10 AM - 8 PM)");root.addView(availability,LinearLayout.LayoutParams(-1,dp(52)).apply{topMargin=dp(8)})
         val msg=label("",13f,red)
         root.addView(msg,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(10)})
-        val submit=button("SUBMIT APPLICATION",{
+        lateinit var submit: TextView
+        submit=button("SUBMIT APPLICATION",{
             val n=name.text.toString().trim();val p=phone.text.toString().trim();val e=email.text.toString().trim()
             val ci=city.text.toString().trim();val a=address.text.toString().trim();val v=vehicle.text.toString().trim()
             val vn=vehicleNumber.text.toString().trim();val aa=aadhaar.text.toString().trim()
@@ -103,15 +104,15 @@ class DeliveryActivity : Activity() {
                 "availability" to availability.text.toString().trim(),
                 "status" to "pending","approved" to false,"createdAt" to FieldValue.serverTimestamp()
             )
-            isEnabled=false
+            submit.isEnabled=false
             msg.text="Submitting application…"
             auth.signInAnonymously().addOnSuccessListener{anonResult->
                 val anonUid=anonResult.user?.uid.orEmpty()
-                if(anonUid.isBlank()){isEnabled=true;msg.text="Secure upload session could not be created.";return@addOnSuccessListener}
+                if(anonUid.isBlank()){submit.isEnabled=true;msg.text="Secure upload session could not be created.";return@addOnSuccessListener}
                 data["photoUploaderUid"]=anonUid
                 db.collection("deliveryApplications").add(data).addOnSuccessListener{docRef->
                     val uri=selectedPhotoUri
-                    if(uri==null){docRef.delete();auth.signOut();isEnabled=true;msg.text="Passport photo is required.";return@addOnSuccessListener}
+                    if(uri==null){docRef.delete();auth.signOut();submit.isEnabled=true;msg.text="Passport photo is required.";return@addOnSuccessListener}
                     val path="delivery-applications/"+anonUid+"/"+docRef.id+".jpg"
                     val metadata=StorageMetadata.Builder().setContentType("image/jpeg").build()
                     storage.reference.child(path).putFile(uri,metadata).addOnSuccessListener{
@@ -119,11 +120,11 @@ class DeliveryActivity : Activity() {
                             auth.signOut()
                             msg.setTextColor(Color.rgb(24,132,83))
                             msg.text="Application submitted successfully. Foodvexa Admin will review your application."
-                            name.isEnabled=false;phone.isEnabled=false;email.isEnabled=false;city.isEnabled=false;address.isEnabled=false;vehicle.isEnabled=false;vehicleNumber.isEnabled=false;licence.isEnabled=false;aadhaar.isEnabled=false;bankName.isEnabled=false;accountNumber.isEnabled=false;ifsc.isEnabled=false;accountHolder.isEnabled=false;availability.isEnabled=false
-                        }.addOnFailureListener{docRef.delete();auth.signOut();isEnabled=true;msg.text="Application saved but photo record failed. Please try again."}
-                    }.addOnFailureListener{docRef.delete();auth.signOut();isEnabled=true;msg.text="Photo upload failed. Please choose a smaller image and try again."}
-                }.addOnFailureListener{auth.signOut();isEnabled=true;msg.text="Application could not be submitted. Please try again."}
-            }.addOnFailureListener{isEnabled=true;msg.text="Secure photo upload could not start. Please try again."}
+                            name.submit.isEnabled=false;phone.submit.isEnabled=false;email.submit.isEnabled=false;city.submit.isEnabled=false;address.submit.isEnabled=false;vehicle.submit.isEnabled=false;vehicleNumber.submit.isEnabled=false;licence.submit.isEnabled=false;aadhaar.submit.isEnabled=false;bankName.submit.isEnabled=false;accountNumber.submit.isEnabled=false;ifsc.submit.isEnabled=false;accountHolder.submit.isEnabled=false;availability.submit.isEnabled=false
+                        }.addOnFailureListener{docRef.delete();auth.signOut();submit.isEnabled=true;msg.text="Application saved but photo record failed. Please try again."}
+                    }.addOnFailureListener{docRef.delete();auth.signOut();submit.isEnabled=true;msg.text="Photo upload failed. Please choose a smaller image and try again."}
+                }.addOnFailureListener{auth.signOut();submit.isEnabled=true;msg.text="Application could not be submitted. Please try again."}
+            }.addOnFailureListener{submit.isEnabled=true;msg.text="Secure photo upload could not start. Please try again."}
         })
         root.addView(submit,LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(6)})
         root.addView(button("BACK TO LOGIN",{showLogin()},Color.DKGRAY),LinearLayout.LayoutParams(-1,-2).apply{topMargin=dp(8)})
